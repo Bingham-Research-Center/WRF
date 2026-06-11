@@ -18,6 +18,7 @@ entry point for human and AI contributors.
   cheap-before-expensive orientation.
 - `doc/BRC_WRF_HANDOFF.md`: current handoff, cold-start order, and next
   orientation work queue.
+- `brc-docs/`: concise BRC-facing usage and roadmap notes for CHPC work.
 - `doc/README.cmake_build`: CMake build flow using `configure_new`,
   `compile_new`, and `cleanCMake.sh`.
 - `doc/README.test_cases`: legacy idealized and real-data test-case overview.
@@ -53,6 +54,7 @@ trailer.
 ## Current Gaps
 
 - BRC-supported build paths still need a host/compiler/use-case matrix.
+- BRC CHPC usage and on-rails workflow gaps are tracked in `brc-docs/`.
 - Local WRF deviations from upstream should be captured as they are confirmed.
 - Cheap smoke tests should be documented before any full regression workflow is
   treated as routine.

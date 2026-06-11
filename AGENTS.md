@@ -22,6 +22,12 @@ small and local before broad scans or expensive commands.
 - `README`: version, public-domain notice, and index of WRF documentation files.
 - `README.md`: BRC landing page, repository roles, local workflow pointers, and
   upstream WRF user, registration, citation, and public-notice links.
+- `brc-docs/README.md`: concise BRC-facing docs index for CHPC usage and
+  roadmap notes.
+- `brc-docs/BRC-WRF-USAGE.md`: CHPC usage posture, storage layout, login-node
+  boundary, and standard WRF run shape.
+- `brc-docs/BRC-WRF-ROADMAP.md`: on-rails WRF workflow plan, skill ideas, and
+  install gaps.
 - `doc/BRC_FORK_GUIDE.md`: fork mental model, local-vs-upstream boundaries, and
   cheap-before-expensive orientation.
 - `doc/README.cmake_build`: CMake-oriented build flow using `configure_new`,
@@ -39,6 +45,9 @@ small and local before broad scans or expensive commands.
 - Pending orientation backlog or handoff task: read `doc/BRC_WRF_HANDOFF.md`.
 - Focused docs task: start with `README.md`, `AGENTS.md`, and the relevant
   `doc/README*` file.
+- BRC CHPC usage or on-rails workflow task: start with `brc-docs/README.md`,
+  then read either `brc-docs/BRC-WRF-USAGE.md` or
+  `brc-docs/BRC-WRF-ROADMAP.md`.
 - Local automation task: read `.sane/wrf/README.md`, then inspect the specific
   script, host config, or SANE test definition.
 - CI task: inspect `.ci/tests/build.sh`, `.github/workflows/ci.yml`, and only
