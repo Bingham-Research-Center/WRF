@@ -36,6 +36,7 @@ small and local before broad scans or expensive commands.
 
 - Repo or fork-orientation task: start with `README.md`, `AGENTS.md`, and
   `doc/BRC_FORK_GUIDE.md`.
+- Pending orientation backlog or handoff task: read `doc/BRC_WRF_HANDOFF.md`.
 - Focused docs task: start with `README.md`, `AGENTS.md`, and the relevant
   `doc/README*` file.
 - Local automation task: read `.sane/wrf/README.md`, then inspect the specific

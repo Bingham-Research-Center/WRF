@@ -16,6 +16,8 @@ entry point for human and AI contributors.
   for AI-assisted work.
 - `doc/BRC_FORK_GUIDE.md`: fork mental model, local-vs-upstream boundaries, and
   cheap-before-expensive orientation.
+- `doc/BRC_WRF_HANDOFF.md`: current handoff, cold-start order, and next
+  orientation work queue.
 - `doc/README.cmake_build`: CMake build flow using `configure_new`,
   `compile_new`, and `cleanCMake.sh`.
 - `doc/README.test_cases`: legacy idealized and real-data test-case overview.
