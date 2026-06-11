@@ -23,6 +23,37 @@ PBS resources.
 | `hosts/derecho.jsonc` | Derecho PBS host resources, local CPU limits, paths, and action resource patches. | Inspect with `sed` or JSONC-aware tools. | Targets Derecho queues/accounts and HPC resources. |
 | `hosts/derecho_envs.jsonc` | Derecho compiler/module environment definitions. | Inspect with `sed` or JSONC-aware tools. | Loads Derecho modules during action execution. |
 
+## Mutation Boundaries
+
+- `buildCMake.sh` runs `cleanCMake.sh`, `configure_new`, and `compile_new`.
+  Treat it as a clean/configure/compile action, not a probe.
+- `buildMake.sh` runs legacy `clean`, `configure`, and `compile`. When given a
+  non-default build directory, it removes that directory, recreates it, copies a
+  WRF source subset into it, and builds there.
+- `run_init.sh` changes into the run folder, may replace `namelist.input`, then
+  removes prior `wrfinput_*`, `wrfbdy_*`, `wrfout_*`, `rsl*`, and related files
+  before launching the init executable.
+- `run_wrf.sh` changes into the run folder, may replace `namelist.input`, then
+  launches WRF with optional MPI and OMP settings.
+- `run_wrf_restart.sh` changes into the run folder, moves existing `wrfout_*`
+  files to `.orig`, copies an `rsl.out.*` log, removes old `*.diff_log` files,
+  reruns WRF, and compares restart output with `diffwrf`.
+- `compare_wrf.sh` creates a temporary comparison directory, runs `diffwrf`
+  across `wrfinput_*` and `wrfout_*` files, then removes the temp directory.
+- `custom_actions/run_wrf.py` can remove and recreate run directories, symlink
+  executables and met/input files, and launch the shell wrappers through SANE.
+- `tests/builds/builds.py` generates compile-scale CMake and legacy build
+  permutations.
+- `tests/regtests/wrf_coop.py` generates init, run, compare, and sync actions
+  that depend on built WRF plus external case and met data.
+
+## Safe Inspection
+
+- Prefer `sed`, `rg`, `bash -n`, and `python -m py_compile` before any action
+  execution.
+- Do not invoke wrappers, SANE actions, WRF binaries, compile paths, regression
+  suites, or HPC submissions without explicit approval.
+
 ## Orientation Rules
 
 - Inspect the relevant script or test definition before inferring build path,
