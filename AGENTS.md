@@ -22,12 +22,30 @@ small and local before broad scans or expensive commands.
 - `README`: version, public-domain notice, and index of WRF documentation files.
 - `README.md`: BRC landing page, repository roles, local workflow pointers, and
   upstream WRF user, registration, citation, and public-notice links.
+- `doc/BRC_FORK_GUIDE.md`: fork mental model, local-vs-upstream boundaries, and
+  cheap-before-expensive orientation.
 - `doc/README.cmake_build`: CMake-oriented build flow using `configure_new`,
   `compile_new`, and `cleanCMake.sh`.
 - `doc/README.test_cases`: legacy test-case overview and idealized/real case
   orientation.
-- `.sane/wrf/`: local WRF automation for builds, runs, and regression-style work.
+- `.sane/wrf/README.md`: map of local WRF automation, cheap validation, and
+  expensive run boundaries.
 - `.ci/tests/build.sh` and `.github/workflows/ci.yml`: CI build-test behavior.
+
+## Task Routing
+
+- Repo or fork-orientation task: start with `README.md`, `AGENTS.md`, and
+  `doc/BRC_FORK_GUIDE.md`.
+- Focused docs task: start with `README.md`, `AGENTS.md`, and the relevant
+  `doc/README*` file.
+- Local automation task: read `.sane/wrf/README.md`, then inspect the specific
+  script, host config, or SANE test definition.
+- CI task: inspect `.ci/tests/build.sh`, `.github/workflows/ci.yml`, and only
+  then the called helper or workflow.
+- Test-case task: read `doc/README.test_cases`, then narrow to the relevant
+  `test/` case directory.
+- Model-code task: use narrow `rg` searches before opening large source
+  subtrees such as `dyn_*`, `phys`, `chem`, or `external`.
 
 ## Build And Test Caution
 
@@ -50,7 +68,7 @@ Use these read-only commands for an initial orientation when relevant:
 - `sed -n '1,120p' README.md`
 - `sed -n '1,80p' README`
 - `sed -n '1,160p' doc/README.cmake_build`
-- `find .sane/wrf -maxdepth 2 -type f | sort`
+- `sed -n '1,140p' .sane/wrf/README.md`
 - `sed -n '1,160p' .ci/tests/build.sh`
 
 If a task concerns tests, read `doc/README.test_cases`; note that this checkout
@@ -87,5 +105,9 @@ different spelling.
 - Keep commit subjects low-verbosity and specific.
 - Use detailed commit bodies that preserve the reasoning, evidence, and
   scientific or operational impact behind each batch.
-- Treat human and AI contributors as coauthors when AI materially assisted the
-  change; include an appropriate `Co-authored-by:` trailer.
+- Write commit messages for future technical review: terse subject, detailed
+  body with why the change was made, what evidence was checked, and any
+  scientific or operational impact.
+- When AI materially assists a change, include both coauthor trailers:
+  `Co-authored-by: John Lawson <john.lawson@usu.edu>` and
+  `Co-authored-by: Codex <codex@openai.com>`.

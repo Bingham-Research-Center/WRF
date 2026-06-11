@@ -14,10 +14,13 @@ entry point for human and AI contributors.
   documentation index.
 - `AGENTS.md`: cold-start routing, safety boundaries, and change expectations
   for AI-assisted work.
+- `doc/BRC_FORK_GUIDE.md`: fork mental model, local-vs-upstream boundaries, and
+  cheap-before-expensive orientation.
 - `doc/README.cmake_build`: CMake build flow using `configure_new`,
   `compile_new`, and `cleanCMake.sh`.
 - `doc/README.test_cases`: legacy idealized and real-data test-case overview.
-- `.sane/wrf/`: BRC-local automation for build, run, and regression-style work.
+- `.sane/wrf/README.md`: BRC-local automation map for build, run, and
+  regression-style work.
 - `.ci/tests/build.sh` and `.github/workflows/ci.yml`: CI compilation behavior.
 
 This is a large source tree. Start with narrow local reads before searching WRF
@@ -45,18 +48,12 @@ operational impact behind the change.
 When AI materially assists a change, include an appropriate `Co-authored-by:`
 trailer.
 
-## Wishlist / Todo
+## Current Gaps
 
-| Item | Feasibility | Likelihood | Craziness | Fundworthiness |
-| --- | --- | --- | --- | --- |
-| Add a short `.sane/wrf/README.md` that explains the local automation boundary. | High | High | Low | Medium |
-| Document a cheap no-build validation path for common script and workflow edits. | High | High | Low | High |
-| Map BRC-supported build paths by host, compiler, and intended use case. | Medium | Medium | Low | High |
-| Add a small decision log for local WRF deviations from upstream. | Medium | Medium | Medium | Medium |
-| Create a lightweight smoke-test harness that avoids full regression cost. | Medium | Medium | Medium | High |
-| Build a cross-discipline "science intent to code path" index for common BRC work. | Medium | Low | Medium | High |
-| Add provenance capture for local builds and runs that records source, config, and environment. | Medium | Medium | Medium | High |
-| Create AI-assisted review checklists for physics, numerics, HPC, and documentation changes. | High | Medium | Low | Medium |
+- BRC-supported build paths still need a host/compiler/use-case matrix.
+- Local WRF deviations from upstream should be captured as they are confirmed.
+- Cheap smoke tests should be documented before any full regression workflow is
+  treated as routine.
 
 ## Upstream WRF Resources
 
