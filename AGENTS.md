@@ -17,15 +17,19 @@ small and local before broad scans or expensive commands.
   upstream WRF resources, but should stay short and route readers to deeper
   local docs instead of becoming a full operating manual.
 
-## First Places To Read
+## First Reads
 
 - `README`: version, public-domain notice, and index of WRF documentation files.
 - `README.md`: BRC landing page, repository roles, local workflow pointers, and
   upstream WRF user, registration, citation, and public-notice links.
 - `brc-docs/README.md`: concise BRC-facing docs index for CHPC usage and
   roadmap notes.
+- `TASK-PRIORITIES-JUNE13.md`: current terse priority queue and repo accounting.
 - `brc-docs/BRC-WRF-USAGE.md`: CHPC usage posture, storage layout, login-node
   boundary, and standard WRF run shape.
+- `brc-docs/BRC-WRF-FIRST-CASE.md`: current start-to-finish Jan-2013 Basin
+  proof path connecting `brc-tools` staged input to WPS, WRF, and archive
+  checks.
 - `brc-docs/BRC-WRF-ROADMAP.md`: on-rails WRF workflow plan, skill ideas, and
   install gaps.
 - `doc/BRC_FORK_GUIDE.md`: fork mental model, local-vs-upstream boundaries, and
@@ -38,11 +42,27 @@ small and local before broad scans or expensive commands.
   expensive run boundaries.
 - `.ci/tests/build.sh` and `.github/workflows/ci.yml`: CI build-test behavior.
 
-## Task Routing
+## Current Run Truth
+
+- Validated proof: NAM-only, `Vtable.NAM`, `fg_name = 'NAM'`,
+  `interval_seconds = 21600`, Jan-2013 Uinta Basin 12/4 km nested case.
+- Not validated: GEFSv12 reforecast plus NAM two-stream forcing
+  (`fg_name = 'GEFS','NAM'`, `interval_seconds = 10800`).
+- `brc-tools` owns input staging and emits `manifest_<case>.json` plus
+  `contract_<case>.json`; do not add NWP downloader code here.
+- `brc-knowledge` owns canonical CHPC reference material and the validated
+  example Slurm script.
+- `brc-wrf` owns source, WRF-side docs, templates, validators, and any maintained
+  WPS/WRF consumption wrapper.
+
+## Routing
 
 - Repo or fork-orientation task: start with `README.md`, `AGENTS.md`, and
   `doc/BRC_FORK_GUIDE.md`.
-- Pending orientation backlog or handoff task: read `doc/BRC_WRF_HANDOFF.md`.
+- Priority or next-task question: read `TASK-PRIORITIES-JUNE13.md`, then
+  `doc/BRC_WRF_HANDOFF.md`.
+- First-case proof or run explanation: read `brc-docs/BRC-WRF-FIRST-CASE.md`,
+  then `brc-docs/BRC-WRF-USAGE.md`.
 - Focused docs task: start with `README.md`, `AGENTS.md`, and the relevant
   `doc/README*` file.
 - BRC CHPC usage or on-rails workflow task: start with `brc-docs/README.md`,
@@ -108,6 +128,26 @@ different spelling.
 - For workflow or HPC changes, inspect the command path and dry-run behavior
   first; require explicit approval before real submission, full regression, or
   expensive build work.
+
+## WRF Run Gotchas Confirmed
+
+- Use `/scratch/general/vast/$USER/wrf_inputs/<case>/` for staged forcing and
+  `/scratch/general/vast/$USER/wrf_runs/<case>/` for active WPS/WRF case I/O.
+  These are scratch paths, not durable archives; promote important outputs to
+  `lawson-group6/<namespace>/wrf_archive/<case>/run_<UTC>/`.
+- Recheck `df -h` and quota/storage tooling before large runs. Filesystem-wide
+  free space is not the same thing as a user or group quota.
+- If staging/download behavior changes, patch `brc-tools`, not this WRF tree.
+- WRF filenames contain colons, for example `wrfout_d01_YYYY-MM-DD_HH:MM:SS`.
+  When using `rsync`, prefix local sources with `./wrfout...` or rsync may treat
+  them as remote-style paths.
+- A Slurm batch wrapper can be marked failed even when `wrf.exe` completed
+  successfully, if a post-WRF archive step fails. Check the WRF step, the
+  `SUCCESS COMPLETE WRF` marker, and archived artifacts separately.
+- Avoid `srun --jobid` probe commands inside a fully occupied WRF allocation;
+  they can leave a pending step waiting for resources.
+- Slurm accounting can fail from this environment even when jobs are healthy.
+  Fall back to exact logs, success markers, `squeue`, and on-disk artifacts.
 
 ## Change SOP
 

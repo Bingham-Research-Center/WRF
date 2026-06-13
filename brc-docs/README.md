@@ -8,6 +8,9 @@ the adjacent `../brc-knowledge` checkout.
 
 - `BRC-WRF-USAGE.md`: current CHPC usage posture for this fork: storage,
   login-node boundaries, build/install stance, and WRF run shape.
+- `BRC-WRF-FIRST-CASE.md`: current start-to-finish Jan-2013 Basin proof path
+  connecting `brc-tools` staged inputs to WPS, `real.exe`, `wrf.exe`, and
+  archive checks.
 - `BRC-WRF-ROADMAP.md`: on-rails WRF workflow plan, dollar-sign skill ideas,
   and survey gaps before a supported BRC CHPC install.
 

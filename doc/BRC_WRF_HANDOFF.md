@@ -54,6 +54,15 @@ Cheap inspection remains appropriate: `sed`, `rg`, `git diff --check`,
 
 ## Next Work Items
 
+0. Current Jan-2013 proof path
+   - Read `brc-docs/BRC-WRF-FIRST-CASE.md` before making new run claims.
+   - NAM-only staging from `../brc-tools` has been validated through WPS,
+     `real.exe`, `wrf.exe`, and archive checks for a known 12/4 km nested Basin
+     case.
+   - GEFS+NAM two-stream forcing remains open; do not describe it as proven.
+   - The referenced CHPC run script now uses `rsync -av ./wrfout_d0*` so WRF
+     colon filenames are archived as local paths.
+
 1. Cheap smoke-test doctrine
    - Suggested file: `doc/BRC_CHEAP_VALIDATION.md`
    - Define what can be validated without building WRF: markdown readback,

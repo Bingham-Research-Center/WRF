@@ -19,8 +19,13 @@ Important local facts:
   node.
 - Local automation under `.sane/wrf/` is useful context, but its current host
   config targets NCAR Derecho/PBS, not CHPC Slurm.
-- CHPC WRF practice currently lives in the adjacent knowledge checkout:
-  `../brc-knowledge/scholarium/reference-base/resources/`.
+- Canonical CHPC infrastructure facts live in:
+  `../brc-knowledge/scholarium/reference-base/resources/chpc-team-resource-inventory.md`.
+- WRF-specific CHPC build/run details are delegated from that inventory to:
+  `../brc-knowledge/scholarium/reference-base/resources/wrf-on-chpc-quickstart.md`.
+- NWP input download code belongs in the parallel `../brc-tools` repo, using
+  its Herbie/SynopticPy patterns and emitted WPS/WRF case contract rather than
+  adding downloader logic here.
 
 The main BRC rule is simple: use this repo for source, documentation, and
 validated wrappers; use CHPC scratch and group storage for heavy model work.
@@ -34,10 +39,10 @@ live run directory or as a dumping ground for `wrfout` files.
 | Purpose | Recommended path | Notes |
 | --- | --- | --- |
 | WRF source checkout | `$HOME/gits/brc-wrf` | Good for git, Codex, docs, and small wrapper edits. |
-| Per-user WRF/WPS build or install | `/uufs/chpc.utah.edu/common/home/lawson-group6/$USER/wrf_build/` | No purge; good for compiled artifacts and shared reproducibility. |
+| Per-user WRF/WPS build or install | `/uufs/chpc.utah.edu/common/home/lawson-group6/<user-or-namespace>/wrf_build/` | No purge; good for compiled artifacts and shared reproducibility. John's first proof should use the `jrlawson` namespace unless the inventory or operator decision changes that. |
 | Active case runs | `/scratch/general/vast/$USER/wrf_runs/<case>/` | Fast active I/O; 60-day purge; clean after archiving. |
 | Shared WPS geography | `/uufs/chpc.utah.edu/common/home/lawson-group6/WPS_GEOG/` | Existing group geog path from the CHPC WRF guide. |
-| Durable outputs | `/uufs/chpc.utah.edu/common/home/lawson-group6/$USER/wrf_archive/<case>/run_<UTC>/` | Archive `wrfout`, namelists, and key logs. |
+| Durable outputs | `/uufs/chpc.utah.edu/common/home/lawson-group6/<user-or-namespace>/wrf_archive/<case>/run_<UTC>/` | Archive `wrfout`, namelists, and key logs. |
 
 Observed from `notchpeak1` on 2026-06-11: `$HOME` is 74 percent used,
 `/scratch/general/vast` is available, and `lawson-group6` is mounted with about
@@ -80,10 +85,10 @@ Two WRF build paths exist in this checkout:
 - legacy WRF: `./configure`, `./compile`, `./clean`;
 - CMake-oriented WRF: `./configure_new`, `./compile_new`, `./cleanCMake.sh`.
 
-Do not assume either one is the BRC default until a CHPC build note says so. The
-current CHPC WRF quickstart validates the legacy-style WRF/WPS setup, while this
-repo also carries CMake-oriented documentation. The missing bridge is a
-confirmed BRC CHPC recipe for this exact fork.
+The first CHPC proof should follow the legacy WRF/WPS path because the current
+CHPC WRF quickstart validates that setup. The CMake-oriented path still matters
+for this fork, but it should be treated as a later comparison until it is
+validated on CHPC with the same level of evidence.
 
 The CHPC WRF guide validated this module stack for WRF/WPS work on Notchpeak:
 
@@ -105,20 +110,17 @@ The validated legacy WRF choices were Intel `dmpar` and basic nesting. WPS needs
 the same module stack plus the `JASPER*` exports before configure so GRIB2
 support is enabled.
 
-For this fork, the preferred installation shape should be out-of-source and
-traceable:
+For John's first proof, keep the build rooted in a traceable group directory:
 
 ```bash
 export WRF_SRC=$HOME/gits/brc-wrf
-export WRF_PREFIX=/uufs/chpc.utah.edu/common/home/lawson-group6/$USER/wrf_build/brc-wrf
-export WRF_BUILD=$WRF_PREFIX/_build
-export WRF_INSTALL=$WRF_PREFIX/install
+export WRF_PREFIX=/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_build/brc-wrf
 ```
 
-Before making this an official recipe, validate the exact `configure_new` /
-`compile_new` invocation on CHPC and record the Git SHA, module list, build path,
-install path, and whether WPS is built beside it. Track that work in
-`BRC-WRF-ROADMAP.md`.
+Before making this an official recipe, validate the exact legacy WRF/WPS
+configure and compile sequence for this fork on CHPC and record the Git SHA,
+module list, build path, compile logs, executables, and whether WPS is built
+beside it. Track any later CMake comparison separately in `BRC-WRF-ROADMAP.md`.
 
 ## Standard Run Pattern
 
@@ -172,10 +174,37 @@ Use scratch for the active case:
 
 ```text
 /scratch/general/vast/$USER/wrf_runs/<case>/
-  grib_data/
+  grib_data/ -> /scratch/general/vast/$USER/wrf_inputs/<case>/<source>/
   wps_run/
   wrf_run/
 ```
+
+Populate the separate scratch input directory from `../brc-tools` staging
+scripts, for example:
+
+```text
+/scratch/general/vast/$USER/wrf_inputs/jan2013_basin_gefs/nam_analysis/
+/scratch/general/vast/$USER/wrf_inputs/jan2013_basin_gefs/manifest_jan2013_basin_gefs.json
+/scratch/general/vast/$USER/wrf_inputs/jan2013_basin_gefs/contract_jan2013_basin_gefs.json
+```
+
+Read `contract_<case>.json` before WPS. It is the canonical input handshake from
+`brc-tools`: staged source counts, cadence, valid window, suggested WPS
+`fg_name`, and `interval_seconds`. The validated NAM-only path uses
+`fg_name = 'NAM'` and `interval_seconds = 21600`. A fresh two-stream
+GEFS+NAM stage should advertise `fg_name = 'GEFS','NAM'` and
+`interval_seconds = 10800`, but that path still needs WPS/`real.exe` proof.
+
+Then link or copy the relevant source directory into the case's `grib_data/`
+path when staging WPS. This keeps the downloaded NWP inputs easy to keep, reuse,
+or discard independently of the WRF run directory. It is scratch, not a durable
+archive: anything important should be promoted later by an explicit archive
+decision.
+
+`brc-tools` already owns WRF-facing input staging and manifest verification. Do
+not add an ad hoc downloader in this WRF tree. If WPS input behavior needs to
+change, update `brc-tools` and keep this repo focused on the WPS/WRF consumption
+contract.
 
 In `wps_run/`, link the WPS executables, `link_grib.csh`, `Vtable`, and the
 literal `geogrid` and `metgrid` directories. The names matter: `geogrid.exe`
@@ -205,6 +234,10 @@ Before `wrf.exe`, verify:
 - `doc/BRC_FORK_GUIDE.md`: fork mental model and local-vs-upstream boundary.
 - `doc/README.cmake_build`: CMake-oriented WRF build flow.
 - `.sane/wrf/README.md`: local automation map and expensive-action boundaries.
+- `brc-docs/BRC-WRF-FIRST-CASE.md`: current end-to-end Jan-2013 Basin proof
+  path and evidence.
+- `../brc-tools/docs/WRF-INPUT-STAGING.md`: WPS/WRF input staging contract,
+  manifest verification, and two-stream backlog.
 - `../brc-knowledge/scholarium/reference-base/resources/wrf-on-chpc-quickstart.md`:
   current WRF-on-CHPC operating guide.
 - `../brc-knowledge/scholarium/reference-base/resources/chpc-team-resource-inventory.md`:

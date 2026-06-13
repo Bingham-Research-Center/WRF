@@ -42,6 +42,24 @@ workflow, or script before choosing.
 Full builds, regression suites, Slurm jobs, and other HPC workflows can be
 expensive. Do not run them without explicit approval.
 
+## Near-Term BRC Roadmap
+
+The immediate aim is a real-life proof of concept: install/build this checkout
+with WPS, run one Uinta Basin case, preserve enough logs to debug without
+guesswork, then grow toward repeatable ensembles.
+
+| Order | Goal | Why It Comes Next | Mini To-Dos |
+| --- | --- | --- | --- |
+| 1 | Confirm CHPC authority | Prevents cargo-cult modules, paths, and Slurm flags. | Treat `../brc-knowledge/scholarium/reference-base/resources/chpc-team-resource-inventory.md` as canonical infrastructure truth; use its delegated WRF quickstart for WRF-specific build/run details. |
+| 2 | Prove the install recipe | This is the first proof of concept for the fork, compilers, modules, and WPS pairing. | Use the legacy WRF/WPS path first because the CHPC WRF quickstart has validated it; keep CMake as a later comparison. Build in a traceable `lawson-group6/jrlawson` area and record Git SHA, module list, build path, and logs. |
+| 3 | Run one submitted real-data case | Batch precedent beats login-node calamity and leaves pollable evidence. | Render and submit a guarded Slurm job; collect stdout, stderr, `rsl.*`, scheduler metadata, and success markers. |
+| 4 | Target the first Basin weather case | A small real case teaches more than a toy run once installation is proven. | Use the validated NAM-only Jan-2013 12/4 km nested Basin proof as the first run record. Keep GEFS+NAM reforecast forcing as the next unproven path. |
+| 5 | Make the outputs worth looking at | Build success is not the same as a useful simulation. | Archive namelists, `wrfout*`, WPS/WRF logs, provenance, and quick visual checks against expected snowy-weather behavior. Preserve `brc-tools` input manifests and contracts. |
+| 6 | Turn the case into a template | The second run should be boring in the best way. | Create a case manifest, cheap validator, reusable Slurm renderer, scratch/archive layout, cleanup rules, and a stable handoff to `../brc-tools` for staged input. |
+| 7 | Run 2+ ensemble members | Monte Carlo workflow pressure-tests paths, storage, logging, and reproducibility. | Use separate run directories per GEFS member; compare logs, timing, outputs, and archive records. |
+| 8 | Change nesting only after the baseline is solid | Nesting multiplies failure modes and should not hide install problems. | Treat the validated 12/4 km nest as the current baseline; introduce any new nesting pattern only after WPS, `real.exe`, `wrf.exe`, and archive behavior are routine. |
+| 9 | Explore stochastic schemes such as SKEB | This is a science extension, not an install prerequisite. | Record the baseline first; then test stochastic options as explicit experiments with comparable provenance. |
+
 ## Change Style
 
 Keep edits lean, scoped, and scientifically motivated. Prefer small logical
