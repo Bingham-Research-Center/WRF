@@ -19,6 +19,8 @@ entry point for human and AI contributors.
 - `doc/BRC_WRF_HANDOFF.md`: current handoff, cold-start order, and next
   orientation work queue.
 - `brc-docs/`: concise BRC-facing usage and roadmap notes for CHPC work.
+- `brc-cases/README.md`: BRC case manifest, cheap validator, and render-only
+  Slurm checkpoint.
 - `doc/README.cmake_build`: CMake build flow using `configure_new`,
   `compile_new`, and `cleanCMake.sh`.
 - `doc/README.test_cases`: legacy idealized and real-data test-case overview.
@@ -55,7 +57,7 @@ guesswork, then grow toward repeatable ensembles.
 | 3 | Run one submitted real-data case | Batch precedent beats login-node calamity and leaves pollable evidence. | Render and submit a guarded Slurm job; collect stdout, stderr, `rsl.*`, scheduler metadata, and success markers. |
 | 4 | Target the first Basin weather case | A small real case teaches more than a toy run once installation is proven. | Use the validated NAM-only Jan-2013 12/4 km nested Basin proof as the first run record. Keep GEFS+NAM reforecast forcing as the next unproven path. |
 | 5 | Make the outputs worth looking at | Build success is not the same as a useful simulation. | Archive namelists, `wrfout*`, WPS/WRF logs, provenance, and quick visual checks against expected snowy-weather behavior. Preserve `brc-tools` input manifests and contracts. |
-| 6 | Turn the case into a template | The second run should be boring in the best way. | Create a case manifest, cheap validator, reusable Slurm renderer, scratch/archive layout, cleanup rules, and a stable handoff to `../brc-tools` for staged input. |
+| 6 | Turn the case into a template | The second run should be boring in the best way. | Start from `brc-cases/`: a case manifest, cheap validator, render-only Slurm path, scratch/archive layout, and stable handoff to `../brc-tools` for staged input. |
 | 7 | Run 2+ ensemble members | Monte Carlo workflow pressure-tests paths, storage, logging, and reproducibility. | Use separate run directories per GEFS member; compare logs, timing, outputs, and archive records. |
 | 8 | Change nesting only after the baseline is solid | Nesting multiplies failure modes and should not hide install problems. | Treat the validated 12/4 km nest as the current baseline; introduce any new nesting pattern only after WPS, `real.exe`, `wrf.exe`, and archive behavior are routine. |
 | 9 | Explore stochastic schemes such as SKEB | This is a science extension, not an install prerequisite. | Record the baseline first; then test stochastic options as explicit experiments with comparable provenance. |

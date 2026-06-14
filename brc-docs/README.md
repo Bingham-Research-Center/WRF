@@ -1,8 +1,8 @@
 # BRC Docs
 
 This directory holds short BRC-facing guidance for this WRF fork. Keep these
-files concise and route deeper operational records to `doc/`, `.sane/wrf/`, or
-the adjacent `../brc-knowledge` checkout.
+files concise and route deeper operational records to `doc/`, `brc-cases/`,
+`.sane/wrf/`, or the adjacent `../brc-knowledge` checkout.
 
 ## Files
 
@@ -13,6 +13,8 @@ the adjacent `../brc-knowledge` checkout.
   archive checks.
 - `BRC-WRF-ROADMAP.md`: on-rails WRF workflow plan, dollar-sign skill ideas,
   and survey gaps before a supported BRC CHPC install.
+- `../brc-cases/README.md`: BRC case manifest, cheap validator, and render-only
+  Slurm checkpoint.
 
 ## Style
 

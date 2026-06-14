@@ -12,6 +12,7 @@ the BRC WRF fork less opaque without loading the full WRF source tree.
 - Latest orientation commits:
   - `170ef2e0` `Document fork orientation`
   - `f52b0c4b` `Document SANE boundaries`
+  - `f5ee2fc0` `Document WRF proof priorities`
 
 The expected starting state after this handoff is a clean branch tracking
 `origin/john/wrf`.
@@ -35,6 +36,8 @@ Start with these local reads before broad scans:
 
 Then narrow by task:
 
+- case manifest or render-only Slurm: `brc-cases/README.md`, then the relevant
+  `*.case.yaml` and `brc-cases/wrf_case.py`
 - CMake build path: `doc/README.cmake_build`
 - test-case orientation: `doc/README.test_cases`
 - CI compile behavior: `.ci/tests/build.sh` and `.github/workflows/ci.yml`
@@ -62,6 +65,12 @@ Cheap inspection remains appropriate: `sed`, `rg`, `git diff --check`,
    - GEFS+NAM two-stream forcing remains open; do not describe it as proven.
    - The referenced CHPC run script now uses `rsync -av ./wrfout_d0*` so WRF
      colon filenames are archived as local paths.
+   - `brc-cases/` now provides the initial review gate for this case:
+     `python brc-cases/wrf_case.py validate brc-cases/jan2013_basin_nam.case.yaml`
+     and `python brc-cases/wrf_case.py render-slurm brc-cases/jan2013_basin_nam.case.yaml`.
+     Non-strict validation warns that the old proof scratch lacks the newer
+     `contract_<case>.json` sidecar; strict validation correctly fails until a
+     fresh contract exists.
 
 1. Cheap smoke-test doctrine
    - Suggested file: `doc/BRC_CHEAP_VALIDATION.md`

@@ -1,0 +1,55 @@
+schema_version: 1
+
+case:
+  name: jan2013_basin_gefs
+  label: "Validated NAM-only Jan 2013 Uinta Basin proof"
+  start: "2013-01-31_12:00:00"
+  end: "2013-02-02_00:00:00"
+  domains: 2
+  owner_namespace: jrlawson
+  proof_status: validated_nam_only
+
+forcing:
+  sources: ["nam_analysis"]
+  wps_fg_name: ["NAM"]
+  interval_seconds: 21600
+  num_metgrid_levels: 40
+  expected_met_em_count: 14
+  manifest_path: "/scratch/general/vast/${USER}/wrf_inputs/jan2013_basin_gefs/manifest_jan2013_basin_gefs.json"
+  contract_path: "/scratch/general/vast/${USER}/wrf_inputs/jan2013_basin_gefs/contract_jan2013_basin_gefs.json"
+
+paths:
+  wrf_src: "/uufs/chpc.utah.edu/common/home/u0737349/gits/brc-wrf"
+  wrf_build: "/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_build/brc-wrf"
+  wps_root: "/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_build/WPS"
+  input_root: "/scratch/general/vast/${USER}/wrf_inputs/jan2013_basin_gefs"
+  run_root: "/scratch/general/vast/${USER}/wrf_runs/jan2013_basin_gefs"
+  grib_data: "/scratch/general/vast/${USER}/wrf_runs/jan2013_basin_gefs/grib_data"
+  wps_run: "/scratch/general/vast/${USER}/wrf_runs/jan2013_basin_gefs/wps_run"
+  wrf_run: "/scratch/general/vast/${USER}/wrf_runs/jan2013_basin_gefs/wrf_run"
+  geog_data_path: "/uufs/chpc.utah.edu/common/home/lawson-group6/WPS_GEOG"
+  archive_root: "/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/jan2013_basin_gefs"
+
+wps:
+  vtable: "Vtable.NAM"
+  ungrib_prefix: "FILE"
+  namelist_fg_name: ["FILE"]
+
+namelists:
+  namelist_wps: "/scratch/general/vast/${USER}/wrf_runs/jan2013_basin_gefs/wps_run/namelist.wps"
+  namelist_input: "/scratch/general/vast/${USER}/wrf_runs/jan2013_basin_gefs/wrf_run/namelist.input"
+
+slurm:
+  job_name: wrf_jan2013_nam
+  account: lawson-np
+  partition: lawson-np
+  nodelist: notch392
+  nodes: 1
+  ntasks: 56
+  memory: "180G"
+  time: "06:00:00"
+  mpi_launcher: "srun --mpi=pmi2"
+
+archive:
+  required_patterns: ["wrfout_d0*", "namelist.input", "rsl.out.0000", "real.rsl.out.0000"]
+  colon_safe_wrfout_source: "./wrfout_d0*"

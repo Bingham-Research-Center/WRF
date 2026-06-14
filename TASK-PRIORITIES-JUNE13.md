@@ -8,9 +8,12 @@ between `brc-wrf`, `brc-tools`, and `brc-knowledge`.
 - `brc-tools` owns WRF input staging. `brc-wrf` consumes its
   `manifest_<case>.json` and `contract_<case>.json`; do not add downloader code
   here.
-- Validated proof: NAM-only, `Vtable.NAM`, `fg_name = 'NAM'`,
+- Validated proof: NAM-only source contract, `Vtable.NAM`,
   `interval_seconds = 21600`, Jan-2013 Uinta Basin 12/4 km nested case,
-  `2013-01-31_12:00:00` to `2013-02-02_00:00:00`.
+  `2013-01-31_12:00:00` to `2013-02-02_00:00:00`. The old proof scratch
+  `namelist.wps` used `ungrib prefix = 'FILE'` and `metgrid fg_name = 'FILE'`;
+  future NAM-named WPS streams should keep `prefix = 'NAM'` paired with
+  `fg_name = 'NAM'`.
 - Proof evidence checked: brc-tools manifest `28/28 OK`; archived run has
   `SUCCESS COMPLETE REAL_EM INIT`, `SUCCESS COMPLETE WRF`, 194 files, 74
   `wrfout_d0*`, 2.2G.
@@ -85,13 +88,22 @@ false failed batch because of post-run file handling.
 
 Microtasks:
 
+Initial checkpoint: `brc-cases/` now holds a constrained case manifest, cheap
+validator, and render-only Slurm command for the Jan-2013 NAM proof. Continue
+to treat this as a review gate, not as approval to submit.
+
+Microtasks:
+
 1. Define a small `case.yaml` schema:
    case name, dates, domains, source contract path, WPS path, WRF path,
-   archive path, account, partition, node, tasks.
+   archive path, account, partition, node, tasks. Initial version exists in
+   `brc-cases/jan2013_basin_nam.case.yaml`.
 2. Add a cheap validator:
    paths, geog, contract, namelist dates, `interval_seconds`,
-   `num_metgrid_levels`, stale `met_em`, Slurm metadata.
-3. Render Slurm without submission.
+   `num_metgrid_levels`, stale `met_em`, Slurm metadata. Initial version exists
+   in `brc-cases/wrf_case.py`.
+3. Render Slurm without submission. Initial command:
+   `python brc-cases/wrf_case.py render-slurm brc-cases/jan2013_basin_nam.case.yaml`.
 4. Require explicit `--allow-sbatch` or equivalent before real submission.
 
 Acceptance: a new run can be reviewed as files and commands before any compute

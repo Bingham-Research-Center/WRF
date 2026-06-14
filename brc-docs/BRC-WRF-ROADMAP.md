@@ -83,3 +83,7 @@ These are the gaps to close before treating this fork as fully on rails on CHPC:
 5. Validate the build path for this fork on CHPC and record exact evidence.
 6. Run the GEFS+NAM two-stream `real.exe` proof if reforecast forcing is still
    the desired ensemble path.
+
+Initial versions of milestones 2-4 live in `../brc-cases/`: a constrained
+`*.case.yaml` manifest, a cheap validator, and a render-only Slurm command. They
+are review gates, not approval to run WPS, WRF, or `sbatch`.

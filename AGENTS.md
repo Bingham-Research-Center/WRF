@@ -24,6 +24,8 @@ small and local before broad scans or expensive commands.
   upstream WRF user, registration, citation, and public-notice links.
 - `brc-docs/README.md`: concise BRC-facing docs index for CHPC usage and
   roadmap notes.
+- `brc-cases/README.md`: case manifest, cheap validator, and render-only Slurm
+  checkpoint.
 - `TASK-PRIORITIES-JUNE13.md`: current terse priority queue and repo accounting.
 - `brc-docs/BRC-WRF-USAGE.md`: CHPC usage posture, storage layout, login-node
   boundary, and standard WRF run shape.
@@ -44,8 +46,10 @@ small and local before broad scans or expensive commands.
 
 ## Current Run Truth
 
-- Validated proof: NAM-only, `Vtable.NAM`, `fg_name = 'NAM'`,
-  `interval_seconds = 21600`, Jan-2013 Uinta Basin 12/4 km nested case.
+- Validated proof: NAM-only, `Vtable.NAM`, `interval_seconds = 21600`,
+  Jan-2013 Uinta Basin 12/4 km nested case. The input contract/source identity
+  is NAM; the old proof scratch `namelist.wps` used the WPS default
+  `ungrib` prefix `FILE` with `metgrid fg_name = 'FILE'`.
 - Not validated: GEFSv12 reforecast plus NAM two-stream forcing
   (`fg_name = 'GEFS','NAM'`, `interval_seconds = 10800`).
 - `brc-tools` owns input staging and emits `manifest_<case>.json` plus
@@ -68,6 +72,9 @@ small and local before broad scans or expensive commands.
 - BRC CHPC usage or on-rails workflow task: start with `brc-docs/README.md`,
   then read either `brc-docs/BRC-WRF-USAGE.md` or
   `brc-docs/BRC-WRF-ROADMAP.md`.
+- Case manifest, validator, or Slurm-render task: start with
+  `brc-cases/README.md`, then inspect the relevant `*.case.yaml` file and
+  `brc-cases/wrf_case.py`.
 - Local automation task: read `.sane/wrf/README.md`, then inspect the specific
   script, host config, or SANE test definition.
 - CI task: inspect `.ci/tests/build.sh`, `.github/workflows/ci.yml`, and only
@@ -100,6 +107,7 @@ Use these read-only commands for an initial orientation when relevant:
 - `sed -n '1,160p' doc/README.cmake_build`
 - `sed -n '1,140p' .sane/wrf/README.md`
 - `sed -n '1,160p' .ci/tests/build.sh`
+- `python brc-cases/wrf_case.py validate brc-cases/jan2013_basin_nam.case.yaml`
 
 If a task concerns tests, read `doc/README.test_cases`; note that this checkout
 uses the dotted filename even though some upstream-oriented references may use a

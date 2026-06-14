@@ -11,7 +11,7 @@ human approval before they run.
 ## Current Status
 
 - Validated path: NAM-only, single WPS stream, `Vtable.NAM`,
-  `fg_name = 'NAM'`, `interval_seconds = 21600`.
+  `interval_seconds = 21600`.
 - Validated case: known Jan-2013 Uinta Basin 12/4 km nested domain,
   `2013-01-31_12:00:00` through `2013-02-02_00:00:00`.
 - Validated runtime target: `notch392`, `lawson-np`, one node, 56 tasks,
@@ -21,6 +21,11 @@ human approval before they run.
 
 Do not describe this proof as a fresh standalone 4 km case or as a completed
 GEFS+NAM two-stream run.
+
+The input contract/source identity for the proof is NAM. The old proof scratch
+`namelist.wps` used the WPS default intermediate prefix, so its live values are
+`ungrib prefix = 'FILE'` and `metgrid fg_name = 'FILE'`. Future NAM-only runs may
+use `prefix = 'NAM'` and `fg_name = 'NAM'` if those names are kept paired.
 
 ## Ownership
 
@@ -50,6 +55,7 @@ For the validated NAM-only path, the WPS-side constants are:
 | Fact | Value |
 | --- | --- |
 | `wps_fg_name` | `NAM` |
+| observed proof `namelist.wps` `fg_name` | `FILE` |
 | `interval_seconds` | `21600` |
 | `num_metgrid_levels` | `40` |
 | `met_em` count | 14 files, d01 and d02 at 6-hour cadence |
@@ -88,7 +94,9 @@ For the validated path:
 
 - Link or copy `wrf_inputs/<case>/nam_analysis/` into `grib_data/`.
 - Use `Vtable.NAM`.
-- Set metgrid `fg_name = 'NAM'`.
+- Keep the WPS intermediate prefix and metgrid `fg_name` paired. The checked
+  proof scratch used `prefix = 'FILE'` and `fg_name = 'FILE'`; a cleaned-up
+  NAM-named stream should use `prefix = 'NAM'` and `fg_name = 'NAM'`.
 - Set WPS/WRF interval to 6 hours (`interval_seconds = 21600`).
 - Keep `geog_data_path = /uufs/chpc.utah.edu/common/home/lawson-group6/WPS_GEOG/`.
 
@@ -149,5 +157,7 @@ The non-fatal `real.exe` soil message observed for the proof was:
    `fg_name = 'GEFS','NAM'`, then prove `real.exe`.
 2. Scaling sweep on `notch392`: run the same case at 16, 28, and 56 tasks, then
    record wall time per simulated hour and peak memory.
-3. Promote the run wrapper into a maintained brc-wrf-side template only after
+3. Use `brc-cases/` to review the case manifest, validate cheap metadata, and
+   render Slurm text before any submitted run.
+4. Promote the run wrapper into a maintained brc-wrf-side template only after
    the exact build/WPS/run directory contract is settled.
