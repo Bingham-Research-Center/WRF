@@ -29,8 +29,13 @@ small and local before broad scans or expensive commands.
   packet, and maximum owned-node Slurm profile.
 - `brc-docs/BRC-TOOLS-LINK-HANDOFF.md`: current brc-wrf -> brc-tools handoff
   for tightening the input-staging contract and stale-proof edge cases.
+- `../brc-tools/docs/HANDOFF-TO-BRC-WRF.md`: current brc-tools -> brc-wrf
+  run-side handoff after staging-contract updates.
 - `brc-cases/README.md`: case manifest, cheap validator, and render-only Slurm
   checkpoint plus no-run quicklooks.
+- `doc/BRC_WRF_MICROTASK_HANDOFF.md`: WRF-run-side control board for the
+  remaining cross-repo microtasks, countdown, no-run prep, and parked
+  human/approval batch.
 - `TASK-PRIORITIES-JUNE13.md`: current terse priority queue and repo accounting.
 - `brc-docs/BRC-WRF-USAGE.md`: CHPC usage posture, storage layout, login-node
   boundary, and standard WRF run shape.
@@ -68,10 +73,17 @@ small and local before broad scans or expensive commands.
   (`fg_name = 'GEFS','NAM'`, `interval_seconds = 10800`).
 - `brc-tools` owns input staging and emits `manifest_<case>.json` plus
   `contract_<case>.json`; do not add NWP downloader code here.
+- Latest reverse handoff from `brc-tools` is
+  `../brc-tools/docs/HANDOFF-TO-BRC-WRF.md` on `feat/wrf-input-staging`; it
+  keeps WRF run profiles, WPS, `real.exe`, `wrf.exe`, scaling, and memory
+  benchmarks owned by `brc-wrf`/`brc-knowledge`.
 - `brc-knowledge` owns canonical CHPC reference material and the validated
   example Slurm script.
 - `brc-wrf` owns source, WRF-side docs, templates, validators, and any maintained
   WPS/WRF consumption wrapper.
+- Remaining microtask routing, countdown, WRF-side no-run prep, and parked
+  approval-gated work live in `doc/BRC_WRF_MICROTASK_HANDOFF.md`; keep that
+  detailed control board current instead of expanding this router.
 
 ## Routing
 
@@ -79,12 +91,19 @@ small and local before broad scans or expensive commands.
   `doc/BRC_FORK_GUIDE.md`.
 - Priority or next-task question: read `TASK-PRIORITIES-JUNE13.md`, then
   `doc/BRC_WRF_HANDOFF.md`.
+- Remaining microtask split, countdown, or "what can Codex do next" question:
+  read `doc/BRC_WRF_MICROTASK_HANDOFF.md`, then stay in the repo lane named by
+  the relevant table.
 - Current milestone/state or printable handoff question: read
   `brc-docs/BRC-WRF-STATE-PLAYBOOK.md`, then
   `brc-docs/BRC-WRF-FORK-HIGHLIGHTS.md`.
 - Task for an outside AI starting in `brc-tools`: read
   `brc-docs/BRC-TOOLS-LINK-HANDOFF.md`, then
   `../brc-tools/docs/WRF-STAGING-STATE-PLAYBOOK.md`.
+- Task handed back from `brc-tools` into `brc-wrf`: read
+  `../brc-tools/docs/HANDOFF-TO-BRC-WRF.md`, then follow its listed read packet
+  in order. Run only its cheap manifest and strict-validator checks unless a
+  human explicitly approves DTN staging, WPS, WRF, or Slurm work.
 - First-case proof or run explanation: read `brc-docs/BRC-WRF-FIRST-CASE.md`,
   then `brc-docs/BRC-WRF-USAGE.md`.
 - Focused docs task: start with `README.md`, `AGENTS.md`, and the relevant
@@ -130,6 +149,8 @@ Use these read-only commands for an initial orientation when relevant:
 - `sed -n '1,140p' .sane/wrf/README.md`
 - `sed -n '1,160p' .ci/tests/build.sh`
 - `python brc-cases/wrf_case.py validate brc-cases/jan2013_basin_nam.case.yaml`
+- `python ../brc-tools/scripts/stage_wrf_inputs.py --verify-manifest /scratch/general/vast/$USER/wrf_inputs/jan2013_basin_gefs/manifest_jan2013_basin_gefs.json`
+- `python brc-cases/wrf_case.py validate brc-cases/jan2013_basin_nam.case.yaml --strict-files`
 - `python brc-cases/wrf_quicklook.py check brc-cases/jan2013_basin_nam.case.yaml`
 
 If a task concerns tests, read `doc/README.test_cases`; note that this checkout

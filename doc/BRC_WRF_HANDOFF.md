@@ -81,6 +81,20 @@ Cheap inspection remains appropriate: `sed`, `rg`, `git diff --check`,
      verifies the `brc-tools` manifest and required NetCDF fields, and
      `python brc-cases/wrf_quicklook.py render brc-cases/jan2013_basin_nam.case.yaml`
      writes ignored PNGs under `brc-cases/quicklooks/<case>/`.
+   - 2026-06-15 reverse handoff intake from
+     `../brc-tools/docs/HANDOFF-TO-BRC-WRF.md` on `feat/wrf-input-staging`:
+     read the listed docs packet, confirmed `../brc-tools` branch context, ran
+     `python ../brc-tools/scripts/stage_wrf_inputs.py --verify-manifest
+     /scratch/general/vast/$USER/wrf_inputs/jan2013_basin_gefs/manifest_jan2013_basin_gefs.json`
+     (`28/28 OK`), and ran
+     `python brc-cases/wrf_case.py validate brc-cases/jan2013_basin_nam.case.yaml --strict-files`
+     (`OK: no findings`). Stopped before DTN staging, WPS, `real.exe`,
+     `wrf.exe`, Slurm, scaling, or memory benchmarks.
+   - Remaining microtasks are split for the next Codex session in
+     `doc/BRC_WRF_MICROTASK_HANDOFF.md`: WRF-side no-run prep first, separate
+     `brc-tools` staging-hygiene batch second, parked human/approval work third,
+     and a countdown toward practical WRF settings tests plus documentation
+     refresh.
 
 1. Cheap smoke-test doctrine
    - Suggested file: `doc/BRC_CHEAP_VALIDATION.md`
