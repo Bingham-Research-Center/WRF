@@ -19,6 +19,8 @@ entry point for human and AI contributors.
 - `doc/BRC_WRF_HANDOFF.md`: current handoff, cold-start order, and next
   orientation work queue.
 - `brc-docs/`: concise BRC-facing usage and roadmap notes for CHPC work.
+  Start with `brc-docs/BRC-WRF-FORK-HIGHLIGHTS.md` and
+  `brc-docs/BRC-WRF-STATE-PLAYBOOK.md` for a print-sized milestone overview.
 - `brc-cases/README.md`: BRC case manifest, cheap validator, and render-only
   Slurm checkpoint.
 - `doc/README.cmake_build`: CMake build flow using `configure_new`,

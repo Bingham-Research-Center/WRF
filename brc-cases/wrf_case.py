@@ -182,6 +182,24 @@ def parse_namelist_values(path: Path) -> dict[str, list[str]]:
     return values
 
 
+def parse_memory_gib(value: Any) -> float | None:
+    text = str(value).strip().upper()
+    match = re.fullmatch(r"(\d+(?:\.\d+)?)([GMTP]?)(?:I?B)?", text)
+    if not match:
+        return None
+    amount = float(match.group(1))
+    unit = match.group(2) or "M"
+    if unit == "T":
+        return amount * 1024
+    if unit == "G":
+        return amount
+    if unit == "M":
+        return amount / 1024
+    if unit == "P":
+        return amount * 1024 * 1024
+    return None
+
+
 def validate_manifest(
     findings: list[Finding],
     path: Path,
@@ -416,6 +434,18 @@ def validate_case(data: dict[str, Any], *, strict_files: bool) -> list[Finding]:
         findings.append(Finding("WARN", "default validated target is lawson-np"))
     if "srun --mpi=pmi2" not in str(slurm["mpi_launcher"]):
         findings.append(Finding("ERROR", "slurm.mpi_launcher must include 'srun --mpi=pmi2'"))
+    if slurm.get("profile") == "owned_notch392_max":
+        if str(slurm["account"]) != "lawson-np" or str(slurm["partition"]) != "lawson-np":
+            findings.append(Finding("ERROR", "owned_notch392_max requires lawson-np account/partition"))
+        if str(slurm.get("nodelist")) != "notch392":
+            findings.append(Finding("ERROR", "owned_notch392_max requires nodelist notch392"))
+        if int(slurm["nodes"]) != 1 or int(slurm["ntasks"]) != 56:
+            findings.append(Finding("ERROR", "owned_notch392_max requires nodes=1 and ntasks=56"))
+        memory_gib = parse_memory_gib(slurm["memory"])
+        if memory_gib is None:
+            findings.append(Finding("ERROR", f"could not parse slurm.memory: {slurm['memory']}"))
+        elif memory_gib < 900:
+            findings.append(Finding("WARN", "owned_notch392_max should request at least 900G"))
 
     archive = data.get("archive", {})
     if archive.get("colon_safe_wrfout_source") != "./wrfout_d0*":

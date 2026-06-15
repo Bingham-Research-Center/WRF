@@ -62,7 +62,10 @@ For the validated NAM-only path, the WPS-side constants are:
 | Required fields observed | `LANDSEA`, `SOILHGT`, `SKINTEMP`, `SEAICE`, `SNOW`, `SNOWH`, four soil-temperature layers, four soil-moisture layers |
 
 The old proof scratch set was staged before the contract sidecar existed, so it
-may have only the manifest. Do not treat a missing old contract as evidence that
+may have only the manifest. This `brc-wrf` checkout carries
+`brc-cases/jan2013_basin_nam.contract.json`, a reconstructed NAM-only contract
+for the validated consumption path, so the case validator has a durable
+handshake to read. Do not treat the missing old scratch sidecar as evidence that
 fresh `brc-tools` staging lacks the contract feature.
 
 Cheap checks that do not submit jobs:

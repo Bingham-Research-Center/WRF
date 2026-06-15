@@ -6,6 +6,12 @@ files concise and route deeper operational records to `doc/`, `brc-cases/`,
 
 ## Files
 
+- `BRC-WRF-FORK-HIGHLIGHTS.md`: terse milestone/highlight reel for the BRC
+  fork layer since it diverged from upstream WRF 4.8.0.
+- `BRC-WRF-STATE-PLAYBOOK.md`: printable plain-language state of play, next
+  steps, reading packet, and maximum owned-node Slurm profile.
+- `BRC-TOOLS-LINK-HANDOFF.md`: current handoff to `../brc-tools` for tightening
+  the WRF input-staging contract and stale-proof edge cases.
 - `BRC-WRF-USAGE.md`: current CHPC usage posture for this fork: storage,
   login-node boundaries, build/install stance, and WRF run shape.
 - `BRC-WRF-FIRST-CASE.md`: current start-to-finish Jan-2013 Basin proof path

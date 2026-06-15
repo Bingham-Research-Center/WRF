@@ -135,6 +135,10 @@ Notchpeak first:
 - launcher: `real.exe` directly, then `srun --mpi=pmi2 -n "$SLURM_NTASKS"
   ./wrf.exe`.
 
+The current Jan-2013 case manifest uses the high-powered owned-node profile
+(`profile: owned_notch392_max`): `notch392`, 56 tasks, and `900G`. This matches
+the current `brc-knowledge` WRF quickstart for a non-preemptible single run.
+
 Do not use bare `mpirun` for WRF on this Intel MPI stack. Do not use bare
 `srun -n N ./wrf.exe` without `--mpi=pmi2`.
 

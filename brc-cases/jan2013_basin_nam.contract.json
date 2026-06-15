@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "contract_kind": "wps_wrf_case_contract",
+  "case": "jan2013_basin_gefs",
+  "region": "uinta_basin_wide",
+  "valid_window": {
+    "start": "2013-01-31T12:00:00Z",
+    "end": "2013-02-02T00:00:00Z"
+  },
+  "sources": [
+    "nam_analysis"
+  ],
+  "source_file_counts": {
+    "nam_analysis": 7
+  },
+  "cadence_hours": {
+    "nam_analysis": 6
+  },
+  "interval_hours": 6,
+  "interval_seconds": 21600,
+  "wps_fg_name": [
+    "NAM"
+  ],
+  "scratch_layout": "<output_root>/<case>/<source>/[<member>/]<file>",
+  "manifest": "manifest_jan2013_basin_gefs.json",
+  "generated_at": "2026-06-13T04:10:57Z",
+  "contract_note": "Reconstructed in brc-wrf for the validated NAM-only WPS/WRF consumption path. The original scratch manifest was written before brc-tools emitted contract sidecars and includes partial GEFS files that were not consumed by the validated WPS run."
+}

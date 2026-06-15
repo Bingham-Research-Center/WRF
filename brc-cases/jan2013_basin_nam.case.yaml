@@ -16,7 +16,7 @@ forcing:
   num_metgrid_levels: 40
   expected_met_em_count: 14
   manifest_path: "/scratch/general/vast/${USER}/wrf_inputs/jan2013_basin_gefs/manifest_jan2013_basin_gefs.json"
-  contract_path: "/scratch/general/vast/${USER}/wrf_inputs/jan2013_basin_gefs/contract_jan2013_basin_gefs.json"
+  contract_path: "/uufs/chpc.utah.edu/common/home/u0737349/gits/brc-wrf/brc-cases/jan2013_basin_nam.contract.json"
 
 paths:
   wrf_src: "/uufs/chpc.utah.edu/common/home/u0737349/gits/brc-wrf"
@@ -40,13 +40,14 @@ namelists:
   namelist_input: "/scratch/general/vast/${USER}/wrf_runs/jan2013_basin_gefs/wrf_run/namelist.input"
 
 slurm:
+  profile: owned_notch392_max
   job_name: wrf_jan2013_nam
   account: lawson-np
   partition: lawson-np
   nodelist: notch392
   nodes: 1
   ntasks: 56
-  memory: "180G"
+  memory: "900G"
   time: "06:00:00"
   mpi_launcher: "srun --mpi=pmi2"
 

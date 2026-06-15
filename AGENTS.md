@@ -22,10 +22,15 @@ small and local before broad scans or expensive commands.
 - `README`: version, public-domain notice, and index of WRF documentation files.
 - `README.md`: BRC landing page, repository roles, local workflow pointers, and
   upstream WRF user, registration, citation, and public-notice links.
-- `brc-docs/README.md`: concise BRC-facing docs index for CHPC usage and
-  roadmap notes.
+- `brc-docs/README.md`: concise BRC-facing docs index.
+- `brc-docs/BRC-WRF-FORK-HIGHLIGHTS.md`: terse change reel for the BRC fork
+  layer.
+- `brc-docs/BRC-WRF-STATE-PLAYBOOK.md`: print-sized current state, reading
+  packet, and maximum owned-node Slurm profile.
+- `brc-docs/BRC-TOOLS-LINK-HANDOFF.md`: current brc-wrf -> brc-tools handoff
+  for tightening the input-staging contract and stale-proof edge cases.
 - `brc-cases/README.md`: case manifest, cheap validator, and render-only Slurm
-  checkpoint.
+  checkpoint plus no-run quicklooks.
 - `TASK-PRIORITIES-JUNE13.md`: current terse priority queue and repo accounting.
 - `brc-docs/BRC-WRF-USAGE.md`: CHPC usage posture, storage layout, login-node
   boundary, and standard WRF run shape.
@@ -50,6 +55,15 @@ small and local before broad scans or expensive commands.
   Jan-2013 Uinta Basin 12/4 km nested case. The input contract/source identity
   is NAM; the old proof scratch `namelist.wps` used the WPS default
   `ungrib` prefix `FILE` with `metgrid fg_name = 'FILE'`.
+- The old proof scratch predates fresh `brc-tools` contract sidecars, so this
+  repo carries `brc-cases/jan2013_basin_nam.contract.json` as a reconstructed
+  NAM-only contract for strict validation. Fresh staging should still emit
+  `contract_<case>.json` from `brc-tools`.
+- No-run visual QA exists:
+  `python brc-cases/wrf_quicklook.py render brc-cases/jan2013_basin_nam.case.yaml`
+  writes ignored PNGs under `brc-cases/quicklooks/<case>/`.
+- Current maximum owned-node Slurm profile is `owned_notch392_max`: `lawson-np`,
+  `notch392`, one node, 56 tasks, `900G`, `srun --mpi=pmi2`.
 - Not validated: GEFSv12 reforecast plus NAM two-stream forcing
   (`fg_name = 'GEFS','NAM'`, `interval_seconds = 10800`).
 - `brc-tools` owns input staging and emits `manifest_<case>.json` plus
@@ -65,6 +79,12 @@ small and local before broad scans or expensive commands.
   `doc/BRC_FORK_GUIDE.md`.
 - Priority or next-task question: read `TASK-PRIORITIES-JUNE13.md`, then
   `doc/BRC_WRF_HANDOFF.md`.
+- Current milestone/state or printable handoff question: read
+  `brc-docs/BRC-WRF-STATE-PLAYBOOK.md`, then
+  `brc-docs/BRC-WRF-FORK-HIGHLIGHTS.md`.
+- Task for an outside AI starting in `brc-tools`: read
+  `brc-docs/BRC-TOOLS-LINK-HANDOFF.md`, then
+  `../brc-tools/docs/WRF-STAGING-STATE-PLAYBOOK.md`.
 - First-case proof or run explanation: read `brc-docs/BRC-WRF-FIRST-CASE.md`,
   then `brc-docs/BRC-WRF-USAGE.md`.
 - Focused docs task: start with `README.md`, `AGENTS.md`, and the relevant
@@ -104,10 +124,13 @@ Use these read-only commands for an initial orientation when relevant:
 - `git status --short`
 - `sed -n '1,120p' README.md`
 - `sed -n '1,80p' README`
+- `sed -n '1,140p' brc-docs/BRC-WRF-STATE-PLAYBOOK.md`
+- `sed -n '1,140p' brc-docs/BRC-TOOLS-LINK-HANDOFF.md`
 - `sed -n '1,160p' doc/README.cmake_build`
 - `sed -n '1,140p' .sane/wrf/README.md`
 - `sed -n '1,160p' .ci/tests/build.sh`
 - `python brc-cases/wrf_case.py validate brc-cases/jan2013_basin_nam.case.yaml`
+- `python brc-cases/wrf_quicklook.py check brc-cases/jan2013_basin_nam.case.yaml`
 
 If a task concerns tests, read `doc/README.test_cases`; note that this checkout
 uses the dotted filename even though some upstream-oriented references may use a

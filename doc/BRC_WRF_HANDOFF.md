@@ -68,9 +68,19 @@ Cheap inspection remains appropriate: `sed`, `rg`, `git diff --check`,
    - `brc-cases/` now provides the initial review gate for this case:
      `python brc-cases/wrf_case.py validate brc-cases/jan2013_basin_nam.case.yaml`
      and `python brc-cases/wrf_case.py render-slurm brc-cases/jan2013_basin_nam.case.yaml`.
-     Non-strict validation warns that the old proof scratch lacks the newer
-     `contract_<case>.json` sidecar; strict validation correctly fails until a
-     fresh contract exists.
+     The old proof scratch lacks the newer `contract_<case>.json` sidecar, so
+     this checkout now carries a tracked reconstructed NAM-only contract for
+     the validated consumption path. Fresh `brc-tools` staging should still
+     emit the scratch sidecar next to the manifest.
+   - The Jan-2013 case manifest uses `profile: owned_notch392_max`: `lawson-np`,
+     `notch392`, one node, 56 tasks, `900G`, and `srun --mpi=pmi2`, matching the
+     current `brc-knowledge` WRF quickstart for a high-powered non-preemptible
+     single run.
+   - Visual QA now starts from existing artifacts, not a rerun:
+     `python brc-cases/wrf_quicklook.py check brc-cases/jan2013_basin_nam.case.yaml`
+     verifies the `brc-tools` manifest and required NetCDF fields, and
+     `python brc-cases/wrf_quicklook.py render brc-cases/jan2013_basin_nam.case.yaml`
+     writes ignored PNGs under `brc-cases/quicklooks/<case>/`.
 
 1. Cheap smoke-test doctrine
    - Suggested file: `doc/BRC_CHEAP_VALIDATION.md`

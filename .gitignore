@@ -43,3 +43,6 @@ rsl.error.*
 # Test generated files
 __pycache__/
 *.pkl
+
+# BRC-local rendered review artifacts
+brc-cases/quicklooks/

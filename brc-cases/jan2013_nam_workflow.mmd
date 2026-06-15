@@ -1,0 +1,11 @@
+flowchart LR
+  brc_tools["brc-tools<br/>stage GRIB + manifest"]
+  manifest["manifest_jan2013_basin_gefs.json<br/>28/28 verified"]
+  wps["WPS<br/>ungrib + metgrid"]
+  met_em["met_em.d0*<br/>NAM-only, 6-hour cadence"]
+  real["real.exe<br/>SUCCESS COMPLETE REAL_EM INIT"]
+  wrf["wrf.exe<br/>SUCCESS COMPLETE WRF"]
+  archive["archive run_20260613T044846Z<br/>wrfout + logs"]
+  quicklooks["brc-wrf quicklooks<br/>visual QA only"]
+
+  brc_tools --> manifest --> wps --> met_em --> real --> wrf --> archive --> quicklooks
