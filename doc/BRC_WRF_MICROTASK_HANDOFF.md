@@ -54,19 +54,22 @@ limit work to light inspection, small Python checks, docs, and local tests.
 | Area | Current state | Evidence or next check |
 | --- | --- | --- |
 | NAM-only Jan-2013 proof | Proven through WPS, `real.exe`, `wrf.exe`, archive, and no-run quicklooks. | `brc-docs/BRC-WRF-FIRST-CASE.md`; `brc-cases/wrf_case.py validate ... --strict-files`; `brc-cases/wrf_quicklook.py check ...`. |
-| Input contract handshake | Old proof scratch predates fresh sidecars; `brc-wrf` carries a reconstructed NAM-only contract for strict validation. | Fresh `brc-tools` staging should later emit `contract_<case>.json`; validate it before retiring the reconstructed fallback. |
+| Input contract handshake | Old proof scratch predates fresh sidecars; `brc-wrf` carries a reconstructed NAM-only contract for strict validation. `brc-tools` manifest schema v2 is additive for this repo because `brc-wrf` reads the contract sidecar, not manifest `staged_files`. | Fresh `brc-tools` staging should later emit `contract_<case>.json`; validate it before retiring the reconstructed fallback. |
 | GEFS+NAM two-stream | Not proven. Treat as a WPS/field-coverage design task until approved WPS evidence exists. | `../brc-tools/docs/WRF-GEFS-NAM-FIELD-MAP.md`; stop before `real.exe`. |
 | WRF run tuning | Not benchmarked. Current max owned-node profile is a safe high-power default, not the efficiency knee. | Prepare 16/28/56 task and memory tables; no `sbatch` without approval. |
 | Docs/router state | This file is the detailed queue; `AGENTS.md` and `doc/BRC_WRF_HANDOFF.md` should stay short. | Update detailed counts here, then leave only pointers in router docs. |
 
 ## Current Countdown
 
-Tracked remaining microtasks from the `brc-tools` handoff and WRF run side: 18.
+Tracked remaining microtasks from the `brc-tools` handoff and WRF run side: 11.
+The 2026-06-16 `brc-tools` hygiene pass closed #4, #5, #6, #11, #12, and
+#31 upstream. This `brc-wrf` caretaker pass closes #32 by keeping current
+staging-doc and scratch-layout references wired here.
 
 | Bucket | Count | Tasks | Meaning |
 | --- | ---: | --- | --- |
-| Codex can do, then human reviews | 9 | #4, #5, #6, #7, #10, #11, #12, #13, #31 | Mostly brc-tools code/tests/docs plus one wishlist pointer. Some, especially #7, may need a proof step parked for approval. |
-| Codex plus human decision/review | 2 | #16, #32 | Codex can prepare design/docs; human decides whether to pursue the two-stream proof and accepts cross-repo wording. |
+| Codex can do, then human reviews | 3 | #7, #10, #13 | Remaining `brc-tools` staging design/test work. Real staging or large transfer proof stays approval-gated. |
+| Codex plus human decision/review | 1 | #16 | Codex can prepare design/docs; human decides whether to pursue the two-stream proof. |
 | Human-only or human-led | 5 | #17, #21, #23, #24, #33 | WPS inspection, domain/geog judgment, DTN submission, helpdesk/proxy answer, retention/promotion decision. |
 | brc-wrf run-tuning, approval-gated | 2 | #26, #27 | Codex can draft scripts/tables, but actual WRF benchmark runs need approval. |
 
@@ -75,43 +78,39 @@ Practical-test countdown:
 | Step | Gate | Can a Codex session advance it now? | Stop point |
 | --- | --- | --- | --- |
 | 1 | Keep NAM-only baseline truth clean in docs and validators. | Yes. | No WPS/WRF claims beyond current evidence. |
-| 2 | Finish no-run brc-tools hygiene that improves manifests, tokens, and docs. | Yes, in small brc-tools commits. | Unit tests and cheap manifest checks only. |
+| 2 | Keep the merged `brc-tools` hygiene reflected in run-side docs. | Yes, docs/checks only. | No WRF-side change needed for additive manifest schema v2. |
 | 3 | Prove a fresh NAM-only `contract_<case>.json` validates in `brc-wrf`. | Partly. Codex can plan and wire the case file; fresh staging needs DTN approval if not already present. | `wrf_case.py validate --strict-files` passes against the fresh contract. |
 | 4 | Decide whether GEFS+NAM two-stream is worth pursuing now. | Codex can prepare the design table; human chooses the science path. | Do not run WPS yet. |
 | 5 | If two-stream is approved, build/select `Vtable.GEFS` and ungrib/metgrid to inspect fields. | Partly. Prep is Codex-friendly; WPS execution is approval-gated. | Stop before `real.exe`; show `met_em` field list and warnings. |
 | 6 | Run practical WRF setting tests: scaling and memory on `notch392`. | Codex can render scripts and result tables. | No `sbatch` or WRF run without explicit approval. |
 | 7 | Refresh docs all round after evidence changes. | Yes. | Update only facts supported by commands, logs, or accepted human decisions. |
 
-## Recommended Mixed Batch
+## Recommended Next No-Run Batch
 
-This is the maximized safe mix: finish WRF-side no-run prep here, then move to a
-separate `brc-tools` commit batch for staging hygiene. Do not mix code commits
-across repos.
+The `brc-tools` hygiene batch is merged upstream. Keep the next work here in
+the WRF-run-side lane unless a separate `brc-tools` session is opened.
 
 ### Lane 1: Bang Out Here In `brc-wrf`
 
 | Order | Task | Why first | Evidence to leave |
 | ---: | --- | --- | --- |
-| 1 | #32 Lock the microtask handoff and router docs. | Removes the current ambiguity about why a WRF handoff lists `brc-tools` tasks. | Diff plus `git diff --check`; no WPS/WRF run. |
-| 2 | Fresh NAM-only contract validation checklist. | Makes Goal A actionable the moment a fresh `contract_<case>.json` exists. | Exact manifest/contract paths and `wrf_case.py validate --strict-files` command. |
-| 3 | #16 GEFS+NAM two-stream design checklist. | Lets a future approved WPS pass stop at field evidence instead of improvising. | Expected GEFS/NAM field split, `Vtable.GEFS` implications, and `real.exe` stop point. |
-| 4 | #26/#27 benchmark table templates. | Prepares scaling/memory work without consuming allocation time. | Empty result table with tasks, memory, wall time, status, archive, and recommendation columns. |
-| 5 | #21 domain/geog evidence pointer. | Separates syntax checks from human domain judgment. | Exact doc/namelist paths to inspect; no claim of fresh scientific approval. |
+| 1 | Fresh NAM-only contract validation checklist. | Makes Goal A actionable the moment a fresh `contract_<case>.json` exists. | Exact manifest/contract paths and `wrf_case.py validate --strict-files` command. |
+| 2 | #16 GEFS+NAM two-stream design checklist. | Lets a future approved WPS pass stop at field evidence instead of improvising. | Expected GEFS/NAM field split, `Vtable.GEFS` implications, and `real.exe` stop point. |
+| 3 | #26/#27 benchmark table templates. | Prepares scaling/memory work without consuming allocation time. | Empty result table with tasks, memory, wall time, status, archive, and recommendation columns. |
+| 4 | #21 domain/geog evidence pointer. | Separates syntax checks from human domain judgment. | Exact doc/namelist paths to inspect; no claim of fresh scientific approval. |
 
-### Lane 2: Next `brc-tools` Batch
+### Lane 2: Future `brc-tools` Batch
 
 | Order | Task | Why next | Evidence to leave |
 | ---: | --- | --- | --- |
-| 1 | #31 Add a `WISHLIST-TASKS.md` pointer to the WRF staging handoff. | Lowest-risk doc pointer; keeps open work discoverable. | Diff plus `git diff --check`. |
-| 2 | #6 Re-derive cached lead times from `.idx` or document degraded skip-manifests. | Manifest trust affects every later proof. | Focused tests, no live download. |
-| 3 | #11 Record total bytes and elapsed time into manifest provenance. | Feeds later DTN and WRF benchmark accounting. | Focused tests and sample manifest assertion. |
-| 4 | #5 Unit-test `obs_sanity_overlay` with synthetic data. | Closes an existing test gap without network or WRF. | Mock/synthetic test result. |
-| 5 | #12 Handle a window crossing the 240 h reforecast bucket boundary. | Prevents future date-window surprises before practical runs. | Unit tests for warning or split behavior. |
-| 6 | #4 Add token preflight for `wps_variable_levels`. | Catches reforecast token drift before downloads. | Offline/mocked tests; live S3 listing only if approved. |
+| 1 | #7 Multi-member staging proof. | Pressure-tests per-member layout before ensemble WRF use. | Mocked or small proof evidence; real transfer only after approval. |
+| 2 | #10 Operational GEFS post-2017 path. | Needed for recent cases, not the Jan-2013 reforecast proof. | Reused staging abstractions and tests. |
+| 3 | #13 Pin `wps_variable_levels` per data-year if token evidence supports it. | Prevents silent reforecast-token drift across 2000-2019. | Evidence-backed token map or explicit decision not to split. |
 
-Keep #10 and #13 as second-wave `brc-tools` work. They need broader design
-judgment across operational GEFS and per-year reforecast token differences, so
-they are better after #4/#6/#11 clarify manifest and token behavior.
+Recently closed upstream in `brc-tools`: #4 token preflight, #5
+`obs_sanity_overlay` test, #6 cached `.idx` lead-time labeling/schema v2, #11
+manifest byte/time provenance, #12 240 h boundary behavior, and #31 wishlist
+pointer. Closed here: #32 cross-repo doc sync.
 
 ### Lane 3: Human Gates
 
@@ -167,6 +166,19 @@ Use these tables after a human approves benchmark submissions.
 | Baseline | `900G` | TBD | TBD | TBD | TBD |
 | Right-size candidate | TBD | TBD | TBD | TBD | TBD |
 
+### Wrapper Robustness Checklist
+
+Keep these checks attached to any future maintained run wrapper:
+
+- Treat WRF success, `real.exe` success, archive completeness, and Slurm state as
+  separate facts. Required markers are `SUCCESS COMPLETE REAL_EM INIT` and
+  `SUCCESS COMPLETE WRF`.
+- Archive WRF colon filenames as local paths, for example
+  `rsync -av ./wrfout_d0* ...`, so `rsync` does not parse the timestamp colon as
+  a remote host separator.
+- Do not use `srun --jobid` probes inside a fully occupied WRF allocation; use
+  `squeue`, exact logs, success markers, and on-disk artifacts instead.
+
 ## Parked For Human Review Or Approval
 
 Do not lose sight of these. They are not good login-node free-running tasks.
@@ -186,14 +198,9 @@ Do not lose sight of these. They are not good login-node free-running tasks.
 
 | Task | Label | Repo | Current classification | Next Codex action | Human review or stop point |
 | --- | --- | --- | --- | --- | --- |
-| #4 | Token preflight against `wps_variable_levels` | `brc-tools` | Codex can do | Add mocked/offline preflight and tests. | Live S3 listing only if approved. |
-| #5 | Test `obs_sanity_overlay` | `brc-tools` | Codex can do | Add synthetic polars test. | Review test assumptions. |
-| #6 | Cached `.idx` lead-time recovery or documented limitation | `brc-tools` | Codex can do | Implement small parser path or document manifest degradation. | Review manifest semantics. |
 | #7 | Multi-member staging proof | `brc-tools` | Codex can partially do | Design per-member layout and mocked manifest aggregation. | Any real multi-member stage needs transfer approval. |
 | #10 | Operational GEFS post-2017 path | `brc-tools` | Codex can do after design | Reuse staging abstractions and tests. | Review source naming and scope before live use. |
-| #11 | Total bytes and elapsed in manifest provenance | `brc-tools` | Codex can do | Add accounting and focused tests. | Review provenance schema. |
-| #12 | Window crossing 240 h bucket boundary | `brc-tools` | Codex can do | Add explicit behavior and tests. | Review whether to warn, split, or fail. |
-| #13 | Pin `wps_variable_levels` per data-year if needed | `brc-tools` | Codex can do after #4 | Add structure only if token evidence supports it. | Human/science review if year differences affect WPS. |
+| #13 | Pin `wps_variable_levels` per data-year if needed | `brc-tools` | Codex can do after evidence review | Add structure only if token evidence supports it. | Human/science review if year differences affect WPS. |
 | #16 | GEFS+NAM Vtable and two-stream WPS proof | `brc-wrf` | Codex plus human | Draft Vtable/field-source design; no execution. | Approval before WPS and before `real.exe`. |
 | #17 | Ungrib staged reforecast and inspect fields | `brc-wrf` | Human-led | Prepare expected field checklist. | WPS execution and field review. |
 | #21 | Confirm geogrid/path/domain | `brc-wrf` | Human-led | Point to exact namelist and runbook evidence. | Human confirms domain/geog baseline. |
@@ -201,9 +208,19 @@ Do not lose sight of these. They are not good login-node free-running tasks.
 | #24 | Compute-node internet/proxy answer | `brc-knowledge` | Human-led | Draft helpdesk question and doc destination. | Human obtains/records answer. |
 | #26 | Scaling benchmark | `brc-wrf` | Approval-gated run tuning | Prepare scripts and result table. | Approve WRF submissions. |
 | #27 | Memory benchmark | `brc-wrf` | Approval-gated run tuning | Prepare memory sweep and accounting table. | Approve WRF submissions. |
-| #31 | WISHLIST pointer | `brc-tools` | Codex can do | Add concise pointer to current WRF staging handoff. | Review wording. |
-| #32 | Cross-repo doc sync | `brc-wrf` + `brc-tools` | Codex plus human | Ensure docs point to current scratch layout and handoff files. | Review cross-repo wording. |
 | #33 | Retention/promotion | `brc-tools` + `brc-wrf` + storage | Human-led | Inventory scratch and durable target commands. | Human decides what to promote. |
+
+## Recently Closed Microtasks
+
+| Task | Close evidence |
+| --- | --- |
+| #4 | `brc-tools` merged offline-tested token preflight; live S3 list-URL format remains a first-live-run caveat. |
+| #5 | `brc-tools` added the synthetic `obs_sanity_overlay` test. |
+| #6 | `brc-tools` manifest schema v2 labels cached lead-time limitations/additions; additive for `brc-wrf`. |
+| #11 | `brc-tools` records manifest byte/time provenance. |
+| #12 | `brc-tools` pins the 240 h boundary behavior as warn+partial. |
+| #31 | `brc-tools` added the `WISHLIST-TASKS.md` pointer. |
+| #32 | `brc-wrf` docs point to current `../brc-tools/docs/WRF-INPUT-STAGING.md`, scratch layout, and handoff files; link-check passes with binary files ignored. |
 
 ## Documentation Refresh Map
 
@@ -215,7 +232,7 @@ Update docs where the evidence belongs, not all in one place.
 | NAM-only run proof facts | `brc-docs/BRC-WRF-FIRST-CASE.md` | `brc-docs/BRC-WRF-STATE-PLAYBOOK.md` |
 | Case manifest or render-only Slurm review | `brc-cases/README.md` | `doc/BRC_WRF_HANDOFF.md` |
 | brc-tools staging behavior, manifests, contracts | `../brc-tools/docs/WRF-INPUT-STAGING.md` | `brc-docs/BRC-WRF-FIRST-CASE.md` |
-| GEFS+NAM field split and Vtable design | `../brc-tools/docs/WRF-GEFS-NAM-FIELD-MAP.md` until WPS proof exists | `TASK-PRIORITIES-JUNE13.md` |
+| GEFS+NAM field split and Vtable design | `../brc-tools/docs/WRF-GEFS-NAM-FIELD-MAP.md` until WPS proof exists | This microtask board and `brc-docs/BRC-WRF-FIRST-CASE.md` |
 | CHPC node, storage, proxy, Slurm truth | `../brc-knowledge/scholarium/reference-base/resources/` | BRC-WRF docs should point, not duplicate |
 | Benchmark results | `brc-docs/BRC-WRF-STATE-PLAYBOOK.md` | `brc-docs/BRC-WRF-FIRST-CASE.md` if runbook changes |
 

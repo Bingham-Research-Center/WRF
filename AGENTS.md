@@ -13,9 +13,9 @@ small and local before broad scans or expensive commands.
 
 - `README`: preserve as the upstream-style WRF version, public-domain notice,
   release-note, and documentation-index file.
-- `README.md`: BRC-facing landing page for humans and AI agents. It may point to
-  upstream WRF resources, but should stay short and route readers to deeper
-  local docs instead of becoming a full operating manual.
+- `README.md`: BRC-facing landing page for humans. It may point to upstream WRF
+  resources, CHPC references, and deeper local docs, but should stay short
+  instead of becoming a full operating manual.
 
 ## First Reads
 
@@ -36,7 +36,6 @@ small and local before broad scans or expensive commands.
 - `doc/BRC_WRF_MICROTASK_HANDOFF.md`: WRF-run-side control board for the
   remaining cross-repo microtasks, countdown, no-run prep, and parked
   human/approval batch.
-- `TASK-PRIORITIES-JUNE13.md`: current terse priority queue and repo accounting.
 - `brc-docs/BRC-WRF-USAGE.md`: CHPC usage posture, storage layout, login-node
   boundary, and standard WRF run shape.
 - `brc-docs/BRC-WRF-FIRST-CASE.md`: current start-to-finish Jan-2013 Basin
@@ -73,10 +72,14 @@ small and local before broad scans or expensive commands.
   (`fg_name = 'GEFS','NAM'`, `interval_seconds = 10800`).
 - `brc-tools` owns input staging and emits `manifest_<case>.json` plus
   `contract_<case>.json`; do not add NWP downloader code here.
+- The latest `brc-tools` staging hygiene is additive for the run side: manifest
+  schema v2 plus token preflight are merged upstream, and `brc-wrf` reads the
+  contract sidecar rather than manifest `staged_files`.
 - Latest reverse handoff from `brc-tools` is
-  `../brc-tools/docs/HANDOFF-TO-BRC-WRF.md` on `feat/wrf-input-staging`; it
-  keeps WRF run profiles, WPS, `real.exe`, `wrf.exe`, scaling, and memory
-  benchmarks owned by `brc-wrf`/`brc-knowledge`.
+  `../brc-tools/docs/HANDOFF-TO-BRC-WRF.md`; the most recent hygiene handoff
+  reports brc-tools PRs #23 and #24 merged to `main`, with nothing to merge in
+  this repo. WRF run profiles, WPS, `real.exe`, `wrf.exe`, scaling, and memory
+  benchmarks stay owned by `brc-wrf`/`brc-knowledge`.
 - `brc-knowledge` owns canonical CHPC reference material and the validated
   example Slurm script.
 - `brc-wrf` owns source, WRF-side docs, templates, validators, and any maintained
@@ -85,12 +88,27 @@ small and local before broad scans or expensive commands.
   approval-gated work live in `doc/BRC_WRF_MICROTASK_HANDOFF.md`; keep that
   detailed control board current instead of expanding this router.
 
+## Doc Currency (caretaker)
+
+When any of these change, update the named file in the same commit:
+
+- `brc-tools` contract/manifest fields or staging flags -> "Current Run Truth"
+  here.
+- A proof state flips, for example GEFS+NAM two-stream proven -> "Current Run
+  Truth" here plus `brc-docs/BRC-WRF-STATE-PLAYBOOK.md` and
+  `brc-docs/BRC-WRF-FIRST-CASE.md`.
+- Any `../brc-tools` path is renamed -> run the cross-repo link-check and fix
+  references.
+
+`README.md` is for humans; `AGENTS.md` is for agents. Do not duplicate run logic
+into `README.md`.
+
 ## Routing
 
 - Repo or fork-orientation task: start with `README.md`, `AGENTS.md`, and
   `doc/BRC_FORK_GUIDE.md`.
-- Priority or next-task question: read `TASK-PRIORITIES-JUNE13.md`, then
-  `doc/BRC_WRF_HANDOFF.md`.
+- Priority or next-task question: read `doc/BRC_WRF_MICROTASK_HANDOFF.md`; use
+  `doc/BRC_WRF_HANDOFF.md` only as a slim pointer.
 - Remaining microtask split, countdown, or "what can Codex do next" question:
   read `doc/BRC_WRF_MICROTASK_HANDOFF.md`, then stay in the repo lane named by
   the relevant table.

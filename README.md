@@ -6,7 +6,7 @@ automation and development practices layered on top.
 
 The extensionless `README` is kept as the upstream WRF version, public-domain,
 release-note, and documentation-index file. This `README.md` is the BRC-facing
-entry point for human and AI contributors.
+entry point for human contributors; AI-assisted routing lives in `AGENTS.md`.
 
 ## Start Here
 
@@ -16,8 +16,8 @@ entry point for human and AI contributors.
   for AI-assisted work.
 - `doc/BRC_FORK_GUIDE.md`: fork mental model, local-vs-upstream boundaries, and
   cheap-before-expensive orientation.
-- `doc/BRC_WRF_HANDOFF.md`: current handoff, cold-start order, and next
-  orientation work queue.
+- `doc/BRC_WRF_HANDOFF.md`: slim pointer to the current WRF-run-side control
+  board.
 - `brc-docs/`: concise BRC-facing usage and roadmap notes for CHPC work.
   Start with `brc-docs/BRC-WRF-FORK-HIGHLIGHTS.md` and
   `brc-docs/BRC-WRF-STATE-PLAYBOOK.md` for a print-sized milestone overview.
@@ -32,6 +32,21 @@ entry point for human and AI contributors.
 
 This is a large source tree. Start with narrow local reads before searching WRF
 internals broadly.
+
+## Human Resource List
+
+- BRC docs index: `brc-docs/README.md`.
+- Current WRF-run-side control board:
+  `doc/BRC_WRF_MICROTASK_HANDOFF.md`.
+- Current first-case runbook: `brc-docs/BRC-WRF-FIRST-CASE.md`.
+- CHPC infrastructure truth:
+  `../brc-knowledge/scholarium/reference-base/resources/chpc-team-resource-inventory.md`.
+- CHPC WRF quickstart:
+  `../brc-knowledge/scholarium/reference-base/resources/wrf-on-chpc-quickstart.md`.
+- `brc-tools` input-staging contract:
+  `../brc-tools/docs/WRF-INPUT-STAGING.md`.
+- Upstream WRF registration, user guide, citation, and public notice links are
+  listed below.
 
 ## Build And Test Posture
 
