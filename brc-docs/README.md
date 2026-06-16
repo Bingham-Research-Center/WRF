@@ -13,6 +13,8 @@ files concise and route deeper operational records to `doc/`, `brc-cases/`,
 - `BRC-WRF-MICHAEL-PRACTICAL-PACKET.md`: short John/Michael pair-programming
   handout with no-run walkthrough commands, editable settings, approval gates,
   and blank result tables.
+- `TOP-100-START-HERE-JUNE.md`: terse 100-item microtask menu for practical
+  WRF tests, science checks, and code/provenance auditing.
 - `BRC-TOOLS-LINK-HANDOFF.md`: current handoff to `../brc-tools` for tightening
   the WRF input-staging contract and stale-proof edge cases.
 - `BRC-WRF-USAGE.md`: current CHPC usage posture for this fork: storage,
