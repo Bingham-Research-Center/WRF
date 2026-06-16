@@ -56,17 +56,19 @@ owner repo, and stop point.
 
 Read these in order for a milestone review:
 
-1. `brc-docs/BRC-WRF-FORK-HIGHLIGHTS.md`
-2. `brc-docs/BRC-WRF-FIRST-CASE.md`
-3. `brc-cases/README.md`
-4. `brc-docs/BRC-WRF-USAGE.md`
-5. `../brc-tools/docs/WRF-STAGING-STATE-PLAYBOOK.md`
-6. `brc-docs/BRC-TOOLS-LINK-HANDOFF.md` if opening a `brc-tools` session
-7. `../brc-knowledge/scholarium/reference-base/resources/chpc-team-resource-inventory.md` sections 1-3 and Q1
-8. `../brc-knowledge/scholarium/reference-base/resources/wrf-on-chpc-quickstart.md` sections 2, 3, and 8
+1. `brc-docs/BRC-WRF-MICHAEL-PRACTICAL-PACKET.md` for a pair-programming
+   walkthrough.
+2. `brc-docs/BRC-WRF-FORK-HIGHLIGHTS.md`
+3. `brc-docs/BRC-WRF-FIRST-CASE.md`
+4. `brc-cases/README.md`
+5. `brc-docs/BRC-WRF-USAGE.md`
+6. `../brc-tools/docs/WRF-STAGING-STATE-PLAYBOOK.md`
+7. `brc-docs/BRC-TOOLS-LINK-HANDOFF.md` if opening a `brc-tools` session
+8. `../brc-knowledge/scholarium/reference-base/resources/chpc-team-resource-inventory.md` sections 1-3 and Q1
+9. `../brc-knowledge/scholarium/reference-base/resources/wrf-on-chpc-quickstart.md` sections 2, 3, and 8
 
-For Michael, start with items 1, 2, 3, and 5 before the full CHPC resource
-inventory. For John, start with items 1, 2, 5, 7, and 8; add item 6 when the
+For Michael, start with items 1, 3, 4, and 6 before the full CHPC resource
+inventory. For John, start with items 2, 3, 6, 8, and 9; add item 7 when the
 next task is in `brc-tools`.
 
 ## Maximum Owned-Node WRF Profile

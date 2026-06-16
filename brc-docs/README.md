@@ -10,6 +10,9 @@ files concise and route deeper operational records to `doc/`, `brc-cases/`,
   fork layer since it diverged from upstream WRF 4.8.0.
 - `BRC-WRF-STATE-PLAYBOOK.md`: printable plain-language state of play, next
   steps, reading packet, and maximum owned-node Slurm profile.
+- `BRC-WRF-MICHAEL-PRACTICAL-PACKET.md`: short John/Michael pair-programming
+  handout with no-run walkthrough commands, editable settings, approval gates,
+  and blank result tables.
 - `BRC-TOOLS-LINK-HANDOFF.md`: current handoff to `../brc-tools` for tightening
   the WRF input-staging contract and stale-proof edge cases.
 - `BRC-WRF-USAGE.md`: current CHPC usage posture for this fork: storage,
@@ -21,6 +24,8 @@ files concise and route deeper operational records to `doc/`, `brc-cases/`,
   and survey gaps before a supported BRC CHPC install.
 - `../brc-cases/README.md`: BRC case manifest, cheap validator, and render-only
   Slurm checkpoint.
+- `handouts/`: rendered PDF copies for live review. Treat these as derivatives
+  of the Markdown sources above.
 
 ## Style
 

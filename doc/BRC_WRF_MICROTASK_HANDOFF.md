@@ -90,6 +90,11 @@ Practical-test countdown:
 The `brc-tools` hygiene batch is merged upstream. Keep the next work here in
 the WRF-run-side lane unless a separate `brc-tools` session is opened.
 
+The current John/Michael no-run handout is
+`brc-docs/BRC-WRF-MICHAEL-PRACTICAL-PACKET.md`. It packages the first contract
+validation checklist, settings map, approval gates, and blank result tables for
+pair-programming without WPS/WRF execution.
+
 ### Lane 1: Bang Out Here In `brc-wrf`
 
 | Order | Task | Why first | Evidence to leave |
