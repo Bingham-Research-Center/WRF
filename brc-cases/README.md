@@ -23,6 +23,12 @@ The checkpoint is intentionally small:
    python brc-cases/wrf_case.py validate --strict-files brc-cases/jan2013_basin_nam.case.yaml
    ```
 
+   Strict validation also checks the declared WRF/WPS executable roots. The WRF
+   root must contain `real.exe` and `wrf.exe`; the WPS root must contain
+   `geogrid.exe`, `ungrib.exe`, `metgrid.exe`, `link_grib.csh`, and
+   `ungrib/Variable_Tables/Vtable.NAM`. It also rejects repo-local staged
+   inputs, run directories, archive roots, logs, and generated data paths.
+
 4. Render the Slurm script for review. This writes text only; it does not call
    `sbatch`.
 

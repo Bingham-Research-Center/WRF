@@ -36,6 +36,8 @@ REQUIRED_SECTIONS = {
     ),
     "paths": (
         "wrf_src",
+        "wrf_build",
+        "wps_root",
         "input_root",
         "run_root",
         "wps_run",
@@ -127,6 +129,14 @@ def as_path(value: Any) -> Path:
     return Path(os.path.expandvars(os.path.expanduser(str(value))))
 
 
+def path_under(path: Path, parent: Path) -> bool:
+    try:
+        path.resolve(strict=False).relative_to(parent.resolve(strict=False))
+        return True
+    except ValueError:
+        return False
+
+
 def add_path_finding(
     findings: list[Finding],
     path: Path,
@@ -143,6 +153,92 @@ def add_path_finding(
         findings.append(Finding("ERROR", f"{label} is not a directory: {path}"))
     if must_be_dir is False and not path.is_file():
         findings.append(Finding("ERROR", f"{label} is not a file: {path}"))
+
+
+def add_executable_root_findings(
+    findings: list[Finding],
+    root: Path,
+    label: str,
+    *,
+    strict_files: bool,
+    executables: tuple[str, ...],
+    subdirs: tuple[str, ...] = (),
+    files: tuple[str, ...] = (),
+) -> None:
+    add_path_finding(
+        findings,
+        root,
+        label,
+        strict_files=strict_files,
+        must_be_dir=True,
+    )
+    if not root.exists() or not root.is_dir():
+        return
+
+    severity = "ERROR" if strict_files else "WARN"
+    for exe in executables:
+        candidates = [
+            root / exe,
+            root / "run" / exe,
+            root / "main" / exe,
+            root / "geogrid" / exe,
+            root / "ungrib" / exe,
+            root / "metgrid" / exe,
+            root / "geogrid" / "src" / exe,
+            root / "ungrib" / "src" / exe,
+            root / "metgrid" / "src" / exe,
+        ]
+        if not any(path.exists() and os.access(path, os.X_OK) for path in candidates):
+            findings.append(
+                Finding(severity, f"{label} missing executable {exe} under {root}")
+            )
+
+    for subdir in subdirs:
+        path = root / subdir
+        if not path.is_dir():
+            findings.append(Finding(severity, f"{label} missing directory {subdir}: {path}"))
+
+    for file_name in files:
+        path = root / file_name
+        if not path.is_file():
+            findings.append(Finding(severity, f"{label} missing file {file_name}: {path}"))
+
+
+def add_storage_policy_findings(
+    findings: list[Finding],
+    data: dict[str, Any],
+    *,
+    strict_files: bool,
+) -> None:
+    paths = data["paths"]
+    repo_root = as_path(paths["wrf_src"])
+    for key in ("input_root", "grib_data", "run_root", "wps_run", "wrf_run", "archive_root"):
+        if key not in paths:
+            continue
+        path = as_path(paths[key])
+        if path_under(path, repo_root):
+            findings.append(
+                Finding(
+                    "ERROR",
+                    f"paths.{key} must not be inside the brc-wrf checkout: {path}",
+                )
+            )
+
+    archive_root = as_path(paths["archive_root"])
+    archive_text = str(archive_root)
+    if archive_text.startswith("/scratch/"):
+        findings.append(
+            Finding("ERROR", f"paths.archive_root must be durable, not scratch: {archive_root}")
+        )
+    elif "lawson-group6" not in archive_text:
+        severity = "ERROR" if strict_files else "WARN"
+        findings.append(
+            Finding(
+                severity,
+                "paths.archive_root should be under durable lawson-group6 storage: "
+                f"{archive_root}",
+            )
+        )
 
 
 def parse_case_datetime(value: Any, field: str, findings: list[Finding]) -> datetime | None:
@@ -371,6 +467,23 @@ def validate_case(data: dict[str, Any], *, strict_files: bool) -> list[Finding]:
         findings, as_path(paths["wrf_src"]), "paths.wrf_src",
         strict_files=True, must_be_dir=True,
     )
+    add_executable_root_findings(
+        findings,
+        as_path(paths["wrf_build"]),
+        "paths.wrf_build",
+        strict_files=strict_files,
+        executables=("real.exe", "wrf.exe"),
+        subdirs=("run",),
+    )
+    add_executable_root_findings(
+        findings,
+        as_path(paths["wps_root"]),
+        "paths.wps_root",
+        strict_files=strict_files,
+        executables=("geogrid.exe", "ungrib.exe", "metgrid.exe"),
+        subdirs=("geogrid", "metgrid", "ungrib"),
+        files=("link_grib.csh", "ungrib/Variable_Tables/Vtable.NAM"),
+    )
     add_path_finding(
         findings, as_path(paths["geog_data_path"]), "paths.geog_data_path",
         strict_files=strict_files, must_be_dir=True,
@@ -380,6 +493,12 @@ def validate_case(data: dict[str, Any], *, strict_files: bool) -> list[Finding]:
             findings, as_path(paths[key]), f"paths.{key}",
             strict_files=strict_files, must_be_dir=True,
         )
+    if "grib_data" in paths:
+        add_path_finding(
+            findings, as_path(paths["grib_data"]), "paths.grib_data",
+            strict_files=strict_files, must_be_dir=True,
+        )
+    add_storage_policy_findings(findings, data, strict_files=strict_files)
 
     validate_manifest(
         findings,

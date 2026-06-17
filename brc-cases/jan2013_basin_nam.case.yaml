@@ -20,8 +20,8 @@ forcing:
 
 paths:
   wrf_src: "/uufs/chpc.utah.edu/common/home/u0737349/gits/brc-wrf"
-  wrf_build: "/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_build/brc-wrf"
-  wps_root: "/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_build/WPS"
+  wrf_build: "/uufs/chpc.utah.edu/common/home/u0737349/gits/brc-wrf"
+  wps_root: "/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_build/WPS"  # planned John-owned WPS root; must exist before WPS submission
   input_root: "/scratch/general/vast/${USER}/wrf_inputs/jan2013_basin_gefs"
   run_root: "/scratch/general/vast/${USER}/wrf_runs/jan2013_basin_gefs"
   grib_data: "/scratch/general/vast/${USER}/wrf_runs/jan2013_basin_gefs/grib_data"
