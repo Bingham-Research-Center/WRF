@@ -66,7 +66,8 @@ small and local before broad scans or expensive commands.
 - No-run visual QA exists:
   `python brc-cases/wrf_quicklook.py render brc-cases/jan2013_basin_nam.case.yaml`
   writes PNGs beside the durable archive run, for example
-  `<archive-run>/quicklooks/`; repo-local PNG output is refused.
+  `<archive-run>/quicklooks/`; repo-local PNG output is refused. This is a
+  practical NetCDF/archive read and must run off-login.
 - Paramount CHPC rule after the 2026-06-17 retrospective: do not run practical
   WRF checks, Python test suites, manifest hashing, NetCDF reads, quicklook
   checks/renders, staging plans, WPS, `real.exe`, `wrf.exe`, or any data-heavy
@@ -101,6 +102,21 @@ small and local before broad scans or expensive commands.
   archives. See `../brc-knowledge/scholarium/reference-base/resources/`.
 - `brc-wrf` owns source, WRF-side docs, templates, validators, and any maintained
   WPS/WRF consumption wrapper.
+- Build/install truth must be checked from disk before submission. The
+  `~/gits/brc-wrf` checkout is John's source tree and intended WRF build root,
+  but a fresh clone has no `real.exe` or `wrf.exe` until it is compiled. Do not
+  silently fall back to another user's group build such as `u6060939`, and do
+  not trust stale `jrlawson/wrf_build` paths unless the executable files exist.
+- WPS is a separate install/root from this WRF source checkout. A real WPS/WRF
+  submission needs both a valid John-owned WRF executable root and a valid
+  WPS root with `geogrid.exe`, `ungrib.exe`, `metgrid.exe`, `link_grib.csh`,
+  and `Vtable.NAM`.
+- Generated data, staged inputs, run directories, run-specific namelists,
+  rendered per-run Slurm scripts, model logs, NetCDF, PNGs, and one-off option
+  files must not be written into this repo. Keep only reusable templates and
+  source-controlled docs/code here. Live WPS/WRF I/O belongs on scratch; durable
+  artifacts belong under `lawson-group6/<namespace>/...` outside the checkout
+  and outside `$HOME/gits`.
 - Remaining microtask routing, countdown, WRF-side no-run prep, and parked
   approval-gated work live in `doc/BRC_WRF_MICROTASK_HANDOFF.md`; keep that
   detailed control board current instead of expanding this router.
@@ -175,9 +191,10 @@ workflow, or script before choosing.
 Do not run full builds, regression tests, Slurm jobs, or other HPC workflows
 without explicit user approval. WRF builds and tests can be expensive.
 
-## Cheap First Commands
+## Login-Node-Safe First Commands
 
-Use these read-only commands for an initial orientation when relevant:
+Use these read-only commands for an initial orientation when relevant. They
+should not read staged GRIBs, WPS/WRF NetCDF, archives, or manifests.
 
 - `git status --short`
 - `sed -n '1,120p' README.md`
@@ -187,14 +204,26 @@ Use these read-only commands for an initial orientation when relevant:
 - `sed -n '1,160p' doc/README.cmake_build`
 - `sed -n '1,140p' .sane/wrf/README.md`
 - `sed -n '1,160p' .ci/tests/build.sh`
-- `python brc-cases/wrf_case.py validate brc-cases/jan2013_basin_nam.case.yaml`
-- `python ../brc-tools/scripts/stage_wrf_inputs.py --verify-manifest /scratch/general/vast/$USER/wrf_inputs/jan2013_basin_gefs/manifest_jan2013_basin_gefs.json`
-- `python brc-cases/wrf_case.py validate brc-cases/jan2013_basin_nam.case.yaml --strict-files`
-- `python brc-cases/wrf_quicklook.py check brc-cases/jan2013_basin_nam.case.yaml`
+- `python -m py_compile brc-cases/wrf_case.py brc-cases/wrf_quicklook.py`
+- `find . -path ./.git -prune -o -name AGENTS.md -print`
+- `find . -maxdepth 3 \( -name wrf.exe -o -name real.exe -o -name geogrid.exe -o -name ungrib.exe -o -name metgrid.exe \) -print`
 
 If a task concerns tests, read `doc/README.test_cases`; note that this checkout
 uses the dotted filename even though some upstream-oriented references may use a
 different spelling.
+
+## Off-Login Practical Checks
+
+Run these only inside an approved Slurm batch or interactive compute context,
+never on a login node:
+
+- `python ../brc-tools/scripts/stage_wrf_inputs.py --verify-manifest ...`
+- `python brc-cases/wrf_case.py validate ... --strict-files` when it reads
+  scratch inputs, manifests, WPS/WRF files, or archive paths.
+- `python brc-cases/wrf_quicklook.py check ...`
+- `python brc-cases/wrf_quicklook.py render ...`
+- WPS, `real.exe`, `wrf.exe`, NetCDF field inspection, and any staging plan or
+  data-heavy filesystem inventory.
 
 ## Orientation Style
 

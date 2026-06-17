@@ -39,7 +39,7 @@ live run directory or as a dumping ground for `wrfout` files.
 | Purpose | Recommended path | Notes |
 | --- | --- | --- |
 | WRF source checkout | `$HOME/gits/brc-wrf` | Good for git, Codex, docs, and small wrapper edits. |
-| Per-user WRF/WPS build or install | `/uufs/chpc.utah.edu/common/home/lawson-group6/<user-or-namespace>/wrf_build/` | No purge; good for compiled artifacts and shared reproducibility. John's first proof should use the `jrlawson` namespace unless the inventory or operator decision changes that. |
+| Per-user WRF/WPS build or install | WRF source/build: `$HOME/gits/brc-wrf`; WPS root: `/uufs/chpc.utah.edu/common/home/lawson-group6/<user-or-namespace>/wrf_build/WPS/` | John's WRF should be compiled from his `brc-wrf` checkout before any run. WPS is separate and should be a John-owned persistent install, not another user's build. |
 | Active case runs | `/scratch/general/vast/$USER/wrf_runs/<case>/` | Fast active I/O; 60-day purge; clean after archiving. |
 | Shared WPS geography | `/uufs/chpc.utah.edu/common/home/lawson-group6/WPS_GEOG/` | Existing group geog path from the CHPC WRF guide. |
 | Durable outputs | `/uufs/chpc.utah.edu/common/home/lawson-group6/<user-or-namespace>/wrf_archive/<case>/run_<UTC>/` | Archive `wrfout`, namelists, and key logs. |
@@ -110,17 +110,19 @@ The validated legacy WRF choices were Intel `dmpar` and basic nesting. WPS needs
 the same module stack plus the `JASPER*` exports before configure so GRIB2
 support is enabled.
 
-For John's first proof, keep the build rooted in a traceable group directory:
+For John's first proof, compile the WRF executable from his checked-out
+`brc-wrf` source tree and keep build logs in persistent group storage:
 
 ```bash
 export WRF_SRC=$HOME/gits/brc-wrf
-export WRF_PREFIX=/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_build/brc-wrf
+export WRF_BUILD=$HOME/gits/brc-wrf
+export BRC_WRF_BUILD_LOG_ROOT=/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_build_logs/brc-wrf
 ```
 
 Before making this an official recipe, validate the exact legacy WRF/WPS
 configure and compile sequence for this fork on CHPC and record the Git SHA,
-module list, build path, compile logs, executables, and whether WPS is built
-beside it. Track any later CMake comparison separately in `BRC-WRF-ROADMAP.md`.
+module list, build path, compile logs, executables, and the separate WPS root.
+Track any later CMake comparison separately in `BRC-WRF-ROADMAP.md`.
 
 ## Standard Run Pattern
 

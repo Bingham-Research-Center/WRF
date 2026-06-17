@@ -32,7 +32,17 @@ on top of upstream WRF 4.8.0.
 | Visual QA | Five PNG quicklooks render from existing WPS/WRF artifacts. |
 | Not proven yet | GEFSv12 reforecast plus NAM two-stream forcing. |
 
-## Current Best Commands
+## Current Review Commands
+
+Login-node-safe source checks:
+
+```bash
+python -m py_compile brc-cases/wrf_case.py brc-cases/wrf_quicklook.py
+```
+
+Artifact checks below read manifests, scratch paths, WPS/WRF outputs, or
+archives. Run them only inside an approved Slurm batch or interactive compute
+context, not on a login node:
 
 ```bash
 python brc-cases/wrf_case.py validate brc-cases/jan2013_basin_nam.case.yaml
