@@ -117,6 +117,12 @@ Use the CHPC-validated wrapper as the starting point:
 The wrapper must keep these CHPC-specific details:
 
 - reload the validated Intel/HDF5/netCDF module stack inside the batch job;
+- write a plain settings readback before model execution, including case
+  window, forcing stream, WPS cadence, Vtable/prefix/`fg_name`, Slurm shape,
+  launcher, and storage paths;
+- write compact debug artifacts beside WRF logs:
+  `debug/run_debug_summary.txt`, `debug/run_phase_times.tsv`, and
+  `debug/run_file_inventory.tsv`;
 - run `real.exe` directly and require `SUCCESS COMPLETE REAL_EM INIT`;
 - move `real.exe` `rsl.*` files aside before `wrf.exe`;
 - launch WRF with `srun --mpi=pmi2 -n "$SLURM_NTASKS" ./wrf.exe`;
@@ -134,6 +140,11 @@ rsync -av namelist.input rsl.out.0000 rsl.error.0000 \
 Treat Slurm batch state, the WRF `.0` step state, WRF success markers, and
 archive completeness as separate facts. A post-WRF archive failure can mark the
 batch failed even when WRF completed successfully.
+
+For fresh NWP downloads, stay in `brc-tools`: use Herbie-backed paths where
+available, respect its direct NCEI path for historical NAM analysis, and run
+full transfer work on `notchpeak-dtn`. This repo consumes the resulting
+manifest and contract sidecars.
 
 ## Proof Evidence
 

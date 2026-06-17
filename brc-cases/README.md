@@ -36,6 +36,19 @@ The checkpoint is intentionally small:
    was enough; this profile deliberately reserves most of the large node for a
    high-powered single run.
 
+   The rendered run wrapper writes a compact debug layer beside WRF's native
+   `rsl.*` logs:
+
+   | File | Purpose |
+   | --- | --- |
+   | `debug/run_debug_summary.txt` | Host, job, commit, paths, natural-language settings table, five gotchas, final status. |
+   | `debug/run_phase_times.tsv` | `real.exe`, marker checks, `wrf.exe`, and archive phase timings with exit codes. |
+   | `debug/run_file_inventory.tsv` | Counts, bytes, and newest mtimes for key `met_em`, `wrfinput`, `wrfbdy`, `wrfout`, and log patterns. |
+
+   These files are first written under `<wrf_run>/brc_run_debug/` and then
+   copied to `<archive-run>/debug/`, including failure exits when the archive
+   path can be created.
+
 5. Render no-run visual quicklooks from the existing proof artifacts:
 
    ```bash
@@ -45,9 +58,11 @@ The checkpoint is intentionally small:
 
    The quicklook helper verifies the `brc-tools` input manifest first, then
    reads existing WPS `met_em` files and archived `wrfout` files. It does not
-   run WPS, `real.exe`, `wrf.exe`, Slurm, or new input staging. Generated PNGs
-   go under `brc-cases/quicklooks/<case>/`, which is intentionally ignored by
-   git. The workflow source is tracked in `jan2013_nam_workflow.mmd`.
+   run WPS, `real.exe`, `wrf.exe`, Slurm, or new input staging. It must run
+   from an approved compute or interactive context, not a login node.
+   Generated PNGs default to `<archive-run>/quicklooks/` under the durable
+   `lawson-group6` archive; repo-local PNG output is refused.
+   The workflow source is tracked in `jan2013_nam_workflow.mmd`.
 
 `wrf_case.py` uses only the Python standard library. Because this checkout does
 not currently carry a YAML dependency, the `*.case.yaml` format is a deliberately
@@ -58,6 +73,11 @@ YAML features.
 The helper is a pre-run review gate, not a workflow engine. Real WPS, `real.exe`,
 `wrf.exe`, scaling sweeps, and Slurm submission still require explicit human
 approval.
+
+Input downloads and staging are not owned here. Use `../brc-tools`, its
+Herbie-backed paths where available, and `notchpeak-dtn` for full NWP transfer
+work. This repo should consume the fresh `contract_<case>.json` sidecar, not add
+download logic.
 
 `wrf_quicklook.py` is separate from `wrf_case.py` on purpose: the case validator
 stays dependency-free, while quicklook rendering uses the local NetCDF and

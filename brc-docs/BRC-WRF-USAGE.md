@@ -142,6 +142,11 @@ the current `brc-knowledge` WRF quickstart for a non-preemptible single run.
 Do not use bare `mpirun` for WRF on this Intel MPI stack. Do not use bare
 `srun -n N ./wrf.exe` without `--mpi=pmi2`.
 
+Before an approved run starts, read back the case settings in plain language:
+case window, domains, forcing stream, WPS cadence, Vtable/prefix/`fg_name`,
+expected `met_em`/levels, Slurm shape, launcher, live scratch path, and durable
+archive path.
+
 Minimum batch body:
 
 ```bash
@@ -167,6 +172,15 @@ mv rsl.error.0000 real.rsl.error.0000
 srun --mpi=pmi2 -n "$SLURM_NTASKS" ./wrf.exe
 grep -q "SUCCESS COMPLETE WRF" rsl.out.0000
 ```
+
+The maintained BRC run wrapper should also write compact debug artifacts beside
+WRF's native logs and copy them to `<archive-run>/debug/`:
+
+| File | Contents |
+| --- | --- |
+| `run_debug_summary.txt` | Settings readback, five gotchas, host, job ID, commit, paths, modules, final status. |
+| `run_phase_times.tsv` | Start/end/elapsed/exit code for `real.exe`, marker checks, `wrf.exe`, and archive copies. |
+| `run_file_inventory.tsv` | Counts, bytes, and newest mtimes for key output and log patterns. |
 
 For ensembles, prefer job arrays with one run directory per member. Many smaller
 single-node or partial-node runs are often better than one oversized WRF run,
@@ -206,9 +220,11 @@ archive: anything important should be promoted later by an explicit archive
 decision.
 
 `brc-tools` already owns WRF-facing input staging and manifest verification. Do
-not add an ad hoc downloader in this WRF tree. If WPS input behavior needs to
-change, update `brc-tools` and keep this repo focused on the WPS/WRF consumption
-contract.
+not add an ad hoc downloader in this WRF tree. Use its Herbie-backed paths where
+available, respect its direct NCEI path for historical NAM analysis, and run
+full NWP transfer work on `notchpeak-dtn`. If WPS input behavior needs to
+change, update `brc-tools` and keep this repo focused on the WPS/WRF
+consumption contract.
 
 In `wps_run/`, link the WPS executables, `link_grib.csh`, `Vtable`, and the
 literal `geogrid` and `metgrid` directories. The names matter: `geogrid.exe`

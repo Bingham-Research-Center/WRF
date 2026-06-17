@@ -30,6 +30,32 @@ By the end of the first session, Michael should be able to explain:
 | Current run profile | `owned_notch392_max`: `lawson-np`, `notch392`, one node, 56 tasks, `900G`, `srun --mpi=pmi2`. |
 | Fresh staging contract | Fresh `brc-tools` staging should emit `manifest_<case>.json` and `contract_<case>.json`. This repo currently carries a reconstructed legacy NAM-only contract for strict validation. |
 
+## Settings Readback Before Any Run
+
+Use this terse table before starting an approved practical run.
+
+| Setting | Current NAM-only baseline |
+| --- | --- |
+| Case window | Jan-2013 Uinta Basin, 2013-01-31 12Z through 2013-02-02 00Z. |
+| Domains | Two nested domains. |
+| Input stream | NAM analysis only, staged by `brc-tools`. |
+| WPS cadence | 6-hourly, `interval_seconds = 21600`. |
+| WPS naming | `Vtable.NAM`; keep ungrib `prefix` and metgrid `fg_name` paired. |
+| WRF levels | `num_metgrid_levels = 40`; expected `met_em` count is 14. |
+| Slurm shape | `lawson-np`, `notch392`, one node, 56 tasks, `900G`. |
+| Launcher | `real.exe` direct; `wrf.exe` with `srun --mpi=pmi2`. |
+| Storage | Scratch for live WPS/WRF I/O; `lawson-group6` for durable archive, debug logs, and quicklooks. |
+
+## Five Gotchas
+
+| Gotcha | Run habit |
+| --- | --- |
+| Login-node creep | Practical checks, manifests, NetCDF reads, archives, quicklooks, staging, WPS, and WRF run off-login only. |
+| WPS stream mismatch | `prefix` and `fg_name` must match the intended stream, for example `FILE`/`FILE` or `NAM`/`NAM`. |
+| Cadence mismatch | NAM-only is 6-hourly; GEFS+NAM is a separate, unproven 3-hourly path. |
+| MPI launcher drift | Keep `srun --mpi=pmi2`; do not switch to bare `mpirun` or bare `srun -n`. |
+| One status is not enough | Slurm state, `real.exe`, `wrf.exe`, archive completeness, and quicklooks are separate evidence. |
+
 ## Repo Split
 
 | Repo | Owns | Do not add there |
@@ -37,6 +63,10 @@ By the end of the first session, Michael should be able to explain:
 | `brc-tools` | NWP download/staging, manifests, contracts, input quicklooks. | WPS, `real.exe`, `wrf.exe`, or Slurm run profiles. |
 | `brc-wrf` | WRF source, WPS/WRF consumption docs, case manifests, validators, Slurm rendering, WRF-output quicklooks. | NWP downloader or GRIB staging logic. |
 | `brc-knowledge` | Canonical CHPC node, storage, scheduler, proxy, and validated example-script facts. | Repo-local code or case manifests. |
+
+For downloads, use `brc-tools` with Herbie-backed paths where available. Full
+NWP staging runs on `notchpeak-dtn`; `brc-wrf` only consumes the resulting
+manifest and contract.
 
 ## Read Before Pairing
 
@@ -51,8 +81,9 @@ Keep `doc/BRC_WRF_MICROTASK_HANDOFF.md` open as the detailed task board.
 
 ## No-Run Walkthrough
 
-Run these from `~/gits/brc-wrf`. They read metadata, verify existing files, or
-render text/plots from existing proof artifacts. They do not submit work.
+Run these from an approved compute or interactive context, not a login node.
+They read metadata, verify existing files, or render text/plots from existing
+proof artifacts. They do not submit work.
 
 ```bash
 git status --short --branch --untracked-files=all
@@ -80,8 +111,36 @@ python brc-cases/wrf_quicklook.py render \
   brc-cases/jan2013_basin_nam.case.yaml
 ```
 
-The optional render writes ignored PNGs under
-`brc-cases/quicklooks/jan2013_basin_gefs/`.
+The optional render writes PNGs beside the durable archive run under
+`lawson-group6`, for example `<archive-run>/quicklooks/`. Repo-local PNG output
+is refused.
+
+For approved Slurm runs, the rendered wrapper adds compact debug files beside
+WRF's `rsl.*` logs:
+
+| Debug file | Why it exists |
+| --- | --- |
+| `debug/run_debug_summary.txt` | Settings readback, gotchas, host/job/commit, paths, modules, final status. |
+| `debug/run_phase_times.tsv` | Phase timings and exit codes for `real.exe`, marker checks, `wrf.exe`, and archive copies. |
+| `debug/run_file_inventory.tsv` | Counts, bytes, and newest mtimes for key WPS/WRF outputs and logs. |
+
+### Latest Walkthrough Result
+
+The 2026-06-17 walkthrough was run from `notchpeak1` login, not Slurm. That is
+now recorded as a process mistake: do not repeat practical checks on a login
+node. Future walkthroughs should run inside an approved compute allocation or
+batch job.
+
+It was fast because it reused existing artifacts:
+
+- staged GRIB files under `/scratch/general/vast/$USER/wrf_inputs/`;
+- existing WPS/WRF run files under `/scratch/general/vast/$USER/wrf_runs/`;
+- the durable proof archive under `lawson-group6/jrlawson/wrf_archive/`; and
+- quicklook PNG output that now belongs beside the durable archive run, not in
+  the repo checkout.
+
+The pass confirmed `28/28 OK` manifest verification, clean case validation, and
+five nonblank quicklook PNGs. It did not prove any new WPS/WRF configuration.
 
 ## Settings To Inspect Or Change
 
@@ -118,7 +177,7 @@ Before any approved run, write down:
 | Run destination | `/scratch/general/vast/$USER/wrf_runs/<case>/` |
 | Archive destination | `/uufs/chpc.utah.edu/common/home/lawson-group6/<namespace>/wrf_archive/<case>/run_<UTC>/` |
 | Stop point | `fresh contract validation`, `metgrid only`, `real.exe only`, or `full WRF` |
-| Evidence to preserve | Command, log path, manifest/contract path, WPS/WRF markers, archive path |
+| Evidence to preserve | Command, log path, manifest/contract path, WPS/WRF markers, archive path, debug TSV/text files |
 
 ## Result Table
 

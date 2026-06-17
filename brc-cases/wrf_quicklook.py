@@ -20,7 +20,28 @@ import wrf_case
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_OUTPUT = REPO_ROOT / "brc-cases" / "quicklooks"
+
+
+def _path_under(path: Path, parent: Path) -> bool:
+    try:
+        path.resolve(strict=False).relative_to(parent.resolve(strict=False))
+        return True
+    except ValueError:
+        return False
+
+
+def _default_output_dir(ctx: "QuicklookContext") -> Path:
+    """Put review PNGs beside the durable archive run, never inside the repo."""
+    return ctx.archive_run / "quicklooks"
+
+
+def _validate_output_dir(path: Path) -> Path:
+    if _path_under(path, REPO_ROOT):
+        raise ValueError(
+            "quicklook output inside the brc-wrf checkout is not allowed; "
+            "write to a durable lawson-group archive path instead"
+        )
+    return path
 
 
 @dataclass
@@ -401,7 +422,9 @@ def cmd_render(args: argparse.Namespace) -> int:
     try:
         ctx = _load_context(args)
         _check_inputs(ctx, verbose_manifest=args.verbose_manifest)
-        output_dir = Path(args.output_dir or DEFAULT_OUTPUT / ctx.case_name)
+        output_dir = _validate_output_dir(
+            Path(args.output_dir) if args.output_dir else _default_output_dir(ctx)
+        )
         outputs = _render(ctx, output_dir)
     except Exception as exc:  # noqa: BLE001 - CLI boundary
         print(f"ERROR: {exc}", file=sys.stderr)
@@ -433,7 +456,7 @@ def build_parser() -> argparse.ArgumentParser:
         if name == "render":
             cmd.add_argument(
                 "--output-dir",
-                help="directory for PNG output; default is brc-cases/quicklooks/<case>",
+                help="directory for PNG output; default is <archive-run>/quicklooks; repo-local paths are refused",
             )
 
     return parser

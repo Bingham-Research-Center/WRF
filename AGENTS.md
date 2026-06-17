@@ -65,13 +65,26 @@ small and local before broad scans or expensive commands.
   `contract_<case>.json` from `brc-tools`.
 - No-run visual QA exists:
   `python brc-cases/wrf_quicklook.py render brc-cases/jan2013_basin_nam.case.yaml`
-  writes ignored PNGs under `brc-cases/quicklooks/<case>/`.
+  writes PNGs beside the durable archive run, for example
+  `<archive-run>/quicklooks/`; repo-local PNG output is refused.
+- Paramount CHPC rule after the 2026-06-17 retrospective: do not run practical
+  WRF checks, Python test suites, manifest hashing, NetCDF reads, quicklook
+  checks/renders, staging plans, WPS, `real.exe`, `wrf.exe`, or any data-heavy
+  command on a login node. Login-node work is limited to reading/editing small
+  docs, preparing scripts, and submitting or querying approved Slurm work.
+- 2026-06-17 lesson learned: an earlier no-run validation pass was executed from
+  `notchpeak1` login. It was fast because it reused existing artifacts, but this
+  is now explicitly disallowed for future practical tests. Re-run from scratch
+  in a Slurm allocation/session using the June 17 handoff.
 - Current maximum owned-node Slurm profile is `owned_notch392_max`: `lawson-np`,
   `notch392`, one node, 56 tasks, `900G`, `srun --mpi=pmi2`.
 - Not validated: GEFSv12 reforecast plus NAM two-stream forcing
   (`fg_name = 'GEFS','NAM'`, `interval_seconds = 10800`).
 - `brc-tools` owns input staging and emits `manifest_<case>.json` plus
   `contract_<case>.json`; do not add NWP downloader code here.
+- NWP downloads/staging should use `brc-tools`, Herbie-backed paths where
+  available, and `notchpeak-dtn` for full transfer work; historical NAM analysis
+  may use the direct NCEI path already owned by `brc-tools`.
 - The latest `brc-tools` staging hygiene is additive for the run side: manifest
   schema v2 plus token preflight are merged upstream, and `brc-wrf` reads the
   contract sidecar rather than manifest `staged_files`.
@@ -82,6 +95,10 @@ small and local before broad scans or expensive commands.
   benchmarks stay owned by `brc-wrf`/`brc-knowledge`.
 - `brc-knowledge` owns canonical CHPC reference material and the validated
   example Slurm script.
+- Current CHPC guidance rechecked against `brc-knowledge` on 2026-06-17:
+  default WRF run posture is still single-node `notch392` on `lawson-np`,
+  `srun --mpi=pmi2`, scratch for live WRF I/O, and `lawson-group6` for durable
+  archives. See `../brc-knowledge/scholarium/reference-base/resources/`.
 - `brc-wrf` owns source, WRF-side docs, templates, validators, and any maintained
   WPS/WRF consumption wrapper.
 - Remaining microtask routing, countdown, WRF-side no-run prep, and parked
@@ -142,6 +159,10 @@ into `README.md`.
   subtrees such as `dyn_*`, `phys`, `chem`, or `external`.
 
 ## Build And Test Caution
+
+Never use a login node for practical test execution in this workflow. If a
+check reads staged GRIBs, WPS/WRF NetCDF files, manifests, or archive outputs,
+run it in an approved interactive/batch compute context or do not run it.
 
 Both build paths exist:
 
@@ -205,6 +226,13 @@ different spelling.
   `/scratch/general/vast/$USER/wrf_runs/<case>/` for active WPS/WRF case I/O.
   These are scratch paths, not durable archives; promote important outputs to
   `lawson-group6/<namespace>/wrf_archive/<case>/run_<UTC>/`.
+- No-run quicklooks are review artifacts beside the durable archive run, for
+  example `lawson-group6/<namespace>/wrf_archive/<case>/run_<UTC>/quicklooks/`.
+  They must not be written into the repo checkout and are not a substitute for
+  a new WPS/WRF run.
+- Rendered WRF run wrappers should preserve compact debug artifacts beside WRF's
+  native logs: `debug/run_debug_summary.txt`, `debug/run_phase_times.tsv`, and
+  `debug/run_file_inventory.tsv`.
 - Recheck `df -h` and quota/storage tooling before large runs. Filesystem-wide
   free space is not the same thing as a user or group quota.
 - If staging/download behavior changes, patch `brc-tools`, not this WRF tree.
