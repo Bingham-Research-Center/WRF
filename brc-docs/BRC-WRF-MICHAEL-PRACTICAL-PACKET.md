@@ -1,12 +1,12 @@
 # BRC WRF Michael Practical Test Packet
 
 This is the short handout for John/Michael pair-programming on the current
-WRF workflow. It is meant for a no-run walkthrough first, then for planning the
-first approved practical tests.
+WRF workflow. It starts with a no-run walkthrough, then points at the first
+practical-test attempt and the fix needed before resubmitting.
 
-It is not approval to run DTN staging, WPS, `real.exe`, `wrf.exe`, Slurm jobs,
-large downloads, or scaling sweeps. Those steps need a named human approval,
-scope, and stop point before they run.
+It is not blanket approval to run DTN staging, WPS, `real.exe`, `wrf.exe`,
+Slurm jobs, large downloads, or new scaling sweeps. Those steps need a named
+approval, scope, and stop point before they run.
 
 ## Goal For The First Session
 
@@ -29,6 +29,7 @@ By the end of the first session, Michael should be able to explain:
 | Not proven | GEFSv12 reforecast plus NAM two-stream forcing with `fg_name = 'GEFS','NAM'` and `interval_seconds = 10800`. |
 | Current run profile | `owned_notch392_max`: `lawson-np`, `notch392`, one node, 56 tasks, `900G`, `srun --mpi=pmi2`. |
 | Fresh staging contract | Fresh `brc-tools` staging should emit `manifest_<case>.json` and `contract_<case>.json`. This repo currently carries a reconstructed legacy NAM-only contract for strict validation. |
+| Practical testing | Started but blocked. Prep `13548706` completed; `scaling_t028` job `13548709` failed in `wrf.exe`; downstream jobs were canceled. |
 
 ## Settings Readback Before Any Run
 
@@ -175,9 +176,22 @@ Use `brc-cases/jan2013_basin_nam.case.yaml` as the first settings map.
 
 | Order | Test | Why first | Stop point |
 | ---: | --- | --- | --- |
-| 1 | Fresh NAM-only contract validation | Proves a new `brc-tools` sidecar can replace the reconstructed legacy contract. | `wrf_case.py validate --strict-files` passes against fresh `contract_<case>.json`. |
-| 2 | GEFS+NAM WPS-only field proof | Checks whether the two-stream forcing design has the needed fields. | Stop after `metgrid`; show `met_em` field list, `num_metgrid_levels`, and warnings. Do not run `real.exe`. |
-| 3 | WRF scaling/memory benchmark | Finds whether 16, 28, or 56 tasks and a smaller memory request are enough. | Requires approved `sbatch`; record timing, memory evidence, WRF marker, and archive path. |
+| 1 | Practical-source diagnosis | The first benchmark used an incompatible WRF/run setup; log reports WRF `V4.7.1` and missing `CAMtr_volume_mixing_ratio`. | Prove source `wrf_run`, `real.exe`, `wrf.exe`, `namelist.input`, and `met_em` provenance before any resubmit. |
+| 2 | WRF scaling/memory benchmark | Finds whether 16, 28, or 56 tasks and a smaller memory request are enough. | Resubmit only after source diagnosis; record timing, memory evidence, WRF marker, and archive path. |
+| 3 | GEFS+NAM WPS-only field proof | Checks whether the two-stream forcing design has the needed fields. | Stop after `metgrid`; show `met_em` field list, `num_metgrid_levels`, and warnings. Do not run `real.exe`. |
+| 4 | Fresh NAM-only contract retirement decision | Fresh Gate 5 sidecars passed, but retiring the tracked fallback is still a policy decision. | Do not delete `brc-cases/jan2013_basin_nam.contract.json` without explicit approval. |
+
+Current practical packet:
+
+```text
+/tmp/brc_gate11_jan2013_basin_gefs_20260618T2118Z/
+```
+
+Failure evidence:
+
+```text
+/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/jan2013_basin_gefs/practical_tests/scaling_t028/run_20260618T213126Z/debug/
+```
 
 ## Approval Gates
 

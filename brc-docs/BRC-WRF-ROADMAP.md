@@ -25,7 +25,20 @@ Current gate state as of 2026-06-18: Gates 0-11 have passed through the
 John-owned WRF/WPS build proof, fresh NAM-only input contract, NAM-only
 WPS/`real.exe`/`wrf.exe` rerun, archive, quicklooks, and a maintained
 render-only practical-test harness. Scaling, memory sweeps, and the GEFS+NAM
-science branch remain separate approval-gated follow-ons.
+science branch remain separate follow-ons. Practical testing has started, but
+the first scaling row failed before producing benchmark evidence.
+
+Current practical chain, submitted 2026-06-18:
+
+| Step | Job ID | Role | Result |
+| --- | --- | --- | --- |
+| 0 | `13548706` | prepare per-scenario `wrf_run` directories | completed |
+| 1 | `13548709` | `scaling_t028` | `real.exe` passed; `wrf.exe` failed with missing `CAMtr_volume_mixing_ratio` |
+| 2 | `13548711` | `scaling_t016` | canceled after dependency failure |
+| 3 | `13548714` | `scaling_t056` | canceled after dependency failure |
+| 4 | `13548717` | `memory_600G` | canceled after dependency failure |
+| 5 | `13548719` | `memory_450G` | canceled after dependency failure |
+| 6 | `13548747` | final Slurm/text summary | canceled |
 
 ## Standing Rules
 
@@ -436,9 +449,10 @@ Goal: turn the successful one-off proof into a repeatable launch and review
 surface for practical testing.
 
 Current status: passed as a render/check-only repo-side harness on 2026-06-18.
-Generated scripts are review artifacts and still require explicit approval
-before any `sbatch`, WPS, `real.exe`, `wrf.exe`, strict artifact read, or
-quicklook work.
+Generated scripts are review artifacts. John approved one practical chain; it
+found a source-run/executable mismatch before useful timing evidence. Future
+`sbatch`, WPS, `real.exe`, `wrf.exe`, strict artifact reads, or quicklook work
+still require explicit scope.
 
 Required pieces:
 
@@ -501,7 +515,13 @@ Required evidence:
 
 Goal: find the task-count knee for the proven case.
 
-Approval boundary: Slurm and WRF execution.
+Status: started on 2026-06-18. Prep `13548706` completed, but
+`scaling_t028` job `13548709` failed in `wrf.exe` after `real.exe` succeeded.
+The WRF log reports WRF `V4.7.1`, so fix executable/source provenance before
+resubmitting.
+
+Approval boundary: Slurm and WRF execution. The failed chain was approved for
+that attempt only; do not add or resubmit rows without a fresh reason.
 
 Candidate table:
 
@@ -518,7 +538,11 @@ and archive completeness are the same.
 
 Goal: replace `900G` with an evidence-backed request for the proven case.
 
-Approval boundary: Slurm and WRF execution.
+Status: not run. Jobs `13548717` (`600G`) and `13548719` (`450G`) were canceled
+after the upstream scaling failure.
+
+Approval boundary: Slurm and WRF execution. Diagnose the first failed upstream
+job before rerunning memory rows.
 
 Evidence:
 
@@ -558,9 +582,9 @@ Read, in order:
 10. ../brc-tools/docs/WRF-INPUT-STAGING.md
 
 Pick exactly one gate or follow-on from brc-docs/BRC-WRF-ROADMAP.md. Gates 0-11
-are complete as of 2026-06-18 if live docs still match this branch. Default next
-work is approval-gated scaling/memory, GEFS+NAM design, or storage/retention
-review, not rebuilding the proven NAM-only baseline.
+are complete as of 2026-06-18 if live docs still match this branch. Practical
+testing has started but is blocked by failed job 13548709. Diagnose executable
+and run-directory provenance before submitting anything else.
 
 Hard boundaries:
 - No compile, WPS, real.exe, wrf.exe, sbatch, large staging, strict artifact

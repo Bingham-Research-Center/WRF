@@ -37,7 +37,8 @@ Then address the open link issues below in small commits.
 | Proven run | NAM-only Jan-2013 Basin proof reached WPS, `real.exe`, `wrf.exe`, archive, and quicklooks. |
 | Old scratch manifest | Verifies `28/28 OK`, but was written before fresh contract sidecars and includes partial GEFS files not consumed by WPS. |
 | Current brc-wrf case | Points to a tracked reconstructed NAM-only contract so strict validation is clean. |
-| Fresh brc-tools contract | Should still be the canonical sidecar for any new staging pass. |
+| Fresh brc-tools contract | Gate 5 fresh NAM-only sidecars passed; the scratch `contract_<case>.json` remains canonical for new staging. |
+| Practical testing | Now in `brc-wrf`; first row failed from WRF/run provenance, not input staging. No `brc-tools` code change is needed unless new staging is requested. |
 | GEFS+NAM two-stream | Still unproven through WPS/`real.exe`; do not mark it production-ready. |
 
 ## Issues To Tighten In brc-tools
@@ -47,7 +48,7 @@ Then address the open link issues below in small commits.
 | 1 | Old proof scratch predates `contract_<case>.json`. | Docs explain that `brc-wrf` carries a reconstructed legacy NAM-only contract, while fresh staging emits the real sidecar. |
 | 2 | The proof manifest includes both `nam_analysis` and partial `gefs_reforecast`, but WPS consumed NAM-only. | Avoid deriving NAM-only WPS truth from mixed-source proof manifest fields; use the contract/source intent instead. |
 | 3 | brc-wrf now validates `owned_notch392_max` against `brc-knowledge`. | brc-tools docs should not suggest Slurm settings; they should point to `brc-wrf`/`brc-knowledge` for run profiles. |
-| 4 | Fresh-stage acceptance is not yet cross-checked end-to-end against `brc-wrf` strict validation. | For the next approved fresh NAM-only stage, confirm `contract_<case>.json` lets `brc-wrf` strict validation pass without the reconstructed fallback. |
+| 4 | Fresh-stage acceptance has one Gate 5 pass. | Keep the reconstructed fallback until John explicitly accepts the retirement policy and compatibility story. |
 | 5 | GEFS+NAM needs a field-map handoff before WPS work. | If two-stream remains desired, produce a compact list of GEFS variable-level tokens, Vtable implications, and missing fields NAM must fill. |
 | 6 | Several root handoff notes are stale/untracked in both repos. | Promote only current state into `docs/`; leave or delete scratch notes by explicit human decision. |
 
@@ -59,6 +60,8 @@ Then address the open link issues below in small commits.
 - Fresh staging continues to emit `manifest_<case>.json` and
   `contract_<case>.json`.
 - `brc-tools` does not grow WPS, WRF, or Slurm run-wrapper ownership.
+- Practical scaling/memory results stay in `brc-wrf`; `brc-tools` only needs a
+  doc sync if those results change the input-staging contract.
 - No heavy download, DTN job, WPS run, WRF run, or Slurm submission happens
   without explicit approval.
 

@@ -9,7 +9,7 @@ files concise and route deeper operational records to `doc/`, `brc-cases/`,
 - `BRC-WRF-FORK-HIGHLIGHTS.md`: terse milestone/highlight reel for the BRC
   fork layer since it diverged from upstream WRF 4.8.0.
 - `BRC-WRF-STATE-PLAYBOOK.md`: printable plain-language state of play, next
-  steps, reading packet, and maximum owned-node Slurm profile. This is the
+  steps, practical-chain result, reading packet, and maximum owned-node Slurm profile. This is the
   WRF-side companion to `../brc-tools/docs/walkthroughs/wrf-staging.md`.
 - `BRC-WRF-PLAN-MODE-RUN-HANDOFF.md`: comprehensive Plan Mode handoff and
   walkthrough for low-hanging no-run work, manual quicklook/data inspection,
@@ -30,7 +30,7 @@ files concise and route deeper operational records to `doc/`, `brc-cases/`,
   connecting `brc-tools` staged inputs to WPS, `real.exe`, `wrf.exe`, and
   archive checks.
 - `BRC-WRF-ROADMAP.md`: on-rails WRF workflow plan, dollar-sign skill ideas,
-  and survey gaps before a supported BRC CHPC install.
+  current practical-testing status, and follow-on science/scaling gates.
 - `../brc-cases/README.md`: BRC case manifest, cheap validator, and render-only
   Slurm checkpoint.
 - `handouts/`: rendered PDF copies for live review. Treat these as derivatives

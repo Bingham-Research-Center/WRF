@@ -29,6 +29,12 @@ execution require explicit run approval.
   `real.exe`, `wrf.exe`, archive, and quicklooks. The new archive is
   `/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/jan2013_basin_gefs/run_gate8_20260618T062439Z_13540006`,
   with quicklooks in its `quicklooks/` subdirectory.
+- Practical testing has started, but the first `scaling_t028` row failed in
+  `wrf.exe`. `real.exe` passed; `wrf.exe` failed with
+  `CLWRF: 'CAMtr_volume_mixing_ratio' does not exist`, and the WRF log reports
+  WRF `V4.7.1`. Do not resubmit benchmarks until the source `wrf_run`
+  directory and executables are verified against the current John-owned WRF
+  4.8.0 fork.
 - Not yet validated: GEFSv12 reforecast plus NAM two-stream forcing
   (`fg_name = 'GEFS','NAM'`, `interval_seconds = 10800`).
 
@@ -225,13 +231,14 @@ The non-fatal `real.exe` soil message observed for the proof was:
 
 ## Next Tests
 
-1. Use the maintained Gate 11 practical-test harness to pick an approved
-   scaling or memory row; render/check only until approval is explicit.
-2. GEFS+NAM two-stream WPS/real path: build or select a GEFSv12 reforecast
+1. Diagnose the failed practical `scaling_t028` row. Evidence lives under
+   `/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/jan2013_basin_gefs/practical_tests/scaling_t028/run_20260618T213126Z/debug/`.
+2. Write the practical-test SOP in `brc-docs`: exact source run directory,
+   executable provenance, cleanup/refusal rules, resubmit command, and result
+   table.
+3. GEFS+NAM two-stream WPS/real path: build or select a GEFSv12 reforecast
    Vtable, ungrib GEFS and NAM separately, run metgrid with
    `fg_name = 'GEFS','NAM'`, then prove `real.exe`.
-3. Scaling sweep on `notch392`: run the same case at 16, 28, and 56 tasks, then
-   record wall time per simulated hour and peak memory.
 4. Use `brc-cases/` to review the case manifest, validate cheap metadata, and
    render Slurm text before any submitted run.
 5. Keep generated run packets, logs, NetCDF, PNGs, and one-off Slurm files out

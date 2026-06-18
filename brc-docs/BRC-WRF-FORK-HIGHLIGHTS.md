@@ -19,6 +19,8 @@ on top of upstream WRF 4.8.0.
 | 9 | current batch | Added no-run quicklooks. | Made the validated NAM-only proof visually inspectable without rerunning WPS or WRF. |
 | 10 | current batch | Added a reconstructed NAM-only contract. | Removed the stale missing-contract warning while preserving that the old scratch manifest predates `brc-tools` sidecars. |
 | 11 | current batch | Aligned the case Slurm profile with `brc-knowledge`. | Moved the local manifest to owned `notch392` max settings: `lawson-np`, 56 tasks, `900G`, `srun --mpi=pmi2`. |
+| 12 | `1244fb3a` | Added the no-run report wrapper. | One command now captures branch, SHA, case validation, Gate 11 packet paths, shell syntax, and skipped compute work. |
+| 13 | current practical chain | Entered practical testing. | Prep passed, but the first 28-task row failed in `wrf.exe`; downstream rows were canceled pending source-run/executable diagnosis. |
 
 ## What Is Proven
 
@@ -30,6 +32,7 @@ on top of upstream WRF 4.8.0.
 | WPS output | 14 `met_em` files, d01/d02, with land, skin temp, snow, and soil fields. |
 | WRF run | `real.exe` and `wrf.exe` reached success markers on CHPC. |
 | Visual QA | Five PNG quicklooks render from existing WPS/WRF artifacts. |
+| Practical testing | Started but blocked: job `13548709` failed in `wrf.exe` after `real.exe` passed; downstream rows were canceled. |
 | Not proven yet | GEFSv12 reforecast plus NAM two-stream forcing. |
 
 ## Current Review Commands

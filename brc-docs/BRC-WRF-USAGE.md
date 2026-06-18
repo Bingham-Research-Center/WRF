@@ -88,10 +88,10 @@ Two WRF build paths exist in this checkout:
 - legacy WRF: `./configure`, `./compile`, `./clean`;
 - CMake-oriented WRF: `./configure_new`, `./compile_new`, `./cleanCMake.sh`.
 
-The first CHPC proof should follow the legacy WRF/WPS path because the current
-CHPC WRF quickstart validates that setup. The CMake-oriented path still matters
-for this fork, but it should be treated as a later comparison until it is
-validated on CHPC with the same level of evidence.
+The first CHPC proof used the legacy WRF/WPS path because the current CHPC WRF
+quickstart validates that setup. The CMake-oriented path still matters for this
+fork, but it should be treated as a later comparison until it is validated on
+CHPC with the same level of evidence.
 
 For AI-led build/run progression, use `../doc/BRC_WRF_END_TO_END_AI_HANDOFF.md`
 as the routing map. It keeps CHPC architecture choices in `brc-knowledge`,
@@ -128,10 +128,10 @@ export WRF_BUILD=$HOME/gits/brc-wrf
 export BRC_WRF_BUILD_LOG_ROOT=/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_build_logs/brc-wrf
 ```
 
-Before making this an official recipe, validate the exact legacy WRF/WPS
-configure and compile sequence for this fork on CHPC and record the Git SHA,
-module list, build path, compile logs, executables, and the separate WPS root.
-Track any later CMake comparison separately in `BRC-WRF-ROADMAP.md`.
+The legacy WRF and WPS proof now exists. Keep using the recorded module stack,
+John-owned WRF checkout, and John-owned WPS root unless a live disk check
+contradicts the proof. Track any later CMake comparison separately in
+`BRC-WRF-ROADMAP.md`.
 
 ## Standard Run Pattern
 
@@ -149,6 +149,10 @@ Notchpeak first:
 The current Jan-2013 case manifest uses the high-powered owned-node profile
 (`profile: owned_notch392_max`): `notch392`, 56 tasks, and `900G`. This matches
 the current `brc-knowledge` WRF quickstart for a non-preemptible single run.
+Practical testing has started, but the first 28-task row failed before timing
+evidence because the run log identified WRF `V4.7.1` and a missing
+`CAMtr_volume_mixing_ratio`. Do not resubmit until the practical `wrf_run`
+source and executable provenance are fixed.
 
 Do not use bare `mpirun` for WRF on this Intel MPI stack. Do not use bare
 `srun -n N ./wrf.exe` without `--mpi=pmi2`.

@@ -14,7 +14,7 @@ explicitly approved the exact row and stop point.
 
 ```text
 You are Codex in /uufs/chpc.utah.edu/common/home/u0737349/gits/brc-wrf on branch
-john/fix-end-to-end-workflow. Work in Plan Mode first.
+john/wrf. Work in Plan Mode first.
 
 Goal: choose the lowest-risk next WRF task, improve tests/docs/render-only
 harnesses where possible, and prepare John for either manual inspection or an
@@ -25,7 +25,7 @@ or memory benchmarks unless John explicitly approves the exact action.
 Start by verifying:
   git status --short --branch --untracked-files=all
   git rev-parse HEAD
-  git rev-parse origin/john/fix-end-to-end-workflow
+  git rev-parse origin/john/wrf
   hostname
   date -u '+UTC %Y-%m-%d %H:%M:%S'
 
@@ -59,11 +59,11 @@ Live state when this document was written:
 
 | Field | Value |
 | --- | --- |
-| Branch | `john/fix-end-to-end-workflow` |
-| HEAD and origin | `0a5f6730b3fe49aa90f6de7efb18a6a6270bd365` |
-| Host/time | `notchpeak1`, `UTC 2026-06-18 14:55:32` |
+| Branch | `john/wrf` |
+| HEAD and origin | `1244fb3a943b1af5ee45ee31c052741161ff5433` |
+| Host/time | `notchpeak1`, `UTC 2026-06-18 21:30:08` |
 | Tracked state | Clean at that commit |
-| Untracked state | Generated WRF build byproducts remain under `Registry`, `external`, `frame`, `inc`, `phys`, `run`, `test/em_real`, and `tools`; leave them alone unless John explicitly asks for cleanup. |
+| Untracked state | Clean in `brc-wrf` at this freeze. |
 
 Proven state:
 
@@ -75,6 +75,7 @@ Proven state:
 | Run target | `lawson-np`, `notch392`, one node, 56 tasks, `900G`, `srun --mpi=pmi2`. |
 | Gates | Roadmap Gates 0-11 passed; scaling/memory and GEFS+NAM are not proven. |
 | Gate 11 | `render-practical-harness` writes review packet, baseline/scaling/memory scripts, `PREPARE_CHECKLIST.md`, and `APPROVAL_PACKET.md` outside the repo. |
+| Practical testing | Started but blocked. Prep `13548706` completed; `scaling_t028` `13548709` failed in `wrf.exe`; downstream rows were canceled. |
 
 ## Directory Truth
 
@@ -105,7 +106,8 @@ These are good next tasks for Codex before asking John to spend allocation time.
 | Done | Add tests for quicklook output path refusal and archive-run selection. | `brc-cases/test_wrf_quicklook.py` covers path-level behavior without opening NetCDF. | Keep actual quicklook checks/renders off-login. |
 | 1 | Walk through existing Gate 10 quicklooks with John/Michael. | Lowest compute next step after path guardrails; it answers whether the NAM-only baseline is physically useful. | Visual/science decision only; no new WPS/WRF run. |
 | Done | Add a one-command no-run report wrapper. | Captures host, SHA, case validate, render packet path, shell syntax, and status in one text report. | Report only; no strict files or artifact reads. |
-| 3 | Improve Gate 11 packet wording after John reviews it. | The packet is now the approval surface for practical tests. | Text/render-only changes. |
+| In progress | Diagnose the failed `scaling_t028` row. | It exposed the first real practical-test blocker. | Prove executable/source-run provenance before resubmitting dependent rows. |
+| 3 | Write the practical-test SOP/result record. | The packet is now the approval surface for practical tests. | Include the failed-row lesson and resubmit guardrails. |
 | 4 | Draft a GEFS+NAM two-stream design table. | Keeps science branch ready without WPS execution. | Stop before WPS and before `real.exe`. |
 | 5 | Draft storage-retention decision notes. | Scratch purges; staged inputs and proof runs may need promotion. | No copy or inventory unless approved. |
 | 6 | Add quicklook summary-stat output in `wrf_quicklook.py`. | Helps manual visual QA catch blank/unit-broken plots. | Only implement code/tests locally; run against NetCDF only in approved context. |
@@ -272,7 +274,7 @@ Login-safe:
 cd /uufs/chpc.utah.edu/common/home/u0737349/gits/brc-wrf
 git status --short --branch --untracked-files=all
 git rev-parse HEAD
-git rev-parse origin/john/fix-end-to-end-workflow
+git rev-parse origin/john/wrf
 hostname
 date -u '+UTC %Y-%m-%d %H:%M:%S'
 python brc-cases/wrf_case.py validate brc-cases/jan2013_basin_nam.case.yaml
@@ -497,11 +499,11 @@ science/benchmark step.
 
 ```text
 You are Codex in /uufs/chpc.utah.edu/common/home/u0737349/gits/brc-wrf on
-branch john/fix-end-to-end-workflow.
+branch john/wrf.
 
-Goal: walk John/Michael through the existing Gate 10 quicklook evidence and then
-choose exactly one next lane: Gate 11 scaling row, Gate 11 memory row, GEFS+NAM
-WPS-only design, or no new run.
+Goal: diagnose the failed practical `scaling_t028` row, then walk John/Michael
+through the Gate 10 quicklooks and practical-test evidence before choosing any
+next lane.
 
 First verify live state:
   git status --short --branch --untracked-files=all
@@ -525,10 +527,10 @@ Boundaries:
   scaling, or memory benchmarks.
 - Do not point John's wrappers at Michael-owned WRF/WPS roots.
 
-Default recommendation: review the existing quicklook PNGs first. If they are
-meteorologically credible, render the Gate 11 packet and choose one benchmark
-row for later approval. If they are not credible, stop and record what field or
-domain issue needs explanation before any new compute.
+Default recommendation: start from job `13548709`. `real.exe` passed, then
+`wrf.exe` failed with `CLWRF: 'CAMtr_volume_mixing_ratio' does not exist`; the
+log reports WRF `V4.7.1`. Verify the source `wrf_run`, executables, namelist,
+and `met_em` provenance before rerunning anything.
 ```
 
 ## Closeout Template

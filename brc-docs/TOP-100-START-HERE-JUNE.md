@@ -1,8 +1,12 @@
 # Top 100 Start Here June
 
 This is a terse task menu for practical/science WRF tests and code auditing.
-It is not approval to run DTN staging, WPS, `real.exe`, `wrf.exe`, Slurm jobs,
-large downloads, or scaling sweeps.
+It is not blanket approval to run DTN staging, WPS, `real.exe`, `wrf.exe`,
+Slurm jobs, large downloads, or new scaling sweeps.
+
+Current state: the NAM-only baseline is proven, and the first practical
+scaling row failed before timing evidence. Use this file as a menu; check
+`BRC-WRF-STATE-PLAYBOOK.md` for the failure breadcrumb and next diagnosis.
 
 Tags:
 
@@ -105,6 +109,8 @@ Tags:
 - [ ] 068 `audit` Record wall time per simulated hour.
 - [ ] 069 `audit` Record peak memory evidence source.
 - [ ] 070 `science` Pick the default profile only after timing and output checks.
+- [ ] 070a `audit` Write the practical-chain failure and resubmit SOP in
+  `brc-docs` before any new benchmark row.
 
 ## 8. Output, Archive, And Reproducibility
 
