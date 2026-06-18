@@ -102,7 +102,7 @@ What can improve next:
 
 | Improvement | Why | Stop point |
 | --- | --- | --- |
-| Add a one-command no-run report wrapper. | Reduces manual copy/paste and captures command, result, hostname, commit, and artifact paths. | Wrapper writes a small ignored or reviewed report; no WPS/WRF. |
+| Add a one-command no-run report wrapper. | Done in `wrf_case.py render-no-run-report`; reduces manual copy/paste and captures command, result, hostname, commit, and artifact paths. | Wrapper writes under `/tmp` by default; no WPS/WRF, strict artifact reads, or quicklooks. |
 | Add quicklook summary stats beside PNGs. | Helps discuss min/max fields and catch blank or unit-broken plots without eyeballing only. | Print/table stats from existing NetCDF files. |
 | Add Basin/obs overlays to WRF-output quicklooks. | Makes plots more useful for John/Michael meteorological review. | Existing artifacts only; no network unless explicitly approved. |
 | Validate a fresh NAM contract sidecar. | Retires the reconstructed legacy fallback only after current `brc-tools` output proves clean. | `wrf_case.py validate --strict-files` passes against fresh `contract_<case>.json`. |
@@ -187,7 +187,7 @@ run rather than general planning cleanup.
 
 | Order | Task | Why first | Evidence to leave |
 | ---: | --- | --- | --- |
-| 1 | Review or extend the Gate 11 harness packet. | The maintained renderer now exists; use it to choose rows before spending allocation time. | `/tmp` render packet from `wrf_case.py render-practical-harness`, plus `bash -n` on generated scripts. |
+| 1 | Render a no-run report for the current case. | One command now captures SHA, dirty state, metadata validation, Gate 11 packet paths, and shell syntax. | `/tmp` report from `wrf_case.py render-no-run-report`; no artifact reads or compute. |
 | 2 | #26/#27 benchmark table rows. | Prepares scaling/memory work without consuming allocation time. | Empty or evidence-filled result table with tasks, memory, wall time, status, archive, and recommendation columns. |
 | 3 | #16 GEFS+NAM two-stream design checklist. | Lets a future approved WPS pass stop at field evidence instead of improvising. | Expected GEFS/NAM field split, `Vtable.GEFS` implications, and `real.exe` stop point. |
 | 4 | #21 domain/geog evidence pointer. | Separates syntax checks from human domain judgment. | Exact doc/namelist paths to inspect; no claim of fresh scientific approval. |

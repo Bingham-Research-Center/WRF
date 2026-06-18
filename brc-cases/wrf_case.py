@@ -13,6 +13,7 @@ import copy
 import glob
 import json
 import os
+import subprocess
 import re
 import shlex
 import sys
@@ -64,6 +65,13 @@ REQUIRED_SECTIONS = {
 class Finding:
     severity: str
     message: str
+
+
+@dataclass
+class PracticalHarnessResult:
+    output_dir: Path
+    scripts: list[Path]
+    packet_files: list[Path]
 
 
 def parse_value(raw: str) -> Any:
@@ -1199,6 +1207,258 @@ def print_findings(findings: list[Finding]) -> None:
         print(f"{finding.severity}: {finding.message}")
 
 
+def require_outside_repo(path: Path, repo_root: Path, label: str) -> None:
+    if path_under(path, repo_root):
+        raise ValueError(f"{label} must stay outside the brc-wrf checkout: {path}")
+
+
+def write_practical_harness(
+    data: dict[str, Any],
+    case_file: Path,
+    *,
+    output_dir: Path,
+    tasks: list[int],
+    memory_candidates: list[str],
+) -> PracticalHarnessResult:
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    scripts: list[tuple[str, str]] = []
+    scenarios: list[dict[str, str]] = []
+    script_paths: list[Path] = []
+    baseline = practical_variant(
+        data,
+        scenario="baseline",
+        job_suffix="baseline",
+    )
+    baseline_name = "baseline.slurm"
+    baseline_path = output_dir / baseline_name
+    baseline_path.write_text(render_slurm(baseline, case_file), encoding="utf-8")
+    script_paths.append(baseline_path)
+    baseline_description = "baseline current case profile"
+    scripts.append((baseline_name, baseline_description))
+    scenarios.append(
+        practical_scenario_record(
+            scenario="baseline",
+            kind="baseline",
+            script_name=baseline_name,
+            description=baseline_description,
+            variant=baseline,
+        )
+    )
+
+    for task_count in tasks:
+        scenario = f"scaling_t{task_count:03d}"
+        script_name = f"{scenario}.slurm"
+        variant = practical_variant(
+            data,
+            scenario=scenario,
+            job_suffix=f"t{task_count:03d}",
+            ntasks=task_count,
+        )
+        script_path = output_dir / script_name
+        script_path.write_text(render_slurm(variant, case_file), encoding="utf-8")
+        script_paths.append(script_path)
+        description = f"scaling candidate: {task_count} tasks"
+        scripts.append((script_name, description))
+        scenarios.append(
+            practical_scenario_record(
+                scenario=scenario,
+                kind="scaling",
+                script_name=script_name,
+                description=description,
+                variant=variant,
+            )
+        )
+
+    for memory in memory_candidates:
+        scenario = f"memory_{safe_name(memory)}"
+        script_name = f"{scenario}.slurm"
+        variant = practical_variant(
+            data,
+            scenario=scenario,
+            job_suffix=f"mem{safe_name(memory)}",
+            memory=memory,
+        )
+        script_path = output_dir / script_name
+        script_path.write_text(render_slurm(variant, case_file), encoding="utf-8")
+        script_paths.append(script_path)
+        description = f"memory candidate: {memory}"
+        scripts.append((script_name, description))
+        scenarios.append(
+            practical_scenario_record(
+                scenario=scenario,
+                kind="memory",
+                script_name=script_name,
+                description=description,
+                variant=variant,
+            )
+        )
+
+    packet_name = "README.md"
+    packet_path = output_dir / packet_name
+    packet_path.write_text(
+        render_practical_packet(
+            data,
+            case_file,
+            output_dir=output_dir,
+            scripts=scripts,
+            scenarios=scenarios,
+        ),
+        encoding="utf-8",
+    )
+    prepare_name = "PREPARE_CHECKLIST.md"
+    prepare_path = output_dir / prepare_name
+    prepare_path.write_text(
+        render_prepare_checklist(data, case_file, scenarios=scenarios),
+        encoding="utf-8",
+    )
+    approval_name = "APPROVAL_PACKET.md"
+    approval_path = output_dir / approval_name
+    approval_path.write_text(
+        render_approval_packet(data, case_file, scenarios=scenarios),
+        encoding="utf-8",
+    )
+    return PracticalHarnessResult(
+        output_dir=output_dir,
+        scripts=script_paths,
+        packet_files=[packet_path, prepare_path, approval_path],
+    )
+
+
+def run_capture(cmd: list[str], *, cwd: Path) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        cmd,
+        cwd=cwd,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+
+def completed_status(result: subprocess.CompletedProcess[str]) -> str:
+    return "PASS" if result.returncode == 0 else f"FAIL ({result.returncode})"
+
+
+def render_no_run_report(
+    data: dict[str, Any],
+    case_file: Path,
+    *,
+    output_path: Path,
+    packet_dir: Path,
+    standalone_slurm: Path,
+    validation_findings: list[Finding],
+    harness_result: PracticalHarnessResult,
+    shell_check: subprocess.CompletedProcess[str],
+    packet_status: str,
+    repo_root: Path,
+) -> str:
+    case = data["case"]
+    forcing = data["forcing"]
+    slurm = data["slurm"]
+    utc = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
+    branch = run_capture(["git", "branch", "--show-current"], cwd=repo_root)
+    head = run_capture(["git", "rev-parse", "--short", "HEAD"], cwd=repo_root)
+    status = run_capture(
+        ["git", "status", "--short", "--branch", "--untracked-files=all"],
+        cwd=repo_root,
+    )
+    hostname = run_capture(["hostname"], cwd=repo_root)
+    validation_status = (
+        "PASS"
+        if not any(finding.severity == "ERROR" for finding in validation_findings)
+        else "FAIL"
+    )
+    finding_lines = (
+        [f"- {finding.severity}: {finding.message}" for finding in validation_findings]
+        if validation_findings
+        else ["- OK: no findings"]
+    )
+    shell_output = (shell_check.stdout + shell_check.stderr).strip()
+    shell_lines = shell_output.splitlines() if shell_output else ["- no output"]
+
+    lines = [
+        f"# BRC WRF No-Run Report: {case['name']}",
+        "",
+        "This report is login-node-safe. It validates case metadata, renders",
+        "review-only Slurm and Gate 11 packet artifacts outside the repo, and",
+        "checks rendered shell syntax. It does not read staged manifests, NetCDF,",
+        "archives, quicklooks, or submit WPS/WRF/Slurm work.",
+        "",
+        "## Source State",
+        "",
+        "| Field | Value |",
+        "| --- | --- |",
+        f"| Generated UTC | `{utc}` |",
+        f"| Host | `{hostname.stdout.strip() or 'unknown'}` |",
+        f"| Branch | `{branch.stdout.strip() or 'unknown'}` |",
+        f"| Commit | `{head.stdout.strip() or 'unknown'}` |",
+        f"| Case file | `{case_file}` |",
+        f"| Report | `{output_path}` |",
+        f"| Gate 11 packet | `{packet_dir}` |",
+        f"| Standalone Slurm render | `{standalone_slurm}` |",
+        "",
+        "## Case Snapshot",
+        "",
+        "| Field | Value |",
+        "| --- | --- |",
+        f"| Window | `{case['start']}` to `{case['end']}` |",
+        f"| Domains | `{case['domains']}` |",
+        f"| Forcing | `{text_value(forcing['sources'])}` |",
+        f"| WPS fg_name | `{text_value(forcing['wps_fg_name'])}` |",
+        f"| WPS cadence | `{forcing['interval_seconds']}` seconds |",
+        f"| Slurm default | `{slurm['account']}` / `{slurm['partition']}`, `{slurm.get('nodelist', 'any')}`, `{slurm['nodes']}` node, `{slurm['ntasks']}` tasks, `{slurm['memory']}` |",
+        f"| Launcher | `{slurm['mpi_launcher']}` |",
+        "",
+        "## Login-Safe Results",
+        "",
+        "| Check | Result |",
+        "| --- | --- |",
+        f"| Case metadata validation | `{validation_status}` |",
+        f"| Gate 11 packet render | `{packet_status}` |",
+        f"| Rendered shell syntax | `{completed_status(shell_check)}` |",
+        "",
+        "## Validation Findings",
+        "",
+        *finding_lines,
+        "",
+        "## Rendered Artifacts",
+        "",
+        "| Artifact | Path |",
+        "| --- | --- |",
+    ]
+    for path in harness_result.packet_files + harness_result.scripts + [standalone_slurm]:
+        lines.append(f"| `{path.name}` | `{path}` |")
+
+    lines.extend(
+        [
+            "",
+            "## Shell Syntax Output",
+            "",
+            "```text",
+            *shell_lines,
+            "```",
+            "",
+            "## Git Status",
+            "",
+            "```text",
+            status.stdout.strip() or "(clean status output unavailable)",
+            "```",
+            "",
+            "## Stop Point",
+            "",
+            "Not run: `--strict-files`, manifest hashing, NetCDF/archive reads,",
+            "quicklook check/render, WPS, `real.exe`, `wrf.exe`, `sbatch`, scaling",
+            "sweeps, memory benchmarks, or scratch/archive copy operations.",
+            "",
+            "Recommended next gate: use `APPROVAL_PACKET.md` to approve exactly one",
+            "benchmark row after visual review. Current default row is",
+            "`scaling_t028`.",
+            "",
+        ]
+    )
+    return "\n".join(lines)
+
+
 def cmd_validate(args: argparse.Namespace) -> int:
     case_file = Path(args.case_file)
     data = load_case(case_file)
@@ -1234,109 +1494,107 @@ def cmd_render_practical_harness(args: argparse.Namespace) -> int:
         return 1
 
     repo_root = as_path(data["paths"]["wrf_src"])
-    if path_under(output_dir, repo_root):
-        print(
-            "ERROR: practical harness output must stay outside the brc-wrf checkout: "
-            f"{output_dir}",
-            file=sys.stderr,
+    require_outside_repo(output_dir, repo_root, "practical harness output")
+
+    tasks = parse_csv_ints(args.tasks)
+    memory_candidates = parse_csv_strings(args.memory_candidates)
+    result = write_practical_harness(
+        data,
+        case_file,
+        output_dir=output_dir,
+        tasks=tasks,
+        memory_candidates=memory_candidates,
+    )
+    print(f"Wrote Gate 11 practical-test harness packet: {output_dir}")
+    for path in result.scripts:
+        print(f"  {path}")
+    for path in result.packet_files:
+        print(f"  {path}")
+    return 0
+
+
+def cmd_render_no_run_report(args: argparse.Namespace) -> int:
+    case_file = Path(args.case_file)
+    data = load_case(case_file)
+    case_name = safe_name(data["case"]["name"])
+    stamp = datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
+    output_path = (
+        Path(args.output)
+        if args.output
+        else Path("/tmp") / f"brc_wrf_no_run_report_{case_name}_{stamp}.md"
+    )
+    packet_dir = (
+        Path(args.packet_dir)
+        if args.packet_dir
+        else output_path.with_suffix("").parent / f"{output_path.with_suffix('').name}_gate11_packet"
+    )
+    standalone_slurm = (
+        Path(args.slurm_output)
+        if args.slurm_output
+        else output_path.with_suffix("").parent / f"{output_path.with_suffix('').name}_render.slurm"
+    )
+    repo_root = as_path(data["paths"]["wrf_src"])
+    require_outside_repo(output_path, repo_root, "no-run report output")
+    require_outside_repo(packet_dir, repo_root, "no-run packet output")
+    require_outside_repo(standalone_slurm, repo_root, "standalone Slurm output")
+
+    findings = validate_case(data, strict_files=False)
+    errors = [finding for finding in findings if finding.severity == "ERROR"]
+    if errors:
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        output_path.write_text(
+            render_no_run_report(
+                data,
+                case_file,
+                output_path=output_path,
+                packet_dir=packet_dir,
+                standalone_slurm=standalone_slurm,
+                validation_findings=findings,
+                harness_result=PracticalHarnessResult(packet_dir, [], []),
+                shell_check=subprocess.CompletedProcess(["bash", "-n"], 1, "", "not run"),
+                packet_status="SKIPPED (validation errors)",
+                repo_root=repo_root,
+            ),
+            encoding="utf-8",
         )
+        print(f"Wrote no-run report with validation errors: {output_path}")
         return 1
 
     tasks = parse_csv_ints(args.tasks)
     memory_candidates = parse_csv_strings(args.memory_candidates)
-    output_dir.mkdir(parents=True, exist_ok=True)
-
-    scripts: list[tuple[str, str]] = []
-    scenarios: list[dict[str, str]] = []
-    baseline = practical_variant(
-        data,
-        scenario="baseline",
-        job_suffix="baseline",
-    )
-    baseline_name = "baseline.slurm"
-    (output_dir / baseline_name).write_text(render_slurm(baseline, case_file), encoding="utf-8")
-    baseline_description = "baseline current case profile"
-    scripts.append((baseline_name, baseline_description))
-    scenarios.append(
-        practical_scenario_record(
-            scenario="baseline",
-            kind="baseline",
-            script_name=baseline_name,
-            description=baseline_description,
-            variant=baseline,
-        )
-    )
-
-    for task_count in tasks:
-        scenario = f"scaling_t{task_count:03d}"
-        script_name = f"{scenario}.slurm"
-        variant = practical_variant(
-            data,
-            scenario=scenario,
-            job_suffix=f"t{task_count:03d}",
-            ntasks=task_count,
-        )
-        (output_dir / script_name).write_text(render_slurm(variant, case_file), encoding="utf-8")
-        description = f"scaling candidate: {task_count} tasks"
-        scripts.append((script_name, description))
-        scenarios.append(
-            practical_scenario_record(
-                scenario=scenario,
-                kind="scaling",
-                script_name=script_name,
-                description=description,
-                variant=variant,
-            )
-        )
-
-    for memory in memory_candidates:
-        scenario = f"memory_{safe_name(memory)}"
-        script_name = f"{scenario}.slurm"
-        variant = practical_variant(
-            data,
-            scenario=scenario,
-            job_suffix=f"mem{safe_name(memory)}",
-            memory=memory,
-        )
-        (output_dir / script_name).write_text(render_slurm(variant, case_file), encoding="utf-8")
-        description = f"memory candidate: {memory}"
-        scripts.append((script_name, description))
-        scenarios.append(
-            practical_scenario_record(
-                scenario=scenario,
-                kind="memory",
-                script_name=script_name,
-                description=description,
-                variant=variant,
-            )
-        )
-
-    packet = render_practical_packet(
+    harness_result = write_practical_harness(
         data,
         case_file,
-        output_dir=output_dir,
-        scripts=scripts,
-        scenarios=scenarios,
+        output_dir=packet_dir,
+        tasks=tasks,
+        memory_candidates=memory_candidates,
     )
-    packet_name = "README.md"
-    (output_dir / packet_name).write_text(packet, encoding="utf-8")
-    prepare_name = "PREPARE_CHECKLIST.md"
-    (output_dir / prepare_name).write_text(
-        render_prepare_checklist(data, case_file, scenarios=scenarios),
+    standalone_slurm.parent.mkdir(parents=True, exist_ok=True)
+    standalone_slurm.write_text(render_slurm(data, case_file), encoding="utf-8")
+    shell_check = run_capture(
+        ["bash", "-n", *[str(path) for path in harness_result.scripts], str(standalone_slurm)],
+        cwd=repo_root,
+    )
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.write_text(
+        render_no_run_report(
+            data,
+            case_file,
+            output_path=output_path,
+            packet_dir=packet_dir,
+            standalone_slurm=standalone_slurm,
+            validation_findings=findings,
+            harness_result=harness_result,
+            shell_check=shell_check,
+            packet_status="PASS",
+            repo_root=repo_root,
+        ),
         encoding="utf-8",
     )
-    approval_name = "APPROVAL_PACKET.md"
-    (output_dir / approval_name).write_text(
-        render_approval_packet(data, case_file, scenarios=scenarios),
-        encoding="utf-8",
-    )
-    print(f"Wrote Gate 11 practical-test harness packet: {output_dir}")
-    for name, _scenario in scripts:
-        print(f"  {output_dir / name}")
-    print(f"  {output_dir / packet_name}")
-    print(f"  {output_dir / prepare_name}")
-    print(f"  {output_dir / approval_name}")
-    return 0
+    print(f"Wrote no-run report: {output_path}")
+    print(f"  Gate 11 packet: {packet_dir}")
+    print(f"  standalone Slurm render: {standalone_slurm}")
+    return shell_check.returncode
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -1382,6 +1640,34 @@ def build_parser() -> argparse.ArgumentParser:
         help="optional comma-separated memory requests to render as candidate scripts",
     )
     practical.set_defaults(func=cmd_render_practical_harness)
+
+    report = subparsers.add_parser(
+        "render-no-run-report",
+        help="write a login-safe metadata/render report; never reads artifacts or submits",
+    )
+    report.add_argument("case_file")
+    report.add_argument(
+        "--output",
+        help="write the Markdown report outside the brc-wrf checkout; default is under /tmp",
+    )
+    report.add_argument(
+        "--packet-dir",
+        help="write the Gate 11 packet outside the brc-wrf checkout; default is beside the report",
+    )
+    report.add_argument(
+        "--slurm-output",
+        help="write standalone render-slurm output outside the brc-wrf checkout; default is beside the report",
+    )
+    report.add_argument(
+        "--tasks",
+        default=",".join(str(value) for value in DEFAULT_PRACTICAL_TASKS),
+        help="comma-separated scaling task counts to render in the packet",
+    )
+    report.add_argument(
+        "--memory-candidates",
+        help="optional comma-separated memory requests to render as candidate scripts",
+    )
+    report.set_defaults(func=cmd_render_no_run_report)
 
     return parser
 

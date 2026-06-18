@@ -104,6 +104,21 @@ archive:
             check=False,
         )
 
+    def run_report(self, case_file: Path, *args: str) -> subprocess.CompletedProcess[str]:
+        return subprocess.run(
+            [
+                sys.executable,
+                str(SCRIPT),
+                "render-no-run-report",
+                str(case_file),
+                *args,
+            ],
+            cwd=REPO_ROOT,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+
     def test_refuses_repo_local_output(self) -> None:
         with tempfile.TemporaryDirectory() as raw:
             case_file = self.write_case(Path(raw))
@@ -189,6 +204,51 @@ archive:
             memory_script = (output_dir / "memory_450G.slurm").read_text(encoding="utf-8")
             self.assertIn("#SBATCH --mem=450G", memory_script)
             self.assertIn("practical_tests/memory_450G/wrf_run", memory_script)
+
+    def test_no_run_report_writes_report_packet_and_slurm_syntax_check(self) -> None:
+        with tempfile.TemporaryDirectory() as raw:
+            workdir = Path(raw)
+            case_file = self.write_case(workdir)
+            report = workdir / "no_run_report.md"
+            packet = workdir / "packet"
+            slurm = workdir / "render.slurm"
+
+            result = self.run_report(
+                case_file,
+                "--output",
+                str(report),
+                "--packet-dir",
+                str(packet),
+                "--slurm-output",
+                str(slurm),
+                "--memory-candidates",
+                "450G,600G",
+            )
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertTrue(report.is_file())
+            self.assertTrue((packet / "APPROVAL_PACKET.md").is_file())
+            self.assertTrue((packet / "memory_450G.slurm").is_file())
+            self.assertTrue(slurm.is_file())
+
+            text = report.read_text(encoding="utf-8")
+            self.assertIn("BRC WRF No-Run Report: unit_case", text)
+            self.assertIn("| Case metadata validation | `PASS` |", text)
+            self.assertIn("| Rendered shell syntax | `PASS` |", text)
+            self.assertIn("memory_450G.slurm", text)
+            self.assertIn("Not run: `--strict-files`, manifest hashing", text)
+            self.assertIn("`scaling_t028`", text)
+
+    def test_no_run_report_refuses_repo_local_output(self) -> None:
+        with tempfile.TemporaryDirectory() as raw:
+            case_file = self.write_case(Path(raw))
+            output = REPO_ROOT / "brc-cases" / f"_unit_no_run_report_{Path(raw).name}.md"
+
+            result = self.run_report(case_file, "--output", str(output))
+
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("outside the brc-wrf checkout", result.stderr)
+            self.assertFalse(output.exists())
 
 
 if __name__ == "__main__":

@@ -77,7 +77,22 @@ The checkpoint is intentionally small:
    from the approved proven run artifacts, but any copy/check of scratch or
    archive WRF files remains off-login and approval-gated.
 
-6. Render no-run visual quicklooks from the existing proof artifacts:
+6. Render a one-command no-run report when you want a compact login-safe
+   checkpoint for handoff or approval review:
+
+   ```bash
+   python brc-cases/wrf_case.py render-no-run-report \
+     brc-cases/jan2013_basin_nam.case.yaml
+   ```
+
+   The report writes under `/tmp` by default, renders the Gate 11 packet and a
+   standalone Slurm review script outside the checkout, records branch/SHA,
+   dirty state, case metadata validation, shell syntax status, artifact paths,
+   and the explicit stop point. It does not run strict file checks, hash
+   manifests, read NetCDF/archive artifacts, render quicklooks, submit Slurm, or
+   run WPS/WRF.
+
+7. Render no-run visual quicklooks from the existing proof artifacts:
 
    ```bash
    python brc-cases/wrf_quicklook.py check brc-cases/jan2013_basin_nam.case.yaml

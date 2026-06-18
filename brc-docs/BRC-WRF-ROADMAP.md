@@ -450,6 +450,7 @@ Required pieces:
 | Validation checklist | Cheap metadata checks are separate from strict off-login artifact checks. |
 | Scenario prepare/check plan | `PREPARE_CHECKLIST.md` names every per-scenario `WRF_RUN`, explains approved-context staging from the proven run artifacts, and keeps artifact reads/copies off login nodes. |
 | Approval packet | `APPROVAL_PACKET.md` carries no-run rows for baseline, scaling, and memory candidates with job ID, Slurm state, WRF marker, wall time, simulated hours, peak memory evidence, archive path, debug path, and recommendation fields. |
+| No-run report | `python brc-cases/wrf_case.py render-no-run-report <case.yaml>` writes a login-safe Markdown report with branch/SHA, dirty state, metadata validation, rendered packet paths, shell syntax, and explicit skipped compute/artifact reads. |
 | Result tables | Scaling and memory tables are ready but empty until approved runs happen. |
 | Closeout prompt | A next AI session can pick up from exact commands, job IDs, archive paths, and stop points. |
 
@@ -459,6 +460,9 @@ Login-node-safe render:
 python brc-cases/wrf_case.py render-practical-harness \
   brc-cases/jan2013_basin_nam.case.yaml \
   --output-dir /tmp/brc_gate11_jan2013_basin_gefs
+
+python brc-cases/wrf_case.py render-no-run-report \
+  brc-cases/jan2013_basin_nam.case.yaml
 ```
 
 The generated packet refuses repo-local output by default, uses per-scenario

@@ -104,7 +104,7 @@ These are good next tasks for Codex before asking John to spend allocation time.
 | ---: | --- | --- | --- |
 | Done | Add tests for quicklook output path refusal and archive-run selection. | `brc-cases/test_wrf_quicklook.py` covers path-level behavior without opening NetCDF. | Keep actual quicklook checks/renders off-login. |
 | 1 | Walk through existing Gate 10 quicklooks with John/Michael. | Lowest compute next step after path guardrails; it answers whether the NAM-only baseline is physically useful. | Visual/science decision only; no new WPS/WRF run. |
-| 2 | Add a one-command no-run report wrapper. | Captures host, SHA, case validate, render packet path, shell syntax, and status in one text report. | Report only; no strict files or artifact reads. |
+| Done | Add a one-command no-run report wrapper. | Captures host, SHA, case validate, render packet path, shell syntax, and status in one text report. | Report only; no strict files or artifact reads. |
 | 3 | Improve Gate 11 packet wording after John reviews it. | The packet is now the approval surface for practical tests. | Text/render-only changes. |
 | 4 | Draft a GEFS+NAM two-stream design table. | Keeps science branch ready without WPS execution. | Stop before WPS and before `real.exe`. |
 | 5 | Draft storage-retention decision notes. | Scratch purges; staged inputs and proof runs may need promotion. | No copy or inventory unless approved. |
@@ -132,6 +132,12 @@ python brc-cases/wrf_case.py render-practical-harness \
 
 bash -n /tmp/brc_gate11_jan2013_basin_gefs_default/*.slurm
 
+python brc-cases/wrf_case.py render-no-run-report \
+  brc-cases/jan2013_basin_nam.case.yaml \
+  --output /tmp/brc_wrf_no_run_report.md \
+  --packet-dir /tmp/brc_wrf_no_run_report_gate11_packet \
+  --slurm-output /tmp/brc_wrf_no_run_report_render.slurm
+
 python brc-cases/wrf_case.py render-slurm \
   brc-cases/jan2013_basin_nam.case.yaml \
   --output /tmp/brc_gate11_baseline_render.slurm
@@ -150,6 +156,7 @@ Good result:
 | metadata `validate` | `OK: no findings` |
 | practical harness render | writes `README.md`, `PREPARE_CHECKLIST.md`, `APPROVAL_PACKET.md`, `baseline.slurm`, `scaling_t016.slurm`, `scaling_t028.slurm`, `scaling_t056.slurm` |
 | `bash -n` | exit `0` |
+| no-run report | writes a Markdown report, Gate 11 packet, standalone Slurm render, and explicit "not run" boundary under `/tmp` |
 | `git diff --check` | no output |
 
 ## Approved-Context Practical Checks
