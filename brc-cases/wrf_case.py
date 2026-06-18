@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 import ast
+import copy
 import glob
 import json
 import os
@@ -23,6 +24,7 @@ from typing import Any
 
 DATE_FORMAT = "%Y-%m-%d_%H:%M:%S"
 CASE_NAME_RE = re.compile(r"^[A-Za-z0-9_.-]+$")
+DEFAULT_PRACTICAL_TASKS = (16, 28, 56)
 
 REQUIRED_SECTIONS = {
     "case": ("name", "start", "end", "domains"),
@@ -628,6 +630,10 @@ def render_slurm(data: dict[str, Any], case_file: Path) -> str:
             "",
             'utc_now() { date -u +%Y-%m-%dT%H:%M:%SZ; }',
             'epoch_now() { date -u +%s; }',
+            'fail() { printf "ERROR: %s\\n" "$*" >&2; exit 2; }',
+            'require_file() { [[ -f "$1" ]] || fail "missing required file: $1"; }',
+            'require_executable() { [[ -x "$1" ]] || fail "missing required executable: $1"; }',
+            'require_glob() { compgen -G "$1" >/dev/null || fail "missing required files matching: $1"; }',
             "",
             "run_phase() {",
             "  local phase=\"$1\"",
@@ -707,6 +713,12 @@ def render_slurm(data: dict[str, Any], case_file: Path) -> str:
             "  exit \"$rc\"",
             "}",
             "",
+            '[[ -d "$WRF_RUN" ]] || fail "WRF run directory is not prepared: $WRF_RUN"',
+            'require_executable "$WRF_RUN/real.exe"',
+            'require_executable "$WRF_RUN/wrf.exe"',
+            'require_file "$WRF_RUN/namelist.input"',
+            'require_glob "$WRF_RUN/met_em.d0*.nc"',
+            "",
             'mkdir -p "$DEBUG_DIR"',
             "printf \"phase\\tstart_utc\\tend_utc\\telapsed_seconds\\texit_code\\n\" > \"$PHASE_LOG\"",
             "trap finalize_debug EXIT",
@@ -747,6 +759,205 @@ def render_slurm(data: dict[str, Any], case_file: Path) -> str:
     return "\n".join(lines) + "\n"
 
 
+def safe_name(value: Any) -> str:
+    return re.sub(r"[^A-Za-z0-9_.-]+", "_", str(value)).strip("_") or "item"
+
+
+def parse_csv_ints(raw: str) -> list[int]:
+    values: list[int] = []
+    for item in raw.split(","):
+        item = item.strip()
+        if not item:
+            continue
+        value = int(item)
+        if value <= 0:
+            raise ValueError(f"task counts must be positive: {raw}")
+        values.append(value)
+    if not values:
+        raise ValueError("at least one task count is required")
+    return values
+
+
+def parse_csv_strings(raw: str | None) -> list[str]:
+    if not raw:
+        return []
+    return [item.strip() for item in raw.split(",") if item.strip()]
+
+
+def practical_variant(
+    data: dict[str, Any],
+    *,
+    scenario: str,
+    job_suffix: str,
+    ntasks: int | None = None,
+    memory: str | None = None,
+) -> dict[str, Any]:
+    variant = copy.deepcopy(data)
+    slurm = variant["slurm"]
+    paths = variant["paths"]
+    archive_root = as_path(paths["archive_root"])
+    run_root = as_path(paths["run_root"])
+
+    slurm["profile"] = "gate11_practical_review"
+    slurm["job_name"] = f"{slurm['job_name']}_{job_suffix}"
+    if ntasks is not None:
+        slurm["ntasks"] = ntasks
+    if memory is not None:
+        slurm["memory"] = memory
+
+    scenario_name = safe_name(scenario)
+    paths["wrf_run"] = str(run_root / "practical_tests" / scenario_name / "wrf_run")
+    paths["archive_root"] = str(archive_root / "practical_tests" / scenario_name)
+    return variant
+
+
+def render_practical_packet(
+    data: dict[str, Any],
+    case_file: Path,
+    *,
+    output_dir: Path,
+    tasks: list[int],
+    memory_candidates: list[str],
+    scripts: list[tuple[str, str]],
+) -> str:
+    case = data["case"]
+    forcing = data["forcing"]
+    paths = data["paths"]
+    slurm = data["slurm"]
+    case_name = str(case["name"])
+
+    lines = [
+        f"# Gate 11 Practical-Test Harness: {case_name}",
+        "",
+        "Rendered from the tracked case manifest. This packet is review-only; it",
+        "does not submit Slurm, run WPS, run `real.exe`, run `wrf.exe`, read",
+        "NetCDF/archive artifacts, hash staged inputs, or render quicklooks.",
+        "",
+        "## Case Contract",
+        "",
+        "| Field | Value |",
+        "| --- | --- |",
+        f"| Case file | `{case_file}` |",
+        f"| Render output | `{output_dir}` |",
+        f"| Window | `{case['start']}` to `{case['end']}` |",
+        f"| Domains | `{case['domains']}` |",
+        f"| Forcing | `{text_value(forcing['sources'])}` |",
+        f"| WPS cadence | `{forcing['interval_seconds']}` seconds |",
+        f"| WPS fg_name | `{text_value(forcing['wps_fg_name'])}` |",
+        f"| Manifest | `{forcing['manifest_path']}` |",
+        f"| Contract | `{forcing['contract_path']}` |",
+        f"| WRF source | `{paths['wrf_src']}` |",
+        f"| WPS root | `{paths['wps_root']}` |",
+        f"| Scratch run root | `{paths['run_root']}` |",
+        f"| Archive root | `{paths['archive_root']}` |",
+        f"| Default Slurm | `{slurm['account']}` / `{slurm['partition']}`, `{slurm.get('nodelist', 'any')}`, `{slurm['nodes']}` node, `{slurm['ntasks']}` tasks, `{slurm['memory']}` |",
+        f"| Launcher | `{slurm['mpi_launcher']}` |",
+        "",
+        "## Rendered Scripts",
+        "",
+        "| Script | Scenario | Approval boundary |",
+        "| --- | --- | --- |",
+    ]
+    for script, scenario in scripts:
+        lines.append(
+            f"| `{script}` | {scenario} | Human approval before `sbatch`; run only in approved Slurm/compute context. |"
+        )
+
+    lines.extend(
+        [
+            "",
+            "Each script preserves the maintained wrapper behavior from",
+            "`brc-cases/wrf_case.py render-slurm`: settings readback, module",
+            "record, phase timings, file inventory, `real.exe` and `wrf.exe`",
+            "success-marker checks, colon-safe `wrfout` archive copy, and debug",
+            "archive under `debug/`.",
+            "",
+            "The scaling variants use per-scenario scratch and archive roots under",
+            "`practical_tests/<scenario>/` so benchmark results do not collide",
+            "with the proof archive or with each other.",
+            "",
+            "Before approved submission, each per-scenario `WRF_RUN` must be",
+            "prepared with `real.exe`, `wrf.exe`, `namelist.input`, and `met_em`",
+            "files. The rendered scripts fail fast if those inputs are missing.",
+            "",
+            "## Login-Safe Checks",
+            "",
+            "Run these before requesting approval. They are metadata/render checks",
+            "only when `--strict-files` is omitted.",
+            "",
+            "```bash",
+            f"python brc-cases/wrf_case.py validate {case_file}",
+            f"python brc-cases/wrf_case.py render-practical-harness {case_file} --output-dir {shell_quote(output_dir)}",
+            f"bash -n {shell_quote(output_dir)}/*.slurm",
+            "```",
+            "",
+            "## Off-Login Checks",
+            "",
+            "Use only inside an approved batch, DTN, or interactive compute context",
+            "when the command reads staged inputs, manifests, WPS/WRF files,",
+            "NetCDF, archives, or quicklook outputs.",
+            "",
+            "```bash",
+            f"python ../brc-tools/scripts/stage_wrf_inputs.py --verify-manifest {forcing['manifest_path']}",
+            f"python brc-cases/wrf_case.py validate {case_file} --strict-files",
+            f"python brc-cases/wrf_quicklook.py check {case_file}",
+            f"python brc-cases/wrf_quicklook.py render {case_file}",
+            "```",
+            "",
+            "## Scaling Result Table",
+            "",
+            "| Tasks | Memory request | Job ID | Wall time | Sim hours | Wall time per sim hour | WRF marker | Archive path | Recommendation |",
+            "| ---: | --- | --- | ---: | ---: | ---: | --- | --- | --- |",
+        ]
+    )
+    for task_count in tasks:
+        memory = str(slurm["memory"])
+        lines.append(f"| {task_count} | `{memory}` | TBD | TBD | TBD | TBD | TBD | TBD | TBD |")
+
+    lines.extend(
+        [
+            "",
+            "## Memory Result Table",
+            "",
+            "| Run | Memory request | Job ID | Peak memory evidence | WRF marker | Archive path | Recommendation |",
+            "| --- | ---: | --- | --- | --- | --- | --- |",
+            f"| Baseline | `{slurm['memory']}` | TBD | TBD | TBD | TBD | TBD |",
+        ]
+    )
+    if memory_candidates:
+        for memory in memory_candidates:
+            lines.append(f"| Candidate | `{memory}` | TBD | TBD | TBD | TBD | TBD |")
+    else:
+        lines.append("| Candidate | TBD | TBD | TBD | TBD | TBD | TBD |")
+
+    lines.extend(
+        [
+            "",
+            "## Closeout Record",
+            "",
+            "| Field | Value |",
+            "| --- | --- |",
+            "| Gate/item | Gate 11 practical-test harness or approved benchmark row |",
+            "| Commands run | Exact render/check commands and any approved `sbatch` |",
+            "| Host/context | Login render, DTN, interactive compute, or Slurm job ID |",
+            "| Approval status | Who approved WPS/WRF/Slurm, or `not approved/not run` |",
+            "| Evidence paths | Render packet, Slurm logs, manifest, contract, archive, quicklooks |",
+            "| Owner repo | `brc-wrf` for wrapper/run; `brc-tools` for staging; `brc-knowledge` for CHPC truth |",
+            "| Result | Passed, failed, parked, or not run |",
+            "| What was not run | Explicit skipped compute/artifact reads |",
+            "| Dirty state | `git status --short --branch --untracked-files=all` |",
+            "| Commit/push status | SHA and remote branch when applicable |",
+            "| Next suggested item | Next approval row or design task |",
+            "",
+            "Do not treat a successful render as approval to submit. Practical",
+            "benchmark `sbatch`, WPS, `real.exe`, `wrf.exe`, strict artifact reads,",
+            "and quicklooks remain approval-gated.",
+            "",
+        ]
+    )
+    return "\n".join(lines)
+
+
 def print_findings(findings: list[Finding]) -> None:
     if not findings:
         print("OK: no findings")
@@ -779,6 +990,80 @@ def cmd_render_slurm(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_render_practical_harness(args: argparse.Namespace) -> int:
+    case_file = Path(args.case_file)
+    output_dir = Path(args.output_dir)
+    data = load_case(case_file)
+    findings = validate_case(data, strict_files=False)
+    errors = [f for f in findings if f.severity == "ERROR"]
+    if errors:
+        print_findings(errors)
+        return 1
+
+    repo_root = as_path(data["paths"]["wrf_src"])
+    if path_under(output_dir, repo_root):
+        print(
+            "ERROR: practical harness output must stay outside the brc-wrf checkout: "
+            f"{output_dir}",
+            file=sys.stderr,
+        )
+        return 1
+
+    tasks = parse_csv_ints(args.tasks)
+    memory_candidates = parse_csv_strings(args.memory_candidates)
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    scripts: list[tuple[str, str]] = []
+    baseline = practical_variant(
+        data,
+        scenario="baseline",
+        job_suffix="baseline",
+    )
+    baseline_name = "baseline.slurm"
+    (output_dir / baseline_name).write_text(render_slurm(baseline, case_file), encoding="utf-8")
+    scripts.append((baseline_name, "baseline current case profile"))
+
+    for task_count in tasks:
+        scenario = f"scaling_t{task_count:03d}"
+        script_name = f"{scenario}.slurm"
+        variant = practical_variant(
+            data,
+            scenario=scenario,
+            job_suffix=f"t{task_count:03d}",
+            ntasks=task_count,
+        )
+        (output_dir / script_name).write_text(render_slurm(variant, case_file), encoding="utf-8")
+        scripts.append((script_name, f"scaling candidate: {task_count} tasks"))
+
+    for memory in memory_candidates:
+        scenario = f"memory_{safe_name(memory)}"
+        script_name = f"{scenario}.slurm"
+        variant = practical_variant(
+            data,
+            scenario=scenario,
+            job_suffix=f"mem{safe_name(memory)}",
+            memory=memory,
+        )
+        (output_dir / script_name).write_text(render_slurm(variant, case_file), encoding="utf-8")
+        scripts.append((script_name, f"memory candidate: {memory}"))
+
+    packet = render_practical_packet(
+        data,
+        case_file,
+        output_dir=output_dir,
+        tasks=tasks,
+        memory_candidates=memory_candidates,
+        scripts=scripts,
+    )
+    packet_name = "README.md"
+    (output_dir / packet_name).write_text(packet, encoding="utf-8")
+    print(f"Wrote Gate 11 practical-test harness packet: {output_dir}")
+    for name, _scenario in scripts:
+        print(f"  {output_dir / name}")
+    print(f"  {output_dir / packet_name}")
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description="Validate and render BRC WRF case manifests without running WRF."
@@ -801,6 +1086,27 @@ def build_parser() -> argparse.ArgumentParser:
     render.add_argument("case_file")
     render.add_argument("--output", help="write rendered script to this path")
     render.set_defaults(func=cmd_render_slurm)
+
+    practical = subparsers.add_parser(
+        "render-practical-harness",
+        help="render a Gate 11 review packet and benchmark Slurm scripts; never submits",
+    )
+    practical.add_argument("case_file")
+    practical.add_argument(
+        "--output-dir",
+        required=True,
+        help="write the packet outside the brc-wrf checkout, for example under /tmp",
+    )
+    practical.add_argument(
+        "--tasks",
+        default=",".join(str(value) for value in DEFAULT_PRACTICAL_TASKS),
+        help="comma-separated scaling task counts to render",
+    )
+    practical.add_argument(
+        "--memory-candidates",
+        help="optional comma-separated memory requests to render as candidate scripts",
+    )
+    practical.set_defaults(func=cmd_render_practical_harness)
 
     return parser
 

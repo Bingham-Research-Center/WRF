@@ -73,6 +73,7 @@ Optional only after the above:
 | Build truth | A fresh checkout has no `real.exe` or `wrf.exe`; check disk before claiming build readiness. |
 | WPS truth | John-owned WPS v4.6.0 is built at `/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_build/WPS`; Gate 3 evidence is under `/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_build_logs/brc-wrf/gate3_20260618T054456Z_13539773/`. |
 | Input contract | Fresh `brc-tools` staging emitted `/scratch/general/vast/u0737349/wrf_inputs/jan2013_basin_gefs/contract_jan2013_basin_gefs.json`; reconstructed legacy contract is a fallback until explicitly retired. |
+| Practical-test harness | Gate 11 is implemented as `python brc-cases/wrf_case.py render-practical-harness ... --output-dir <outside-repo-dir>`; generated scripts are review artifacts and still require approval before `sbatch`. |
 
 ## Architecture Contract
 
@@ -121,11 +122,12 @@ state or a human decision requires it.
 Use the proven NAM-only case first unless the human explicitly chooses
 GEFS+NAM.
 
-Current proof-lane state: Gates 5-10 passed on 2026-06-18. The fresh NAM-only
+Current proof-lane state: Gates 5-11 passed on 2026-06-18. The fresh NAM-only
 contract verified `7/7 OK`, WPS produced 14 `met_em` files, `real.exe` reached
 `SUCCESS COMPLETE REAL_EM INIT`, `wrf.exe` reached `SUCCESS COMPLETE WRF`, the
-archive contains 74 `wrfout` files, and Gate 10 wrote five quicklook PNGs from
-the new archive.
+archive contains 74 `wrfout` files, Gate 10 wrote five quicklook PNGs from the
+new archive, and Gate 11 renders the practical-test packet from the case
+manifest without submitting jobs.
 
 | Step | Action | Evidence | Stop point |
 | ---: | --- | --- | --- |
@@ -216,8 +218,8 @@ it as John's WRF or WPS root. John's WRF executable root must be compiled from
 ~/gits/brc-wrf with branch/SHA provenance. WPS must be John-owned too.
 
 First decide the next gate:
-1. Gate 11 maintained practical-test harness for the proven NAM-only baseline.
-2. Scaling/memory benchmark templates; submissions require approval.
+1. Render/review the Gate 11 practical-test packet for the proven NAM-only baseline.
+2. Scaling/memory benchmark rows; submissions require approval.
 3. GEFS+NAM WPS-only field proof after science approval.
 4. Storage-retention or fallback-contract retirement decision.
 

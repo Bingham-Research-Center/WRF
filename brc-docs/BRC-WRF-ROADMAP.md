@@ -21,11 +21,11 @@ ready for practical testing, plus 3 optional or follow-on gates.
 | Optional science branch | 1 | GEFS+NAM WPS-only field proof if John chooses that path. |
 | Practical testing branch | 2 | Scaling and memory sweeps after the baseline is repeatable. |
 
-Current gate state as of 2026-06-18: Gates 0-10 have passed for John's owned
-WRF/WPS build proof, fresh NAM-only input contract, NAM-only WPS/`real.exe`/
-`wrf.exe` rerun, archive, and quicklooks. The next required baseline gate is
-Gate 11, the maintained practical-test harness. Scaling, memory sweeps, and the
-GEFS+NAM science branch remain separate approval-gated follow-ons.
+Current gate state as of 2026-06-18: Gates 0-11 have passed through the
+John-owned WRF/WPS build proof, fresh NAM-only input contract, NAM-only
+WPS/`real.exe`/`wrf.exe` rerun, archive, quicklooks, and a maintained
+render-only practical-test harness. Scaling, memory sweeps, and the GEFS+NAM
+science branch remain separate approval-gated follow-ons.
 
 ## Standing Rules
 
@@ -59,7 +59,7 @@ GEFS+NAM science branch remain separate approval-gated follow-ons.
 | 8 | NAM-only `wrf.exe` proof | `brc-wrf` | Yes | John's `wrf.exe` runs on `notch392` with `srun --mpi=pmi2` and reaches `SUCCESS COMPLETE WRF`. |
 | 9 | Archive proof | `brc-wrf` | Included in run approval | `wrfout`, namelists, WPS/WRF logs, debug files, and provenance records are copied to a timestamped `lawson-group6` archive. |
 | 10 | Quicklook proof | `brc-wrf` | Yes if reading NetCDF/archive artifacts | Quicklook check/render runs from the new archive and writes PNGs plus summary stats under `<archive-run>/quicklooks/`. |
-| 11 | Practical-test harness | `brc-wrf` | No for docs/templates; yes for submissions | Maintained wrapper, validation checklist, result tables, and approval prompts are ready for scaling/memory tests. |
+| 11 | Practical-test harness | `brc-wrf` | No for docs/templates/renders; yes for submissions | `wrf_case.py render-practical-harness` writes the maintained wrapper packet, validation checklist, result tables, and approval prompts for scaling/memory tests. |
 
 ## Gate 0 - Live State Freeze
 
@@ -435,16 +435,35 @@ approved.
 Goal: turn the successful one-off proof into a repeatable launch and review
 surface for practical testing.
 
+Current status: passed as a render/check-only repo-side harness on 2026-06-18.
+Generated scripts are review artifacts and still require explicit approval
+before any `sbatch`, WPS, `real.exe`, `wrf.exe`, strict artifact read, or
+quicklook work.
+
 Required pieces:
 
 | Piece | Done when |
 | --- | --- |
-| Maintained Slurm wrapper | It renders from the case manifest and does not require hand-editing one-off paths. |
+| Maintained Slurm wrapper | `python brc-cases/wrf_case.py render-practical-harness <case.yaml> --output-dir <outside-repo-dir>` renders baseline/scaling/memory review scripts from the case manifest. |
 | Settings readback | Run logs show case window, forcing, WPS cadence, Vtable/prefix/`fg_name`, Slurm shape, launcher, scratch path, archive path. |
 | Debug artifacts | Summary, phase timing, and file inventory are created for every run. |
 | Validation checklist | Cheap metadata checks are separate from strict off-login artifact checks. |
 | Result tables | Scaling and memory tables are ready but empty until approved runs happen. |
 | Closeout prompt | A next AI session can pick up from exact commands, job IDs, archive paths, and stop points. |
+
+Login-node-safe render:
+
+```bash
+python brc-cases/wrf_case.py render-practical-harness \
+  brc-cases/jan2013_basin_nam.case.yaml \
+  --output-dir /tmp/brc_gate11_jan2013_basin_gefs
+```
+
+The generated packet refuses repo-local output by default, uses per-scenario
+scratch/archive subdirectories under `practical_tests/<scenario>/`, and keeps
+benchmark result tables blank until approved runs produce evidence. Generated
+run wrappers fail fast unless the scenario `wrf_run` directory is prepared with
+`real.exe`, `wrf.exe`, `namelist.input`, and `met_em` files.
 
 Ready-for-practical-testing means: John can approve a scaling or memory run by
 choosing a row in a table, not by reconstructing the entire WRF/WPS path from
@@ -531,9 +550,10 @@ Read, in order:
 9. ../brc-tools/docs/HANDOFF-TO-BRC-WRF.md
 10. ../brc-tools/docs/WRF-INPUT-STAGING.md
 
-Pick exactly one gate from brc-docs/BRC-WRF-ROADMAP.md. Default next gate is
-Gate 1, the build/run contract, unless a current handoff proves it is already
-complete.
+Pick exactly one gate or follow-on from brc-docs/BRC-WRF-ROADMAP.md. Gates 0-11
+are complete as of 2026-06-18 if live docs still match this branch. Default next
+work is approval-gated scaling/memory, GEFS+NAM design, or storage/retention
+review, not rebuilding the proven NAM-only baseline.
 
 Hard boundaries:
 - No compile, WPS, real.exe, wrf.exe, sbatch, large staging, strict artifact

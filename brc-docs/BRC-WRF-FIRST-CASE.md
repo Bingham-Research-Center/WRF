@@ -135,6 +135,20 @@ Use the CHPC-validated wrapper as the starting point:
 ../brc-knowledge/scholarium/reference-base/resources/run_wrf_feb05.slurm
 ```
 
+For maintained BRC-side practical-test renders, use the case manifest entrypoint:
+
+```bash
+python brc-cases/wrf_case.py render-practical-harness \
+  brc-cases/jan2013_basin_nam.case.yaml \
+  --output-dir /tmp/brc_gate11_jan2013_basin_gefs
+```
+
+That command writes a review packet, baseline wrapper, scaling wrappers, blank
+result tables, approval boundaries, and closeout template outside the repo. It
+does not submit jobs or read staged/archive artifacts; generated wrappers still
+need prepared per-scenario `wrf_run` directories and explicit approval before
+`sbatch`.
+
 The wrapper must keep these CHPC-specific details:
 
 - reload the validated Intel/HDF5/netCDF module stack inside the batch job;
@@ -197,8 +211,8 @@ The non-fatal `real.exe` soil message observed for the proof was:
 
 ## Next Tests
 
-1. Turn the successful one-off proof into a maintained practical-test harness:
-   wrapper/template, validation checklist, closeout prompt, and result tables.
+1. Use the maintained Gate 11 practical-test harness to pick an approved
+   scaling or memory row; render/check only until approval is explicit.
 2. GEFS+NAM two-stream WPS/real path: build or select a GEFSv12 reforecast
    Vtable, ungrib GEFS and NAM separately, run metgrid with
    `fg_name = 'GEFS','NAM'`, then prove `real.exe`.
@@ -206,5 +220,5 @@ The non-fatal `real.exe` soil message observed for the proof was:
    record wall time per simulated hour and peak memory.
 4. Use `brc-cases/` to review the case manifest, validate cheap metadata, and
    render Slurm text before any submitted run.
-5. Promote the run wrapper into a maintained brc-wrf-side template only after
-   the exact build/WPS/run directory contract is settled.
+5. Keep generated run packets, logs, NetCDF, PNGs, and one-off Slurm files out
+   of the repo; durable evidence belongs under `lawson-group6`.

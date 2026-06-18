@@ -7,7 +7,8 @@ the current `brc-wrf` fork fits, what is proven, and what should happen next.
 
 We have a BRC-local review layer around WRF 4.8.0, and one NAM-only Jan-2013
 Basin case is proven through `brc-tools` input staging, WPS, `real.exe`,
-`wrf.exe`, archive checks, and no-run quicklooks.
+`wrf.exe`, archive checks, no-run quicklooks, and a maintained render-only
+practical-test harness.
 
 ## Mental Model
 
@@ -28,7 +29,7 @@ owner repo, and stop point.
 | --- | --- | --- |
 | John/JRL | High enough to audit and steer science decisions. | The GEFS+NAM two-stream path still needs WPS/`real.exe` proof before it is science-ready. |
 | Michael/new developer | Medium if starting from the reading packet below. | WRF requires both software-install knowledge and meteorological forcing knowledge; the repo split must be read first. |
-| Future AI agent | Medium-high for no-run review tasks. | It must not confuse old NAM-only proof artifacts with unproven GEFS+NAM workflow. |
+| Future AI agent | High for no-run review tasks. | It must not confuse the maintained render harness with approval to run WPS/WRF/Slurm. |
 
 ## Where We Are
 
@@ -37,9 +38,10 @@ owner repo, and stop point.
 | Fork orientation | Usable. `README.md`, `AGENTS.md`, and `doc/BRC_FORK_GUIDE.md` explain the local layer. |
 | CHPC posture | Usable. Canonical CHPC facts live in `brc-knowledge`; this repo points there. |
 | First case | Proven NAM-only path for Jan 31-Feb 2 2013, d01/d02 Basin nest. |
-| Case review | Usable. `brc-cases/wrf_case.py` validates metadata and renders Slurm text only. |
+| Case review | Usable. `brc-cases/wrf_case.py` validates metadata, renders Slurm text, and renders the Gate 11 practical-test packet only. |
 | WRF/WPS build proof | Gates 2-3 passed. John's `main/real.exe` and `main/wrf.exe` exist, and John-owned WPS v4.6.0 is built at `/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_build/WPS`. |
 | Visual QA | Usable. `brc-cases/wrf_quicklook.py` renders five no-run PNGs from existing proof artifacts. |
+| Practical-test harness | Usable for render/check-only prep. `wrf_case.py render-practical-harness` writes review packets outside the repo with scaling/memory scripts and blank result tables. |
 | Slurm profile | Aligned to max owned-node profile: `lawson-np`, `notch392`, 1 node, 56 tasks, `900G`, `srun --mpi=pmi2`. |
 | GEFS+NAM | Not proven. Treat as a design/proof task, not a working production method. |
 
@@ -47,10 +49,10 @@ owner repo, and stop point.
 
 | Order | Next move | Stop point |
 | --- | --- | --- |
-| 1 | Prove a fresh NAM-only `contract_<case>.json` from `brc-tools`. | Do not run WPS until the current input contract is trustworthy. |
-| 2 | Decide whether GEFS+NAM is still needed for the next science question. | If yes, draft the two-stream WPS proof; if no, improve NAM-only repeatability. |
-| 3 | For any real run, render Slurm and inspect it against `brc-knowledge` before `sbatch`. | Human approval only after the rendered script matches current CHPC truth. |
-| 4 | Review the old quicklook PNGs with meteorological eyes. | Decide whether the NAM-only proof remains a physically useful baseline. |
+| 1 | Render the Gate 11 practical-test packet and choose a scaling or memory row. | Stop before `sbatch` until John approves the exact row and stop point. |
+| 2 | Decide whether GEFS+NAM is still needed for the next science question. | If yes, draft the two-stream WPS proof; if no, keep improving NAM-only repeatability. |
+| 3 | For any real run, inspect rendered Slurm against `brc-knowledge` before `sbatch`. | Human approval only after the rendered script matches current CHPC truth. |
+| 4 | Review the Gate 10 quicklook PNGs with meteorological eyes. | Decide whether the NAM-only proof remains a physically useful baseline. |
 
 ## Reading Packet
 

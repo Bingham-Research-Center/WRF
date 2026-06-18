@@ -55,7 +55,25 @@ The checkpoint is intentionally small:
    copied to `<archive-run>/debug/`, including failure exits when the archive
    path can be created.
 
-5. Render no-run visual quicklooks from the existing proof artifacts:
+5. Render the Gate 11 practical-test harness packet. This writes review
+   artifacts outside the checkout; it does not submit Slurm or read staged,
+   WPS/WRF, NetCDF, or archive artifacts.
+
+   ```bash
+   python brc-cases/wrf_case.py render-practical-harness \
+     brc-cases/jan2013_basin_nam.case.yaml \
+     --output-dir /tmp/brc_gate11_jan2013_basin_gefs
+   ```
+
+   The packet contains a `README.md`, a baseline Slurm wrapper, scaling wrappers
+   for 16/28/56 tasks, optional memory-candidate wrappers, approval boundaries,
+   validation commands, blank result tables, and a closeout record template.
+   Generated wrappers keep per-scenario scratch and archive paths under
+   `practical_tests/<scenario>/`, fail fast if the scenario `wrf_run` directory
+   is not prepared with `real.exe`, `wrf.exe`, `namelist.input`, and `met_em`
+   files, and still require explicit approval before `sbatch`.
+
+6. Render no-run visual quicklooks from the existing proof artifacts:
 
    ```bash
    python brc-cases/wrf_quicklook.py check brc-cases/jan2013_basin_nam.case.yaml

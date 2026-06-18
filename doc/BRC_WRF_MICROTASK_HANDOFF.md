@@ -13,11 +13,11 @@ It is intentionally a planning and routing artifact. It is not approval to run
 DTN staging, WPS, `real.exe`, `wrf.exe`, Slurm submissions, scaling sweeps, or
 large downloads.
 
-Current gate state as of 2026-06-18: Roadmap Gates 0-10 have passed for the
+Current gate state as of 2026-06-18: Roadmap Gates 0-11 have passed for the
 John-owned WRF/WPS proof, fresh NAM-only `brc-tools` contract, NAM-only
-WPS/`real.exe`/`wrf.exe` rerun, archive, and quicklooks. The next required
-baseline gate is Gate 11, a maintained practical-test harness. Scaling and
-memory sweeps remain separate approval-gated runs.
+WPS/`real.exe`/`wrf.exe` rerun, archive, quicklooks, and a maintained
+render-only practical-test harness. Scaling and memory sweeps remain separate
+approval-gated runs.
 
 The file includes `brc-tools` tasks because WRF cannot safely consume staged
 forcing until the manifest/contract side is trustworthy. Keep implementation
@@ -161,16 +161,17 @@ Practical-test countdown:
 | 2 | Keep the merged `brc-tools` hygiene reflected in run-side docs. | Yes, docs/checks only. | No WRF-side change needed for additive manifest schema v2. |
 | 3 | Prove a fresh NAM-only `contract_<case>.json` validates in `brc-wrf`. | Done on 2026-06-18. | Gate 5: `verify: 7/7 OK`; strict validation `OK: no findings`. |
 | 4 | Keep the successful NAM-only rerun and quicklooks wired into docs. | Done for Gates 6-10 evidence; continue only for maintained templates. | Do not overstate this as GEFS+NAM proof. |
-| 5 | Build the maintained practical-test harness. | Yes. | Renderable wrapper/checklist/result tables; no new WRF submission unless approved. |
+| 5 | Build the maintained practical-test harness. | Done on 2026-06-18. | `wrf_case.py render-practical-harness` renders wrapper/checklist/result tables; no new WRF submission unless approved. |
 | 6 | Decide whether GEFS+NAM two-stream is worth pursuing now. | Codex can prepare the design table; human chooses the science path. | Do not run WPS yet. |
 | 7 | Run practical WRF setting tests: scaling and memory on `notch392`. | Codex can render scripts and result tables. | No benchmark `sbatch` without explicit approval. |
 
 ## Recommended Next No-Run Batch
 
-The `brc-tools` hygiene batch is merged upstream and Roadmap Gates 3-10 are now
-complete for the NAM-only baseline. Keep the next `brc-wrf` work on Gate 11:
-turn the one-off proof scripts and checklists into a maintained practical-test
-harness, without submitting scaling or memory benchmarks until approved.
+The `brc-tools` hygiene batch is merged upstream and Roadmap Gates 3-11 are now
+complete for the NAM-only baseline and maintained render-only harness. Keep the
+next `brc-wrf` work on approval-gated practical testing prep: choose scaling or
+memory rows from the harness packet, or stay in no-run design work for GEFS+NAM
+and domain/geog review.
 
 The current John/Michael no-run handout is
 `brc-docs/BRC-WRF-MICHAEL-PRACTICAL-PACKET.md`. It packages the first contract
@@ -186,10 +187,25 @@ run rather than general planning cleanup.
 
 | Order | Task | Why first | Evidence to leave |
 | ---: | --- | --- | --- |
-| 1 | Gate 11 maintained wrapper/checklist draft. | The NAM-only proof now exists; repeatability is the next bottleneck. | Renderable wrapper plan, validation checklist, and closeout prompt. |
-| 2 | #26/#27 benchmark table templates. | Prepares scaling/memory work without consuming allocation time. | Empty result table with tasks, memory, wall time, status, archive, and recommendation columns. |
+| 1 | Review or extend the Gate 11 harness packet. | The maintained renderer now exists; use it to choose rows before spending allocation time. | `/tmp` render packet from `wrf_case.py render-practical-harness`, plus `bash -n` on generated scripts. |
+| 2 | #26/#27 benchmark table rows. | Prepares scaling/memory work without consuming allocation time. | Empty or evidence-filled result table with tasks, memory, wall time, status, archive, and recommendation columns. |
 | 3 | #16 GEFS+NAM two-stream design checklist. | Lets a future approved WPS pass stop at field evidence instead of improvising. | Expected GEFS/NAM field split, `Vtable.GEFS` implications, and `real.exe` stop point. |
 | 4 | #21 domain/geog evidence pointer. | Separates syntax checks from human domain judgment. | Exact doc/namelist paths to inspect; no claim of fresh scientific approval. |
+
+### Gate 11 Harness Entry Point
+
+Render the practical-test packet from the case manifest:
+
+```bash
+python brc-cases/wrf_case.py render-practical-harness \
+  brc-cases/jan2013_basin_nam.case.yaml \
+  --output-dir /tmp/brc_gate11_jan2013_basin_gefs
+```
+
+The generated packet contains the baseline wrapper, scaling wrappers for
+16/28/56 tasks, optional memory-candidate wrappers, login-safe metadata checks,
+off-login artifact checks, blank result tables, and the closeout record. It
+refuses repo-local output and does not submit anything.
 
 ### Lane 2: Future `brc-tools` Batch
 
@@ -324,6 +340,7 @@ Do not lose sight of these. They are not good login-node free-running tasks.
 | #12 | `brc-tools` pins the 240 h boundary behavior as warn+partial. |
 | #31 | `brc-tools` added the `WISHLIST-TASKS.md` pointer. |
 | #32 | `brc-wrf` docs point to current `../brc-tools/docs/WRF-INPUT-STAGING.md`, scratch layout, and handoff files; link-check passes with binary files ignored. |
+| Gate 11 | `brc-cases/wrf_case.py render-practical-harness` renders the maintained practical-test packet and benchmark Slurm review scripts outside the repo. |
 
 ## Documentation Refresh Map
 
