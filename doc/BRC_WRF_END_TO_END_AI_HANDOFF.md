@@ -66,13 +66,13 @@ Optional only after the above:
 
 | Topic | Current state |
 | --- | --- |
-| Proven case | Jan-2013 Uinta Basin, NAM-only, 12/4 km nest, WPS to `real.exe` to `wrf.exe` to archive. |
-| Proven input identity | NAM-only, `Vtable.NAM`, `interval_seconds = 21600`. Old scratch used WPS `FILE`/`FILE` naming. |
+| Proven case | Jan-2013 Uinta Basin, NAM-only, 12/4 km nest, fresh 2026-06-18 path through WPS, `real.exe`, `wrf.exe`, archive, and quicklooks. |
+| Proven input identity | Fresh `brc-tools` NAM-only contract on scratch, `Vtable.NAM`, `interval_seconds = 21600`, WPS `prefix = 'NAM'`, `fg_name = 'NAM'`. Old scratch used WPS `FILE`/`FILE` naming and remains historical context only. |
 | Not proven | GEFSv12 plus NAM two-stream forcing, 3-hour cadence, `fg_name = 'GEFS','NAM'`. |
 | Runtime default | `lawson-np`, `notch392`, one node, 56 tasks, `900G`, `srun --mpi=pmi2`. |
 | Build truth | A fresh checkout has no `real.exe` or `wrf.exe`; check disk before claiming build readiness. |
 | WPS truth | John-owned WPS v4.6.0 is built at `/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_build/WPS`; Gate 3 evidence is under `/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_build_logs/brc-wrf/gate3_20260618T054456Z_13539773/`. |
-| Input contract | Fresh `brc-tools` staging should emit `contract_<case>.json`; reconstructed legacy contract is a fallback only. |
+| Input contract | Fresh `brc-tools` staging emitted `/scratch/general/vast/u0737349/wrf_inputs/jan2013_basin_gefs/contract_jan2013_basin_gefs.json`; reconstructed legacy contract is a fallback until explicitly retired. |
 
 ## Architecture Contract
 
@@ -120,6 +120,12 @@ state or a human decision requires it.
 
 Use the proven NAM-only case first unless the human explicitly chooses
 GEFS+NAM.
+
+Current proof-lane state: Gates 5-10 passed on 2026-06-18. The fresh NAM-only
+contract verified `7/7 OK`, WPS produced 14 `met_em` files, `real.exe` reached
+`SUCCESS COMPLETE REAL_EM INIT`, `wrf.exe` reached `SUCCESS COMPLETE WRF`, the
+archive contains 74 `wrfout` files, and Gate 10 wrote five quicklook PNGs from
+the new archive.
 
 | Step | Action | Evidence | Stop point |
 | ---: | --- | --- | --- |
@@ -210,10 +216,10 @@ it as John's WRF or WPS root. John's WRF executable root must be compiled from
 ~/gits/brc-wrf with branch/SHA provenance. WPS must be John-owned too.
 
 First decide the next gate:
-1. Fresh NAM-only contract validation from brc-tools into brc-wrf.
-2. NAM-only WPS proof after approval.
-3. NAM-only real.exe/wrf.exe rerun after separate approval.
-4. GEFS+NAM WPS-only field proof after science approval.
+1. Gate 11 maintained practical-test harness for the proven NAM-only baseline.
+2. Scaling/memory benchmark templates; submissions require approval.
+3. GEFS+NAM WPS-only field proof after science approval.
+4. Storage-retention or fallback-contract retirement decision.
 
 Stay login-node-safe unless approval explicitly allows compile/WPS/WRF/Slurm
 work. Leave breadcrumbs: command, evidence, owner repo, artifact path, stop

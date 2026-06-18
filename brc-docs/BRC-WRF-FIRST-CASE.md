@@ -20,6 +20,10 @@ human approval before they run.
   `/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_build/WPS`.
   Gate 3 evidence:
   `/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_build_logs/brc-wrf/gate3_20260618T054456Z_13539773/`.
+- Fresh 2026-06-18 NAM-only proof passed through input contract, WPS,
+  `real.exe`, `wrf.exe`, archive, and quicklooks. The new archive is
+  `/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/jan2013_basin_gefs/run_gate8_20260618T062439Z_13540006`,
+  with quicklooks in its `quicklooks/` subdirectory.
 - Not yet validated: GEFSv12 reforecast plus NAM two-stream forcing
   (`fg_name = 'GEFS','NAM'`, `interval_seconds = 10800`).
 
@@ -88,9 +92,16 @@ The `--plan` command is metadata planning. Manifest verification reads scratch
 artifacts and should run only in an approved compute/batch context or on the
 appropriate transfer node.
 
-Current checked evidence: the existing staged proof manifest verifies `28/28 OK`
-for 7 NAM files plus 21 optional GEFS reforecast files. The validated WPS run
-consumed the NAM stream only.
+Current checked evidence: fresh NAM-only Gate 5 sidecars exist on scratch and
+the manifest verifies `7/7 OK`:
+
+```text
+/scratch/general/vast/u0737349/wrf_inputs/jan2013_basin_gefs/manifest_jan2013_basin_gefs.json
+/scratch/general/vast/u0737349/wrf_inputs/jan2013_basin_gefs/contract_jan2013_basin_gefs.json
+```
+
+The previous mixed scratch manifest that verified `28/28 OK` is historical
+context. The fresh 2026-06-18 rerun consumed the NAM stream only.
 
 ## WPS Handoff
 
@@ -158,6 +169,16 @@ manifest and contract sidecars.
 
 ## Proof Evidence
 
+Fresh evidence checked on 2026-06-18:
+
+| Gate | Evidence |
+| --- | --- |
+| Gate 5 fresh contract | `/scratch/general/vast/u0737349/wrf_inputs/jan2013_basin_gefs/gate5_nam_contract_13539969.out`; `verify: 7/7 OK`; strict validation log `/scratch/general/vast/u0737349/wrf_inputs/jan2013_basin_gefs/gate5_validate_13539980.out`. |
+| Gate 6 WPS | `/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_build_logs/brc-wrf/gate6_20260618T061731Z_13539991/`; 14 `met_em` files, `num_metgrid_levels = 40`. |
+| Gate 7 `real.exe` | `/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_build_logs/brc-wrf/gate7_20260618T062118Z_13540001/`; `SUCCESS COMPLETE REAL_EM INIT`. |
+| Gate 8/9 `wrf.exe` and archive | `/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_build_logs/brc-wrf/gate8_20260618T062439Z_13540006/`; `SUCCESS COMPLETE WRF`; 74 `wrfout` files archived. |
+| Gate 10 quicklooks | `/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_build_logs/brc-wrf/gate10_20260618T065224Z_13540365/`; five PNGs under the Gate 8 archive `quicklooks/` directory. |
+
 Evidence checked on 2026-06-13 without submitting a new job:
 
 - `brc-tools` manifest verification:
@@ -176,9 +197,8 @@ The non-fatal `real.exe` soil message observed for the proof was:
 
 ## Next Tests
 
-1. Fresh NAM-only input contract: produce or locate current `brc-tools`
-   `manifest_<case>.json` and `contract_<case>.json`, then validate them
-   off-login before any WPS execution.
+1. Turn the successful one-off proof into a maintained practical-test harness:
+   wrapper/template, validation checklist, closeout prompt, and result tables.
 2. GEFS+NAM two-stream WPS/real path: build or select a GEFSv12 reforecast
    Vtable, ungrib GEFS and NAM separately, run metgrid with
    `fg_name = 'GEFS','NAM'`, then prove `real.exe`.

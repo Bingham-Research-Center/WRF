@@ -13,10 +13,11 @@ It is intentionally a planning and routing artifact. It is not approval to run
 DTN staging, WPS, `real.exe`, `wrf.exe`, Slurm submissions, scaling sweeps, or
 large downloads.
 
-Current gate state as of 2026-06-18: Roadmap Gate 3 passed for the John-owned
-WPS executable proof, and Gate 4 passed as metadata-only case-root review. The
-next required gate is Gate 5, a fresh NAM-only input contract from `brc-tools`
-before any WPS execution.
+Current gate state as of 2026-06-18: Roadmap Gates 0-10 have passed for the
+John-owned WRF/WPS proof, fresh NAM-only `brc-tools` contract, NAM-only
+WPS/`real.exe`/`wrf.exe` rerun, archive, and quicklooks. The next required
+baseline gate is Gate 11, a maintained practical-test harness. Scaling and
+memory sweeps remain separate approval-gated runs.
 
 The file includes `brc-tools` tasks because WRF cannot safely consume staged
 forcing until the manifest/contract side is trustworthy. Keep implementation
@@ -129,8 +130,8 @@ render path performs practical checks.
 
 | Area | Current state | Evidence or next check |
 | --- | --- | --- |
-| NAM-only Jan-2013 proof | Proven through WPS, `real.exe`, `wrf.exe`, archive, and no-run quicklooks. | `brc-docs/BRC-WRF-FIRST-CASE.md`; `brc-cases/wrf_case.py validate ... --strict-files`; `brc-cases/wrf_quicklook.py check ...`. |
-| Input contract handshake | Old proof scratch predates fresh sidecars; `brc-wrf` carries a reconstructed NAM-only contract for strict validation. `brc-tools` manifest schema v2 is additive for this repo because `brc-wrf` reads the contract sidecar, not manifest `staged_files`. | Fresh `brc-tools` staging should later emit `contract_<case>.json`; validate it before retiring the reconstructed fallback. |
+| NAM-only Jan-2013 proof | Fresh proof passed through WPS, `real.exe`, `wrf.exe`, archive, and quicklooks on 2026-06-18. | Gates 5-10 evidence under `/scratch/general/vast/u0737349/wrf_inputs/jan2013_basin_gefs/` and `/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_build_logs/brc-wrf/`. |
+| Input contract handshake | Fresh `brc-tools` NAM-only sidecars now exist on scratch and verify `7/7 OK`; strict `brc-wrf` validation passed off-login. The tracked reconstructed contract remains a fallback until retirement is explicit. | Manifest and contract under `/scratch/general/vast/u0737349/wrf_inputs/jan2013_basin_gefs/`; Gate 5 logs `gate5_nam_contract_13539969.out` and `gate5_validate_13539980.out`. |
 | GEFS+NAM two-stream | Not proven. Treat as a WPS/field-coverage design task until approved WPS evidence exists. | `../brc-tools/docs/WRF-GEFS-NAM-FIELD-MAP.md`; stop before `real.exe`. |
 | WRF run tuning | Not benchmarked. Current max owned-node profile is a safe high-power default, not the efficiency knee. | Prepare 16/28/56 task and memory tables; no `sbatch` without approval. |
 | CHPC settings | Rechecked 2026-06-17 against `brc-knowledge`: WRF default remains single-node `notch392` on `lawson-np`; avoid multi-node for Basin-scale cases unless memory/size proves it. | `../brc-knowledge/scholarium/reference-base/resources/chpc-team-resource-inventory.md`; `wrf-on-chpc-quickstart.md`; `chpc-slurm-job-examples.md`. |
@@ -158,17 +159,18 @@ Practical-test countdown:
 | --- | --- | --- | --- |
 | 1 | Keep NAM-only baseline truth clean in docs and validators. | Yes. | No WPS/WRF claims beyond current evidence. |
 | 2 | Keep the merged `brc-tools` hygiene reflected in run-side docs. | Yes, docs/checks only. | No WRF-side change needed for additive manifest schema v2. |
-| 3 | Prove a fresh NAM-only `contract_<case>.json` validates in `brc-wrf`. | Partly. Codex can plan and wire the case file; fresh staging needs DTN approval if not already present. | `wrf_case.py validate --strict-files` passes against the fresh contract. |
-| 4 | Decide whether GEFS+NAM two-stream is worth pursuing now. | Codex can prepare the design table; human chooses the science path. | Do not run WPS yet. |
-| 5 | If two-stream is approved, build/select `Vtable.GEFS` and ungrib/metgrid to inspect fields. | Partly. Prep is Codex-friendly; WPS execution is approval-gated. | Stop before `real.exe`; show `met_em` field list and warnings. |
-| 6 | Run practical WRF setting tests: scaling and memory on `notch392`. | Codex can render scripts and result tables. | No `sbatch` or WRF run without explicit approval. |
-| 7 | Refresh docs all round after evidence changes. | Yes. | Update only facts supported by commands, logs, or accepted human decisions. |
+| 3 | Prove a fresh NAM-only `contract_<case>.json` validates in `brc-wrf`. | Done on 2026-06-18. | Gate 5: `verify: 7/7 OK`; strict validation `OK: no findings`. |
+| 4 | Keep the successful NAM-only rerun and quicklooks wired into docs. | Done for Gates 6-10 evidence; continue only for maintained templates. | Do not overstate this as GEFS+NAM proof. |
+| 5 | Build the maintained practical-test harness. | Yes. | Renderable wrapper/checklist/result tables; no new WRF submission unless approved. |
+| 6 | Decide whether GEFS+NAM two-stream is worth pursuing now. | Codex can prepare the design table; human chooses the science path. | Do not run WPS yet. |
+| 7 | Run practical WRF setting tests: scaling and memory on `notch392`. | Codex can render scripts and result tables. | No benchmark `sbatch` without explicit approval. |
 
 ## Recommended Next No-Run Batch
 
-The `brc-tools` hygiene batch is merged upstream and Roadmap Gates 3-4 are now
-complete. Keep the next work on Gate 5 input-contract truth unless a separate
-`brc-tools` session is opened.
+The `brc-tools` hygiene batch is merged upstream and Roadmap Gates 3-10 are now
+complete for the NAM-only baseline. Keep the next `brc-wrf` work on Gate 11:
+turn the one-off proof scripts and checklists into a maintained practical-test
+harness, without submitting scaling or memory benchmarks until approved.
 
 The current John/Michael no-run handout is
 `brc-docs/BRC-WRF-MICHAEL-PRACTICAL-PACKET.md`. It packages the first contract
@@ -184,9 +186,9 @@ run rather than general planning cleanup.
 
 | Order | Task | Why first | Evidence to leave |
 | ---: | --- | --- | --- |
-| 1 | Fresh NAM-only contract validation checklist. | Makes Goal A actionable the moment a fresh `contract_<case>.json` exists. | Exact manifest/contract paths and `wrf_case.py validate --strict-files` command. |
-| 2 | #16 GEFS+NAM two-stream design checklist. | Lets a future approved WPS pass stop at field evidence instead of improvising. | Expected GEFS/NAM field split, `Vtable.GEFS` implications, and `real.exe` stop point. |
-| 3 | #26/#27 benchmark table templates. | Prepares scaling/memory work without consuming allocation time. | Empty result table with tasks, memory, wall time, status, archive, and recommendation columns. |
+| 1 | Gate 11 maintained wrapper/checklist draft. | The NAM-only proof now exists; repeatability is the next bottleneck. | Renderable wrapper plan, validation checklist, and closeout prompt. |
+| 2 | #26/#27 benchmark table templates. | Prepares scaling/memory work without consuming allocation time. | Empty result table with tasks, memory, wall time, status, archive, and recommendation columns. |
+| 3 | #16 GEFS+NAM two-stream design checklist. | Lets a future approved WPS pass stop at field evidence instead of improvising. | Expected GEFS/NAM field split, `Vtable.GEFS` implications, and `real.exe` stop point. |
 | 4 | #21 domain/geog evidence pointer. | Separates syntax checks from human domain judgment. | Exact doc/namelist paths to inspect; no claim of fresh scientific approval. |
 
 ### Lane 2: Future `brc-tools` Batch
@@ -286,7 +288,7 @@ Do not lose sight of these. They are not good login-node free-running tasks.
 
 | Task | Owner | Why parked | What Codex can prepare | Human decision or action |
 | --- | --- | --- | --- | --- |
-| Fresh NAM-only contract validation, handoff Goal A | `brc-tools` + `brc-wrf` | Needs fresh `contract_<case>.json`; may require DTN staging if not already on scratch. | Plan command, case-yaml patch, validation checklist. | Approve or provide fresh stage; decide when reconstructed fallback can retire. |
+| Reconstructed-contract retirement decision | `brc-tools` + `brc-wrf` | Fresh scratch `contract_<case>.json` now passed, but tracked fallback retirement is a separate compatibility decision. | Point to Gate 5 evidence and draft the patch if retirement is approved. | Decide whether/when `brc-cases/jan2013_basin_nam.contract.json` remains as a fallback. |
 | #16 GEFS+NAM two-stream proof | `brc-wrf` with brc-tools context | WPS work and eventual `real.exe` are approval-gated; science value must be chosen. | Draft `Vtable.GEFS` mapping and field-source table from `WRF-GEFS-NAM-FIELD-MAP.md`. | Decide whether two-stream is needed now. |
 | #17 Ungrib staged reforecast and inspect fields | Human-led WPS proof | Runs WPS tooling and inspects meteorological field coverage. | Build checklist and expected field list. | Approve WPS/ungrib execution; review missing fields. |
 | #21 Confirm geogrid, `geog_data_path`, and Basin domain | Human-led review | This is scientific/domain judgment, not just syntax. | Collect exact namelist paths and current expected values. | Confirm the domain/geog setup is the intended baseline. |

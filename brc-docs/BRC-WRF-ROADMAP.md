@@ -21,10 +21,11 @@ ready for practical testing, plus 3 optional or follow-on gates.
 | Optional science branch | 1 | GEFS+NAM WPS-only field proof if John chooses that path. |
 | Practical testing branch | 2 | Scaling and memory sweeps after the baseline is repeatable. |
 
-Current gate state as of 2026-06-18: Gates 0-4 have passed for John's owned
-WRF/WPS build proof and metadata-only case-root review. The next required gate
-is Gate 5, the fresh NAM-only input contract. Do not skip it by running WPS
-against stale or assumed staging.
+Current gate state as of 2026-06-18: Gates 0-10 have passed for John's owned
+WRF/WPS build proof, fresh NAM-only input contract, NAM-only WPS/`real.exe`/
+`wrf.exe` rerun, archive, and quicklooks. The next required baseline gate is
+Gate 11, the maintained practical-test harness. Scaling, memory sweeps, and the
+GEFS+NAM science branch remain separate approval-gated follow-ons.
 
 ## Standing Rules
 
@@ -217,6 +218,18 @@ Done when:
 Goal: retire dependence on the reconstructed legacy fallback only after a fresh
 `brc-tools` contract proves clean.
 
+Current status: passed on 2026-06-18.
+
+| Field | Value |
+| --- | --- |
+| Stage/verify job | `13539969` on `dtn05` |
+| Strict validation job | `13539980` on `notch137` |
+| Manifest | `/scratch/general/vast/u0737349/wrf_inputs/jan2013_basin_gefs/manifest_jan2013_basin_gefs.json` |
+| Contract | `/scratch/general/vast/u0737349/wrf_inputs/jan2013_basin_gefs/contract_jan2013_basin_gefs.json` |
+| Stage log | `/scratch/general/vast/u0737349/wrf_inputs/jan2013_basin_gefs/gate5_nam_contract_13539969.out` |
+| Strict validation log | `/scratch/general/vast/u0737349/wrf_inputs/jan2013_basin_gefs/gate5_validate_13539980.out` |
+| Result | `verify: 7/7 OK`; `wrf_case.py validate --strict-files` reported `OK: no findings` |
+
 Owner split:
 
 | Repo | Owns |
@@ -249,6 +262,16 @@ Goal: rerun WPS using John-owned WPS against the proven NAM-only input lane.
 
 Approval boundary: WPS execution.
 
+Current status: passed on 2026-06-18.
+
+| Field | Value |
+| --- | --- |
+| Slurm job | `13539991` on `notch392` |
+| Run root | `/scratch/general/vast/u0737349/wrf_runs/jan2013_basin_gefs_gate6_13539991` |
+| WPS run | `/scratch/general/vast/u0737349/wrf_runs/jan2013_basin_gefs_gate6_13539991/wps_run` |
+| Evidence | `/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_build_logs/brc-wrf/gate6_20260618T061731Z_13539991/` |
+| Result | `met_em` count `14`, `num_metgrid_levels = 40`, required NAM land/soil/skin/snow fields present |
+
 Expected settings:
 
 | Item | Expected |
@@ -277,6 +300,15 @@ Goal: prove John's compiled `real.exe` consumes the new WPS output.
 
 Approval boundary: model preprocessing execution.
 
+Current status: passed on 2026-06-18.
+
+| Field | Value |
+| --- | --- |
+| Slurm job | `13540001` on `notch392` |
+| WRF run root | `/scratch/general/vast/u0737349/wrf_runs/jan2013_basin_gefs_gate6_13539991/wrf_run_gate7_13540001` |
+| Evidence | `/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_build_logs/brc-wrf/gate7_20260618T062118Z_13540001/` |
+| Result | `SUCCESS COMPLETE REAL_EM INIT`; `wrfinput_d01`, `wrfinput_d02`, and `wrfbdy_d01` preserved |
+
 Evidence:
 
 | Evidence | Required |
@@ -294,6 +326,15 @@ Stop point: stop before `wrf.exe` unless the approval explicitly included WRF.
 Goal: run John's compiled WRF on the proven NAM-only case.
 
 Approval boundary: WRF model execution and Slurm submission.
+
+Current status: passed on 2026-06-18.
+
+| Field | Value |
+| --- | --- |
+| Slurm job | `13540006` on `notch392` |
+| WRF run root | `/scratch/general/vast/u0737349/wrf_runs/jan2013_basin_gefs_gate6_13539991/wrf_run_gate7_13540001` |
+| Evidence | `/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_build_logs/brc-wrf/gate8_20260618T062439Z_13540006/` |
+| Result | `SUCCESS COMPLETE WRF`; `wrfout` count `74` |
 
 Required run facts:
 
@@ -319,6 +360,14 @@ the WRF logs and output files.
 ## Gate 9 - Archive Proof
 
 Goal: preserve the new run in durable storage with enough provenance to audit it.
+
+Current status: passed on 2026-06-18, included in Slurm job `13540006`.
+
+| Field | Value |
+| --- | --- |
+| Archive run | `/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/jan2013_basin_gefs/run_gate8_20260618T062439Z_13540006` |
+| Phase evidence | `/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_build_logs/brc-wrf/gate8_20260618T062439Z_13540006/run_phase_times.tsv` |
+| Result | `archive_wrfout`, WRF logs, WPS logs, debug, and provenance archive phases all exited `0` |
 
 Archive root:
 
@@ -351,6 +400,16 @@ review and practical testing triage.
 Approval boundary: quicklook checks/renders read NetCDF and archive artifacts,
 so run in approved compute/batch/interactive context, not on a login node.
 
+Current status: passed on 2026-06-18.
+
+| Field | Value |
+| --- | --- |
+| Slurm job | `13540365` on `notch392` |
+| Evidence | `/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_build_logs/brc-wrf/gate10_20260618T065224Z_13540365/` |
+| Quicklooks | `/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/jan2013_basin_gefs/run_gate8_20260618T062439Z_13540006/quicklooks/` |
+| Result | Quicklook check/render exited `0`; five PNGs written with shape `1275x975` |
+| Visual review | Basic visual sanity passed: plots were nonblank, framed, and showed coherent terrain, landmask, temperature/wind, and snow-depth structure |
+
 Expected commands after the case manifest points at the new archive:
 
 ```bash
@@ -362,7 +421,8 @@ Done when:
 
 - Quicklook check passes.
 - PNGs are written under `<archive-run>/quicklooks/`, not the repo.
-- A small summary stats table exists beside the PNGs or in the run record.
+- A small inventory, shape, or summary stats table exists beside the PNGs or in
+  the run record.
 - Any blank, unit-broken, or physically suspicious image is called out before
   practical testing begins.
 
