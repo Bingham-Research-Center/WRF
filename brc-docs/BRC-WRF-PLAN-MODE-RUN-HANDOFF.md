@@ -102,7 +102,8 @@ These are good next tasks for Codex before asking John to spend allocation time.
 
 | Priority | Task | Why | Stop point |
 | ---: | --- | --- | --- |
-| 1 | Add tests for quicklook output path refusal and archive-run selection. | `wrf_case.py` now has focused tests; `wrf_quicklook.py` could use cheap path-level tests without opening NetCDF. | Do not require xarray/NetCDF reads in unit tests. |
+| Done | Add tests for quicklook output path refusal and archive-run selection. | `brc-cases/test_wrf_quicklook.py` covers path-level behavior without opening NetCDF. | Keep actual quicklook checks/renders off-login. |
+| 1 | Walk through existing Gate 10 quicklooks with John/Michael. | Lowest compute next step after path guardrails; it answers whether the NAM-only baseline is physically useful. | Visual/science decision only; no new WPS/WRF run. |
 | 2 | Add a one-command no-run report wrapper. | Captures host, SHA, case validate, render packet path, shell syntax, and status in one text report. | Report only; no strict files or artifact reads. |
 | 3 | Improve Gate 11 packet wording after John reviews it. | The packet is now the approval surface for practical tests. | Text/render-only changes. |
 | 4 | Draft a GEFS+NAM two-stream design table. | Keeps science branch ready without WPS execution. | Stop before WPS and before `real.exe`. |
@@ -116,9 +117,11 @@ These are login-node-safe because they do not read staged GRIBs, WPS NetCDF,
 archives, or quicklook PNGs.
 
 ```bash
-python -m py_compile brc-cases/wrf_case.py brc-cases/wrf_quicklook.py brc-cases/test_wrf_case.py
+python -m py_compile brc-cases/wrf_case.py brc-cases/wrf_quicklook.py brc-cases/test_wrf_case.py brc-cases/test_wrf_quicklook.py
 
 python brc-cases/test_wrf_case.py
+
+python brc-cases/test_wrf_quicklook.py
 
 python brc-cases/wrf_case.py validate \
   brc-cases/jan2013_basin_nam.case.yaml
@@ -479,6 +482,47 @@ Then John should inspect the five PNGs using the visual checklist above.
 | Do we pursue GEFS+NAM now? | No unless the science question needs it; keep it as WPS-only field proof with stop after `metgrid`. |
 | Do we retire the tracked reconstructed fallback contract? | No until compatibility and fresh sidecar policy are explicitly accepted. |
 | Do we promote scratch inputs/artifacts to durable storage? | Decide after inventory and storage review; no blind copy from login. |
+
+## Next-Session Prompt
+
+Use this when the next session should stay low-compute and decide the next
+science/benchmark step.
+
+```text
+You are Codex in /uufs/chpc.utah.edu/common/home/u0737349/gits/brc-wrf on
+branch john/fix-end-to-end-workflow.
+
+Goal: walk John/Michael through the existing Gate 10 quicklook evidence and then
+choose exactly one next lane: Gate 11 scaling row, Gate 11 memory row, GEFS+NAM
+WPS-only design, or no new run.
+
+First verify live state:
+  git status --short --branch --untracked-files=all
+  git rev-parse HEAD
+  hostname
+  date -u '+UTC %Y-%m-%d %H:%M:%S'
+
+Read:
+1. AGENTS.md
+2. brc-docs/BRC-WRF-STATE-PLAYBOOK.md
+3. brc-docs/BRC-WRF-MICHAEL-PRACTICAL-PACKET.md
+4. brc-docs/BRC-WRF-FIRST-CASE.md
+5. brc-cases/README.md
+6. ../brc-tools/docs/walkthroughs/wrf-staging.md
+
+Boundaries:
+- Login-safe: syntax/tests, metadata validate, render-only Slurm or Gate 11 packet.
+- Off-login approval required: manifest verification, strict artifact reads,
+  NetCDF/archive reads, and quicklook check/render.
+- Explicit run approval required: staging jobs, WPS, real.exe, wrf.exe, sbatch,
+  scaling, or memory benchmarks.
+- Do not point John's wrappers at Michael-owned WRF/WPS roots.
+
+Default recommendation: review the existing quicklook PNGs first. If they are
+meteorologically credible, render the Gate 11 packet and choose one benchmark
+row for later approval. If they are not credible, stop and record what field or
+domain issue needs explanation before any new compute.
+```
 
 ## Closeout Template
 

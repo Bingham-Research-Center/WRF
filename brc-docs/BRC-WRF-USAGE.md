@@ -57,6 +57,7 @@ Codex and humans can do low-impact preparation on a login node:
 - edit docs, namelists, templates, and wrapper scripts;
 - run `git status`, `git diff`, and similar metadata commands;
 - run `bash -n <script>` and `python -m py_compile <file>`;
+- run path-only unit tests that do not read staged files, archives, or NetCDF;
 - inspect storage with `df -hT`;
 - inspect modules with `module spider`;
 - run scheduler queries such as `squeue`, `sinfo`, and `sacctmgr`.
@@ -66,6 +67,8 @@ Do not run compile-scale or model-scale work on a login node:
 - no WRF compile;
 - no WPS `geogrid.exe`, `ungrib.exe`, or `metgrid.exe`;
 - no `real.exe` or `wrf.exe`;
+- no manifest hashing, strict artifact validation, NetCDF/archive reads, or
+  quicklook check/render;
 - no SANE build/run action;
 - no real `sbatch` unless the user explicitly approves submission.
 

@@ -90,6 +90,8 @@ The checkpoint is intentionally small:
    from an approved compute or interactive context, not a login node.
    Generated PNGs default to `<archive-run>/quicklooks/` under the durable
    `lawson-group6` archive; repo-local PNG output is refused.
+   Path-only quicklook unit tests are login-node safe because they do not
+   verify manifests, open NetCDF files, read archives, or render PNGs.
    The workflow source is tracked in `jan2013_nam_workflow.mmd`.
 
 `wrf_case.py` uses only the Python standard library. Because this checkout does

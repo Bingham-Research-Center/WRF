@@ -9,7 +9,8 @@ files concise and route deeper operational records to `doc/`, `brc-cases/`,
 - `BRC-WRF-FORK-HIGHLIGHTS.md`: terse milestone/highlight reel for the BRC
   fork layer since it diverged from upstream WRF 4.8.0.
 - `BRC-WRF-STATE-PLAYBOOK.md`: printable plain-language state of play, next
-  steps, reading packet, and maximum owned-node Slurm profile.
+  steps, reading packet, and maximum owned-node Slurm profile. This is the
+  WRF-side companion to `../brc-tools/docs/walkthroughs/wrf-staging.md`.
 - `BRC-WRF-PLAN-MODE-RUN-HANDOFF.md`: comprehensive Plan Mode handoff and
   walkthrough for low-hanging no-run work, manual quicklook/data inspection,
   directory checks, and a gated from-scratch NAM-only run.
@@ -39,5 +40,7 @@ files concise and route deeper operational records to `doc/`, `brc-cases/`,
 
 - Prefer confirmed local facts over copied upstream WRF documentation.
 - Keep high-level docs small enough for a cold-start agent to read cheaply.
+- Keep beginner walkthroughs split by execution context: login-safe metadata
+  checks, approved off-login artifact reads, and approved WRF execution.
 - Move run records, large inventories, and time-stamped operational evidence to
   `../brc-knowledge` unless they must live with this fork.

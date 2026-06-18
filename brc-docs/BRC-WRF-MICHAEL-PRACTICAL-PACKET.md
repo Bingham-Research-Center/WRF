@@ -75,22 +75,41 @@ Read these in order:
 1. `brc-docs/BRC-WRF-STATE-PLAYBOOK.md`
 2. `brc-docs/BRC-WRF-FIRST-CASE.md`
 3. `brc-cases/README.md`
-4. `../brc-tools/docs/WRF-STAGING-STATE-PLAYBOOK.md`
+4. `../brc-tools/docs/walkthroughs/wrf-staging.md`
+5. `../brc-tools/docs/WRF-STAGING-STATE-PLAYBOOK.md`
 
 Keep `doc/BRC_WRF_MICROTASK_HANDOFF.md` open as the detailed task board.
 
 ## No-Run Walkthrough
 
-Run these from an approved compute or interactive context, not a login node.
-They read metadata, verify existing files, or render text/plots from existing
-proof artifacts. They do not submit work.
+Start with login-safe checks. They read local metadata or render text only; they
+do not hash staged files, open NetCDF, read archives, render quicklooks, or
+submit work.
 
 ```bash
 git status --short --branch --untracked-files=all
 
+python -m py_compile \
+  brc-cases/wrf_case.py \
+  brc-cases/wrf_quicklook.py \
+  brc-cases/test_wrf_case.py \
+  brc-cases/test_wrf_quicklook.py
+
+python brc-cases/test_wrf_case.py
+
+python brc-cases/test_wrf_quicklook.py
+
 python brc-cases/wrf_case.py validate \
   brc-cases/jan2013_basin_nam.case.yaml
 
+python brc-cases/wrf_case.py render-slurm \
+  brc-cases/jan2013_basin_nam.case.yaml
+```
+
+Run these only in an approved compute/batch context or the appropriate transfer
+node. They read staged files, archive files, or NetCDF-backed quicklook inputs.
+
+```bash
 python ../brc-tools/scripts/stage_wrf_inputs.py --verify-manifest \
   /scratch/general/vast/$USER/wrf_inputs/jan2013_basin_gefs/manifest_jan2013_basin_gefs.json
 
@@ -99,12 +118,9 @@ python brc-cases/wrf_case.py validate \
 
 python brc-cases/wrf_quicklook.py check \
   brc-cases/jan2013_basin_nam.case.yaml
-
-python brc-cases/wrf_case.py render-slurm \
-  brc-cases/jan2013_basin_nam.case.yaml
 ```
 
-Optional no-run visual output:
+Optional no-run visual output, still off-login only:
 
 ```bash
 python brc-cases/wrf_quicklook.py render \

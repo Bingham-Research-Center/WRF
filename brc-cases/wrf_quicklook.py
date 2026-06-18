@@ -89,6 +89,12 @@ def _latest_archive_run(archive_root: Path) -> Path:
     return runs[-1]
 
 
+def _resolve_archive_run(archive_root: Path, archive_run_arg: str | None) -> Path:
+    if archive_run_arg:
+        return Path(archive_run_arg)
+    return _latest_archive_run(archive_root)
+
+
 def _load_context(args: argparse.Namespace) -> QuicklookContext:
     case_file = Path(args.case_file)
     data = wrf_case.load_case(case_file)
@@ -106,7 +112,7 @@ def _load_context(args: argparse.Namespace) -> QuicklookContext:
     manifest_path = _as_path(forcing["manifest_path"])
     wps_run = _as_path(paths["wps_run"])
     archive_root = _as_path(paths["archive_root"])
-    archive_run = Path(args.archive_run) if args.archive_run else _latest_archive_run(archive_root)
+    archive_run = _resolve_archive_run(archive_root, args.archive_run)
 
     met_d01 = _find_first(
         [

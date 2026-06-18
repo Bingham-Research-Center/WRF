@@ -8,6 +8,11 @@ It is a runbook, not an approval to submit jobs. DTN staging jobs, WPS work,
 `real.exe`, `wrf.exe`, scaling sweeps, and Slurm submissions still need explicit
 human approval before they run.
 
+Beginner rule: keep three contexts separate. Metadata validation and path-only
+unit tests are login-safe; manifest hashing, strict artifact checks, NetCDF
+reads, and quicklook rendering are approved off-login checks; WPS and WRF
+execution require explicit run approval.
+
 ## Current Status
 
 - Validated path: NAM-only, single WPS stream, `Vtable.NAM`,
@@ -148,6 +153,15 @@ approval packet, baseline wrapper, scaling wrappers, blank result tables,
 approval boundaries, and closeout template outside the repo. It does not submit
 jobs or read staged/archive artifacts; generated wrappers still need prepared
 per-scenario `wrf_run` directories and explicit approval before `sbatch`.
+
+For login-safe guardrails around quicklook paths, run:
+
+```bash
+python brc-cases/test_wrf_quicklook.py
+```
+
+Those tests exercise output-path refusal and archive-run selection only. They do
+not verify manifests, open NetCDF files, read archives, or render PNGs.
 
 The wrapper must keep these CHPC-specific details:
 
