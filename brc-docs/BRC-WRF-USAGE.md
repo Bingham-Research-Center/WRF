@@ -155,7 +155,11 @@ evidence because the run log identified WRF `V4.7.1` and a missing
 `real.exe` and `wrf.exe` resolved to Michael Davies'
 `lawson-group6/u6060939/wrf_build/WRF/main/` binaries through scratch symlinks,
 not John's `~/gits/brc-wrf/main/` binaries. Do not resubmit until the practical
-`wrf_run` source and executable provenance are fixed.
+`wrf_run` source and executable provenance are fixed. Follow-up job `13550021`
+used John's WRF `V4.8.0` binaries and passed the executable byte-match checks,
+then failed because the clean scenario `WRF_RUN` lacked `CAMtr_volume_mixing_ratio`.
+Stage runtime physics files from John's `~/gits/brc-wrf/run/` along with the
+executables before rerunning.
 
 Do not use bare `mpirun` for WRF on this Intel MPI stack. Do not use bare
 `srun -n N ./wrf.exe` without `--mpi=pmi2`.

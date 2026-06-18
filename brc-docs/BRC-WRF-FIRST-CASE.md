@@ -237,7 +237,10 @@ The non-fatal `real.exe` soil message observed for the proof was:
    base scratch run to Michael Davies' `lawson-group6/u6060939/wrf_build/WRF/main/`
    binaries, not John's `~/gits/brc-wrf/main/` binaries. The practical harness
    must source executables from John's build and verify they match before
-   `real.exe`.
+   `real.exe`. Follow-up job `13550021` corrected binary provenance and ran
+   John's WRF `V4.8.0`, but failed because the clean scenario `WRF_RUN` lacked
+   `CAMtr_volume_mixing_ratio`. Stage runtime physics files from John's
+   `~/gits/brc-wrf/run/` before rerunning.
 2. Write the practical-test SOP in `brc-docs`: exact source run directory,
    executable provenance, cleanup/refusal rules, resubmit command, and result
    table.

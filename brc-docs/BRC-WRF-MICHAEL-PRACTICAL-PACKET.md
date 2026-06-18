@@ -176,7 +176,7 @@ Use `brc-cases/jan2013_basin_nam.case.yaml` as the first settings map.
 
 | Order | Test | Why first | Stop point |
 | ---: | --- | --- | --- |
-| 1 | Practical-source diagnosis | The first benchmark used Michael-owned WRF binaries through scratch symlinks; log reports WRF `V4.7.1` and missing `CAMtr_volume_mixing_ratio`. | Source `real.exe`/`wrf.exe` from John's `~/gits/brc-wrf/main`, use approved proven artifacts only for `namelist.input`/`met_em`, and prove byte-match before any resubmit. |
+| 1 | Practical-source diagnosis | The first benchmark used Michael-owned WRF binaries through scratch symlinks; follow-up job `13550021` used John's WRF `V4.8.0` but lacked runtime physics files. | Source `real.exe`/`wrf.exe` and runtime physics files from John's `~/gits/brc-wrf/{main,run}`, use approved proven artifacts only for `namelist.input`/`met_em`, and prove byte-match before any resubmit. |
 | 2 | WRF scaling/memory benchmark | Finds whether 16, 28, or 56 tasks and a smaller memory request are enough. | Resubmit only after source diagnosis; record timing, memory evidence, WRF marker, and archive path. |
 | 3 | GEFS+NAM WPS-only field proof | Checks whether the two-stream forcing design has the needed fields. | Stop after `metgrid`; show `met_em` field list, `num_metgrid_levels`, and warnings. Do not run `real.exe`. |
 | 4 | Fresh NAM-only contract retirement decision | Fresh Gate 5 sidecars passed, but retiring the tracked fallback is still a policy decision. | Do not delete `brc-cases/jan2013_basin_nam.contract.json` without explicit approval. |

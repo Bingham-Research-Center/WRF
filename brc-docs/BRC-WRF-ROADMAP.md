@@ -461,9 +461,10 @@ Required pieces:
 | Maintained Slurm wrapper | `python brc-cases/wrf_case.py render-practical-harness <case.yaml> --output-dir <outside-repo-dir>` renders baseline/scaling/memory review scripts from the case manifest. |
 | Settings readback | Run logs show case window, forcing, WPS cadence, Vtable/prefix/`fg_name`, Slurm shape, launcher, scratch path, archive path. |
 | Executable provenance check | Rendered wrappers fail before `real.exe` unless scenario `real.exe` and `wrf.exe` byte-match `paths.wrf_build/main/{real.exe,wrf.exe}` from John's `~/gits/brc-wrf` build. |
+| Runtime physics files | Rendered wrappers fail before `real.exe` unless current-case WRF runtime files such as `CAMtr_volume_mixing_ratio`, `RRTMG_LW_DATA`, `RRTMG_SW_DATA`, ozone files, and core land-surface tables are present from John's `paths.wrf_build/run/`. |
 | Debug artifacts | Summary, phase timing, and file inventory are created for every run. |
 | Validation checklist | Cheap metadata checks are separate from strict off-login artifact checks. |
-| Scenario prepare/check plan | `PREPARE_CHECKLIST.md` names every per-scenario `WRF_RUN`, sources executables from John's WRF build, sources `namelist.input`/`met_em` from the proven run artifacts, and keeps artifact reads/copies off login nodes. |
+| Scenario prepare/check plan | `PREPARE_CHECKLIST.md` names every per-scenario `WRF_RUN`, sources executables and runtime physics files from John's WRF build, sources `namelist.input`/`met_em` from the proven run artifacts, and keeps artifact reads/copies off login nodes. |
 | Approval packet | `APPROVAL_PACKET.md` carries no-run rows for baseline, scaling, and memory candidates with job ID, Slurm state, WRF marker, wall time, simulated hours, peak memory evidence, archive path, debug path, and recommendation fields. |
 | No-run report | `python brc-cases/wrf_case.py render-no-run-report <case.yaml>` writes a login-safe Markdown report with branch/SHA, dirty state, metadata validation, rendered packet paths, shell syntax, and explicit skipped compute/artifact reads. |
 | Result tables | Scaling and memory tables are ready but empty until approved runs happen. |
@@ -486,7 +487,9 @@ maintained prepare/check plan and no-run approval packet, and keeps benchmark
 result tables blank until approved runs produce evidence. Generated run wrappers
 fail fast unless the scenario `wrf_run` directory is prepared with `real.exe`,
 `wrf.exe`, `namelist.input`, and `met_em` files, and unless the scenario
-executables byte-match John's `paths.wrf_build/main` binaries.
+executables byte-match John's `paths.wrf_build/main` binaries. They also
+preflight the current-case WRF runtime files needed by RRTMG and land-surface
+physics from John's `paths.wrf_build/run` directory.
 
 Ready-for-practical-testing means: John can approve a scaling or memory run by
 choosing a row in a table, not by reconstructing the entire WRF/WPS path from
@@ -523,7 +526,10 @@ The WRF log reports WRF `V4.7.1`, so fix executable/source provenance before
 resubmitting. Live diagnosis showed the practical row's `real.exe` and
 `wrf.exe` symlinked through the base scratch run to Michael Davies'
 `lawson-group6/u6060939/wrf_build/WRF/main/` binaries instead of John's
-`~/gits/brc-wrf/main/` binaries.
+`~/gits/brc-wrf/main/` binaries. Follow-up job `13550021` corrected binary
+provenance and launched WRF `V4.8.0`, but the clean scenario run directory was
+missing John's runtime physics files; with default `ghg_input=1`, RRTMG needs
+`CAMtr_volume_mixing_ratio`.
 
 Approval boundary: Slurm and WRF execution. The failed chain was approved for
 that attempt only; do not add or resubmit rows without a fresh reason.

@@ -140,3 +140,8 @@ were symlinks through the base scratch run directory to Michael Davies'
 `~/gits/brc-wrf/main/` binaries. Future practical wrappers now need an
 executable byte-match check against John's `paths.wrf_build/main` before model
 execution.
+Follow-up job `13550021` used John's WRF `V4.8.0` binaries and passed the
+executable provenance checks, but still failed because the clean scenario
+`WRF_RUN` did not contain WRF runtime physics files from John's `run/`
+directory. With `ghg_input=1` by default and RRTMG radiation enabled, WRF needs
+`CAMtr_volume_mixing_ratio` in the run directory.

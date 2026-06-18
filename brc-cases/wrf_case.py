@@ -26,6 +26,18 @@ from typing import Any
 DATE_FORMAT = "%Y-%m-%d_%H:%M:%S"
 CASE_NAME_RE = re.compile(r"^[A-Za-z0-9_.-]+$")
 DEFAULT_PRACTICAL_TASKS = (16, 28, 56)
+REQUIRED_WRF_RUNTIME_FILES = (
+    "CAMtr_volume_mixing_ratio",
+    "RRTMG_LW_DATA",
+    "RRTMG_SW_DATA",
+    "ozone.formatted",
+    "ozone_lat.formatted",
+    "ozone_plev.formatted",
+    "GENPARM.TBL",
+    "LANDUSE.TBL",
+    "SOILPARM.TBL",
+    "VEGPARM.TBL",
+)
 
 REQUIRED_SECTIONS = {
     "case": ("name", "start", "end", "domains"),
@@ -761,6 +773,9 @@ def render_slurm(data: dict[str, Any], case_file: Path) -> str:
             'require_executable "$WRF_RUN/wrf.exe"',
             'require_file "$WRF_RUN/namelist.input"',
             'require_glob "$WRF_RUN/met_em.d0*.nc"',
+            f"for runtime_file in {' '.join(REQUIRED_WRF_RUNTIME_FILES)}; do",
+            '  require_file "$WRF_RUN/$runtime_file"',
+            "done",
             "",
             'mkdir -p "$DEBUG_DIR"',
             'cd "$WRF_RUN"',
@@ -927,6 +942,7 @@ def render_prepare_checklist(
             "| --- | --- | --- |",
             f"| `real.exe` | John-owned WRF build | Source from `{john_real}`; wrappers byte-compare before `real.exe`. |",
             f"| `wrf.exe` | John-owned WRF build | Source from `{john_wrf}`; wrappers byte-compare before `real.exe`. |",
+            f"| WRF runtime files | John-owned WRF `run/` directory | Stage from `{john_wrf_build}/run/`; current-case preflight requires `{', '.join(REQUIRED_WRF_RUNTIME_FILES)}`. |",
             "| `namelist.input` | Proven NAM-only WRF run setup | Keep source SHA, WRF/WPS roots, and case window unchanged across benchmark rows. |",
             "| `met_em.d0*.nc` | Gate 6 WPS output consumed by the proven run | Do not inspect or copy on a login node. |",
             "",
@@ -953,6 +969,7 @@ def render_prepare_checklist(
             'mkdir -p "$WRF_RUN"',
             'rsync -av "$JOHN_WRF_BUILD"/main/real.exe "$WRF_RUN"/',
             'rsync -av "$JOHN_WRF_BUILD"/main/wrf.exe "$WRF_RUN"/',
+            'rsync -av --exclude="*.exe" "$JOHN_WRF_BUILD"/run/ "$WRF_RUN"/',
             'rsync -av "$PROVEN_WRF_RUN"/namelist.input "$WRF_RUN"/',
             'rsync -av "$PROVEN_WRF_RUN"/met_em.d0*.nc "$WRF_RUN"/',
             "```",
@@ -969,6 +986,9 @@ def render_prepare_checklist(
             'compgen -G "$WRF_RUN/met_em.d0*.nc" >/dev/null',
             'cmp -s "$JOHN_WRF_BUILD/main/real.exe" "$WRF_RUN/real.exe"',
             'cmp -s "$JOHN_WRF_BUILD/main/wrf.exe" "$WRF_RUN/wrf.exe"',
+            f"for runtime_file in {' '.join(REQUIRED_WRF_RUNTIME_FILES)}; do",
+            '  test -f "$WRF_RUN/$runtime_file"',
+            "done",
             "```",
             "",
             "## Login-Safe Review",
@@ -1148,10 +1168,11 @@ def render_practical_packet(
             "",
             "`PREPARE_CHECKLIST.md` names every per-scenario `WRF_RUN` and explains",
             "how to stage `real.exe` and `wrf.exe` from John's WRF build, plus",
+            "runtime physics files from John's WRF `run/` directory, plus",
             "`namelist.input` and `met_em` files from the approved proven run",
             "artifacts. The rendered scripts fail fast if those inputs are",
-            "missing or if the scenario executables do not byte-match",
-            "`paths.wrf_build/main`.",
+            "missing, if the current-case runtime files are absent, or if the",
+            "scenario executables do not byte-match `paths.wrf_build/main`.",
             "",
             "`APPROVAL_PACKET.md` carries the no-run approval rows and evidence",
             "fields for baseline, 16/28/56-style scaling rows, and optional memory",

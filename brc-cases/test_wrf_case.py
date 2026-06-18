@@ -161,7 +161,9 @@ archive:
             self.assertIn("Approved batch, DTN, or interactive compute context only", prepare)
             self.assertIn("JOHN_WRF_BUILD=/tmp/brc_wrf_unit_missing_wrf_build", prepare)
             self.assertIn('rsync -av "$JOHN_WRF_BUILD"/main/wrf.exe "$WRF_RUN"/', prepare)
+            self.assertIn('rsync -av --exclude="*.exe" "$JOHN_WRF_BUILD"/run/ "$WRF_RUN"/', prepare)
             self.assertIn('cmp -s "$JOHN_WRF_BUILD/main/wrf.exe" "$WRF_RUN/wrf.exe"', prepare)
+            self.assertIn("CAMtr_volume_mixing_ratio", prepare)
 
             approval = (output_dir / "APPROVAL_PACKET.md").read_text(encoding="utf-8")
             self.assertIn("Job ID | Slurm state | WRF marker", approval)
@@ -175,6 +177,8 @@ archive:
             self.assertIn("EXPECTED_WRF=/tmp/brc_wrf_unit_missing_wrf_build/main/wrf.exe", scaling)
             self.assertIn('require_matching_executable "$EXPECTED_WRF" "$WRF_RUN/wrf.exe" "wrf.exe"', scaling)
             self.assertIn("does not match John-owned WRF build", scaling)
+            self.assertIn("for runtime_file in CAMtr_volume_mixing_ratio", scaling)
+            self.assertIn('require_file "$WRF_RUN/$runtime_file"', scaling)
 
     def test_custom_tasks_and_memory_candidates_render(self) -> None:
         with tempfile.TemporaryDirectory() as raw:

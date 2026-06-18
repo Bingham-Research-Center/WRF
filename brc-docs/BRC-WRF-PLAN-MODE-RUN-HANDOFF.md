@@ -534,6 +534,10 @@ log reports WRF `V4.7.1`. Live diagnosis found the scenario `real.exe` and
 `lawson-group6/u6060939/wrf_build/WRF/main/` binaries. Source executables from
 John's `~/gits/brc-wrf/main`, use approved proven artifacts only for
 `namelist.input`/`met_em`, and verify byte-match before rerunning anything.
+Follow-up job `13550021` passed the byte-match checks with John's WRF `V4.8.0`
+and then failed because the clean scenario `WRF_RUN` lacked
+`CAMtr_volume_mixing_ratio`; include runtime physics files from John's
+`~/gits/brc-wrf/run/` in the next prep.
 ```
 
 ## Closeout Template

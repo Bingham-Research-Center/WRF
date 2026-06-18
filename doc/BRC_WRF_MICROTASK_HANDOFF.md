@@ -170,9 +170,12 @@ John's compiled WRF binaries. Live diagnosis on 2026-06-18 showed the scenario
 `real.exe` and `wrf.exe` symlinked through the base scratch run to Michael
 Davies' `lawson-group6/u6060939/wrf_build/WRF/main/` binaries instead of
 John's `~/gits/brc-wrf/main/` binaries. Keep future practical preparation
-strict: executables come from `paths.wrf_build/main`, while `namelist.input`
-and `met_em` come from the approved proven run artifacts in an approved
-off-login context.
+strict: executables and runtime physics files come from John's
+`paths.wrf_build/{main,run}`, while `namelist.input` and `met_em` come from the
+approved proven run artifacts in an approved off-login context. Follow-up job
+`13550021` proved John's WRF `V4.8.0` binaries were used and then failed because
+the clean scenario run directory lacked `CAMtr_volume_mixing_ratio`; default
+`ghg_input=1` with RRTMG needs that file from John's `run/` directory.
 
 ## Recommended Next No-Run Batch
 
