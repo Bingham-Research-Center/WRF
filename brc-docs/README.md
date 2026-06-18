@@ -10,6 +10,9 @@ files concise and route deeper operational records to `doc/`, `brc-cases/`,
   fork layer since it diverged from upstream WRF 4.8.0.
 - `BRC-WRF-STATE-PLAYBOOK.md`: printable plain-language state of play, next
   steps, reading packet, and maximum owned-node Slurm profile.
+- `BRC-WRF-PLAN-MODE-RUN-HANDOFF.md`: comprehensive Plan Mode handoff and
+  walkthrough for low-hanging no-run work, manual quicklook/data inspection,
+  directory checks, and a gated from-scratch NAM-only run.
 - `BRC-WRF-MICHAEL-PRACTICAL-PACKET.md`: short John/Michael pair-programming
   handout with no-run walkthrough commands, editable settings, approval gates,
   and blank result tables.
