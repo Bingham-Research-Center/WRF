@@ -149,17 +149,15 @@ Notchpeak first:
 The current Jan-2013 case manifest uses the high-powered owned-node profile
 (`profile: owned_notch392_max`): `notch392`, 56 tasks, and `900G`. This matches
 the current `brc-knowledge` WRF quickstart for a non-preemptible single run.
-Practical testing has started, but the first 28-task row failed before timing
-evidence because the run log identified WRF `V4.7.1` and a missing
-`CAMtr_volume_mixing_ratio`. Live diagnosis showed that the practical row's
-`real.exe` and `wrf.exe` resolved to Michael Davies'
-`lawson-group6/u6060939/wrf_build/WRF/main/` binaries through scratch symlinks,
-not John's `~/gits/brc-wrf/main/` binaries. Do not resubmit until the practical
-`wrf_run` source and executable provenance are fixed. Follow-up job `13550021`
-used John's WRF `V4.8.0` binaries and passed the executable byte-match checks,
-then failed because the clean scenario `WRF_RUN` lacked `CAMtr_volume_mixing_ratio`.
-Stage runtime physics files from John's `~/gits/brc-wrf/run/` along with the
-executables before rerunning.
+Practical testing has one completed 28-task row. The first attempt failed
+because the run log identified WRF `V4.7.1`, the scenario executables resolved
+through scratch symlinks to Michael Davies'
+`lawson-group6/u6060939/wrf_build/WRF/main/` binaries, and the run later exposed
+missing `CAMtr_volume_mixing_ratio` runtime-file staging. The maintained wrapper
+now sources executables from John's `~/gits/brc-wrf/main/`, byte-checks them,
+and stages runtime physics files from John's `~/gits/brc-wrf/run/`. Job
+`13550110` passed `scaling_t028` at 28 tasks, `900G`; evidence is under
+`/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/jan2013_basin_gefs/practical_tests/scaling_t028/run_20260618T230858Z/debug/`.
 
 Do not use bare `mpirun` for WRF on this Intel MPI stack. Do not use bare
 `srun -n N ./wrf.exe` without `--mpi=pmi2`.

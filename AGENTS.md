@@ -78,14 +78,17 @@ about CI, read `.ci/tests/build.sh` and `.github/workflows/ci.yml`.
   NAM-only WPS/`real.exe`/`wrf.exe`, archive, quicklooks, and maintained
   practical-test harness are complete. Do not redo those gates unless live disk
   evidence contradicts the docs.
-- Practical testing has started, but the first row failed. Prep job `13548706`
-  completed; `scaling_t028` job `13548709` passed `real.exe` and then failed in
-  `wrf.exe` with `CLWRF: 'CAMtr_volume_mixing_ratio' does not exist`. The WRF log
-  identified WRF `V4.7.1`, so treat the practical source run directory as
-  incompatible with the current WRF 4.8.0 fork until proven otherwise. Downstream
-  jobs `13548711`, `13548714`, `13548717`, `13548719`, and `13548747` were
-  canceled. Evidence:
-  `/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/jan2013_basin_gefs/practical_tests/scaling_t028/run_20260618T213126Z/debug/`.
+- Practical testing has one approved scaling row complete. The first chain
+  exposed two setup bugs: job `13548709` used Michael-owned WRF `V4.7.1`
+  binaries through scratch symlinks and failed with
+  `CLWRF: 'CAMtr_volume_mixing_ratio' does not exist`; follow-up job `13550021`
+  used John's WRF `V4.8.0` binaries but the clean scenario run directory lacked
+  runtime physics files from John's `run/` directory. After wrapper provenance
+  guards and runtime-file staging, prep job `13550104` and `scaling_t028` job
+  `13550110` passed with John's `~/gits/brc-wrf` at `34710497`, 28 tasks,
+  `900G`, and archive/debug evidence under
+  `/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/jan2013_basin_gefs/practical_tests/scaling_t028/run_20260618T230858Z/debug/`.
+  No other scaling or memory rows are approved by this evidence.
 - Michael Davies has a separate working end-to-end WRF/WPS reference path under
   `lawson-group6/u6060939/wrf_build/`, documented in `brc-knowledge`. Treat it
   as evidence and comparison context only; do not point John's run wrappers at

@@ -73,9 +73,9 @@ Proven state:
 | Input cadence | `Vtable.NAM`, `interval_seconds = 21600`, fresh `brc-tools` NAM-only sidecars verified on 2026-06-18. |
 | WRF/WPS ownership | John-owned WRF build and John-owned WPS v4.6.0; do not point wrappers at Michael-owned roots. |
 | Run target | `lawson-np`, `notch392`, one node, 56 tasks, `900G`, `srun --mpi=pmi2`. |
-| Gates | Roadmap Gates 0-11 passed; scaling/memory and GEFS+NAM are not proven. |
+| Gates | Roadmap Gates 0-11 passed; one 28-task scaling row passed; memory right-sizing and GEFS+NAM are not proven. |
 | Gate 11 | `render-practical-harness` writes review packet, baseline/scaling/memory scripts, `PREPARE_CHECKLIST.md`, and `APPROVAL_PACKET.md` outside the repo. |
-| Practical testing | Started but blocked. Prep `13548706` completed; `scaling_t028` `13548709` failed in `wrf.exe`; downstream rows were canceled. |
+| Practical testing | One 28-task row passed. Job `13550110` ran John's WRF `V4.8.0`, passed `real.exe`/`wrf.exe`, and archived debug evidence under `practical_tests/scaling_t028/run_20260618T230858Z/`; other rows remain unapproved. |
 
 ## Directory Truth
 
@@ -106,8 +106,8 @@ These are good next tasks for Codex before asking John to spend allocation time.
 | Done | Add tests for quicklook output path refusal and archive-run selection. | `brc-cases/test_wrf_quicklook.py` covers path-level behavior without opening NetCDF. | Keep actual quicklook checks/renders off-login. |
 | 1 | Walk through existing Gate 10 quicklooks with John/Michael. | Lowest compute next step after path guardrails; it answers whether the NAM-only baseline is physically useful. | Visual/science decision only; no new WPS/WRF run. |
 | Done | Add a one-command no-run report wrapper. | Captures host, SHA, case validate, render packet path, shell syntax, and status in one text report. | Report only; no strict files or artifact reads. |
-| In progress | Diagnose the failed `scaling_t028` row. | It exposed the first real practical-test blocker. | Prove executable/source-run provenance before resubmitting dependent rows. |
-| 3 | Write the practical-test SOP/result record. | The packet is now the approval surface for practical tests. | Include the failed-row lesson and resubmit guardrails. |
+| Done | Diagnose and fix the failed `scaling_t028` row. | It exposed wrong executable provenance and missing runtime files. | Successful rerun `13550110` is the evidence; do not launch dependent rows by default. |
+| 3 | Write or refine the practical-test SOP/result record. | The packet is now the approval surface for practical tests. | Include both failed-row lessons and the successful 28-task result. |
 | 4 | Draft a GEFS+NAM two-stream design table. | Keeps science branch ready without WPS execution. | Stop before WPS and before `real.exe`. |
 | 5 | Draft storage-retention decision notes. | Scratch purges; staged inputs and proof runs may need promotion. | No copy or inventory unless approved. |
 | 6 | Add quicklook summary-stat output in `wrf_quicklook.py`. | Helps manual visual QA catch blank/unit-broken plots. | Only implement code/tests locally; run against NetCDF only in approved context. |
@@ -501,9 +501,8 @@ science/benchmark step.
 You are Codex in /uufs/chpc.utah.edu/common/home/u0737349/gits/brc-wrf on
 branch john/wrf.
 
-Goal: diagnose the failed practical `scaling_t028` row, then walk John/Michael
-through the Gate 10 quicklooks and practical-test evidence before choosing any
-next lane.
+Goal: walk John/Michael through the Gate 10 quicklooks and practical-test
+evidence, then choose any next lane.
 
 First verify live state:
   git status --short --branch --untracked-files=all
@@ -527,17 +526,13 @@ Boundaries:
   scaling, or memory benchmarks.
 - Do not point John's wrappers at Michael-owned WRF/WPS roots.
 
-Default recommendation: start from job `13548709`. `real.exe` passed, then
-`wrf.exe` failed with `CLWRF: 'CAMtr_volume_mixing_ratio' does not exist`; the
-log reports WRF `V4.7.1`. Live diagnosis found the scenario `real.exe` and
-`wrf.exe` symlinked through scratch to Michael Davies'
-`lawson-group6/u6060939/wrf_build/WRF/main/` binaries. Source executables from
-John's `~/gits/brc-wrf/main`, use approved proven artifacts only for
-`namelist.input`/`met_em`, and verify byte-match before rerunning anything.
-Follow-up job `13550021` passed the byte-match checks with John's WRF `V4.8.0`
-and then failed because the clean scenario `WRF_RUN` lacked
-`CAMtr_volume_mixing_ratio`; include runtime physics files from John's
-`~/gits/brc-wrf/run/` in the next prep.
+Default recommendation: start from the successful job `13550110` and its debug
+archive. The original job `13548709` used Michael-owned WRF `V4.7.1` binaries
+through scratch symlinks and failed with missing `CAMtr_volume_mixing_ratio`.
+Follow-up job `13550021` used John's WRF `V4.8.0` but lacked runtime physics
+files. The successful row sourced executables from John's `~/gits/brc-wrf/main`,
+verified byte matches, staged runtime files from John's `~/gits/brc-wrf/run/`,
+and completed `real.exe`, `wrf.exe`, and archive with exit `0`.
 ```
 
 ## Closeout Template

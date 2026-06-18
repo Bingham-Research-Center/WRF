@@ -29,7 +29,7 @@ By the end of the first session, Michael should be able to explain:
 | Not proven | GEFSv12 reforecast plus NAM two-stream forcing with `fg_name = 'GEFS','NAM'` and `interval_seconds = 10800`. |
 | Current run profile | `owned_notch392_max`: `lawson-np`, `notch392`, one node, 56 tasks, `900G`, `srun --mpi=pmi2`. |
 | Fresh staging contract | Fresh `brc-tools` staging should emit `manifest_<case>.json` and `contract_<case>.json`. This repo currently carries a reconstructed legacy NAM-only contract for strict validation. |
-| Practical testing | Started but blocked. Prep `13548706` completed; `scaling_t028` job `13548709` failed in `wrf.exe`; downstream jobs were canceled. |
+| Practical testing | One 28-task row passed. Job `13550110` ran John's WRF `V4.8.0`, passed `real.exe`/`wrf.exe`, and archived debug evidence under `practical_tests/scaling_t028/run_20260618T230858Z/`. Other rows remain unapproved. |
 
 ## Settings Readback Before Any Run
 
@@ -176,8 +176,8 @@ Use `brc-cases/jan2013_basin_nam.case.yaml` as the first settings map.
 
 | Order | Test | Why first | Stop point |
 | ---: | --- | --- | --- |
-| 1 | Practical-source diagnosis | The first benchmark used Michael-owned WRF binaries through scratch symlinks; follow-up job `13550021` used John's WRF `V4.8.0` but lacked runtime physics files. | Source `real.exe`/`wrf.exe` and runtime physics files from John's `~/gits/brc-wrf/{main,run}`, use approved proven artifacts only for `namelist.input`/`met_em`, and prove byte-match before any resubmit. |
-| 2 | WRF scaling/memory benchmark | Finds whether 16, 28, or 56 tasks and a smaller memory request are enough. | Resubmit only after source diagnosis; record timing, memory evidence, WRF marker, and archive path. |
+| 1 | Practical-source record | The first benchmark used Michael-owned WRF binaries through scratch symlinks; follow-up job `13550021` used John's WRF `V4.8.0` but lacked runtime physics files; job `13550110` passed after both fixes. | Preserve the rule: source `real.exe`/`wrf.exe` and runtime physics files from John's `~/gits/brc-wrf/{main,run}`, use approved proven artifacts only for `namelist.input`/`met_em`, and prove byte-match before any run. |
+| 2 | WRF scaling/memory benchmark | Finds whether 16, 28, or 56 tasks and a smaller memory request are enough. | 28 tasks has one successful row; approve exactly one more row before running anything else. |
 | 3 | GEFS+NAM WPS-only field proof | Checks whether the two-stream forcing design has the needed fields. | Stop after `metgrid`; show `met_em` field list, `num_metgrid_levels`, and warnings. Do not run `real.exe`. |
 | 4 | Fresh NAM-only contract retirement decision | Fresh Gate 5 sidecars passed, but retiring the tracked fallback is still a policy decision. | Do not delete `brc-cases/jan2013_basin_nam.contract.json` without explicit approval. |
 
@@ -187,10 +187,11 @@ Current practical packet:
 /tmp/brc_gate11_jan2013_basin_gefs_20260618T2118Z/
 ```
 
-Failure evidence:
+Practical evidence:
 
 ```text
 /uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/jan2013_basin_gefs/practical_tests/scaling_t028/run_20260618T213126Z/debug/
+/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/jan2013_basin_gefs/practical_tests/scaling_t028/run_20260618T230858Z/debug/
 ```
 
 ## Approval Gates

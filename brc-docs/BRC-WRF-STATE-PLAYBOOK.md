@@ -7,9 +7,9 @@ the current `brc-wrf` fork fits, what is proven, and what should happen next.
 
 We have a BRC-local review layer around WRF 4.8.0, and one NAM-only Jan-2013
 Basin case is proven through `brc-tools` input staging, WPS, `real.exe`,
-`wrf.exe`, archive checks, no-run quicklooks, and a maintained render-only
-practical-test harness; the first practical scaling row exposed a WRF executable
-or run-directory mismatch that must be fixed before more benchmarks.
+`wrf.exe`, archive checks, no-run quicklooks, and a maintained practical-test
+harness; the first practical 28-task row now passes after fixing executable
+provenance and WRF runtime-file staging.
 
 ## Mental Model
 
@@ -43,7 +43,7 @@ owner repo, and stop point.
 | WRF/WPS build proof | Gates 2-3 passed. John's `main/real.exe` and `main/wrf.exe` exist, and John-owned WPS v4.6.0 is built at `/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_build/WPS`. |
 | Visual QA | Usable off-login. `brc-cases/wrf_quicklook.py` checks/renders five PNGs from existing proof artifacts; path-only unit tests are login-safe. |
 | Practical-test harness | Usable. `wrf_case.py render-practical-harness` writes review packets outside the repo with scaling/memory scripts and blank result tables. |
-| Practical testing | Started but blocked. Prep `13548706` completed, `scaling_t028` `13548709` failed in `wrf.exe`, and downstream jobs were canceled. The failed log reports WRF `V4.7.1`; diagnose source-run/executable mismatch before resubmitting. |
+| Practical testing | One 28-task row passed. Job `13550110` ran John's `~/gits/brc-wrf` WRF `V4.8.0`, passed `real.exe`/`wrf.exe`, and archived debug evidence under `practical_tests/scaling_t028/run_20260618T230858Z/`. Other scaling and memory rows remain unrun. |
 | Slurm profile | Aligned to max owned-node profile: `lawson-np`, `notch392`, 1 node, 56 tasks, `900G`, `srun --mpi=pmi2`. |
 | GEFS+NAM | Not proven. Treat as a design/proof task, not a working production method. |
 
@@ -51,10 +51,9 @@ owner repo, and stop point.
 
 | Order | Next move | Stop point |
 | --- | --- | --- |
-| 1 | Diagnose the failed `scaling_t028` practical row. | Prove which `real.exe`/`wrf.exe`, `namelist.input`, and `met_em` source was used before resubmitting. |
-| 2 | Patch the practical-test SOP/result record after diagnosis. | Make the approved preparation source explicit; do not rely on `/scratch/.../wrf_run` by memory. |
-| 3 | Walk through Gate 10 quicklook PNGs with meteorological eyes. | Decide whether the NAM-only proof remains a physically useful baseline. |
-| 4 | Decide whether GEFS+NAM is still needed for the next science question. | If yes, draft the two-stream WPS proof; if no, keep improving NAM-only repeatability. |
+| 1 | Walk through Gate 10 quicklook PNGs with meteorological eyes. | Decide whether the NAM-only proof remains a physically useful baseline. |
+| 2 | Decide whether to approve exactly one more practical benchmark row. | Pick one row and stop on its result; do not launch a sweep by default. |
+| 3 | Decide whether GEFS+NAM is still needed for the next science question. | If yes, draft the two-stream WPS proof; if no, keep improving NAM-only repeatability. |
 
 ## Reading Packet
 
@@ -112,7 +111,7 @@ sacct -j 13548706,13548709,13548711,13548714,13548717,13548719,13548747 \
   --format=JobID,JobName%30,State,ExitCode,Elapsed,MaxRSS,NodeList
 ```
 
-Observed:
+Observed original failed chain:
 
 | Job | Result |
 | --- | --- |
@@ -145,3 +144,16 @@ executable provenance checks, but still failed because the clean scenario
 `WRF_RUN` did not contain WRF runtime physics files from John's `run/`
 directory. With `ghg_input=1` by default and RRTMG radiation enabled, WRF needs
 `CAMtr_volume_mixing_ratio` in the run directory.
+
+Successful rerun:
+
+| Job | Result |
+| --- | --- |
+| `13550104` prep | completed runtime-file fixed `scaling_t028` setup |
+| `13550110` `scaling_t028` | completed with John's WRF `V4.8.0`, 28 tasks, `900G`; `wrf.exe` elapsed 2296 s; archive and debug summary exited `0` |
+
+Successful evidence:
+
+```text
+/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/jan2013_basin_gefs/practical_tests/scaling_t028/run_20260618T230858Z/debug/
+```

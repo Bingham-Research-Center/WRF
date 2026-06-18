@@ -29,12 +29,12 @@ execution require explicit run approval.
   `real.exe`, `wrf.exe`, archive, and quicklooks. The new archive is
   `/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/jan2013_basin_gefs/run_gate8_20260618T062439Z_13540006`,
   with quicklooks in its `quicklooks/` subdirectory.
-- Practical testing has started, but the first `scaling_t028` row failed in
-  `wrf.exe`. `real.exe` passed; `wrf.exe` failed with
-  `CLWRF: 'CAMtr_volume_mixing_ratio' does not exist`, and the WRF log reports
-  WRF `V4.7.1`. Do not resubmit benchmarks until the source `wrf_run`
-  directory and executables are verified against the current John-owned WRF
-  4.8.0 fork.
+- Practical testing has one completed `scaling_t028` row. The first attempt
+  exposed wrong executable provenance and missing runtime physics files, but
+  retry job `13550110` ran John's WRF `V4.8.0` from `~/gits/brc-wrf`, passed
+  `real.exe`/`wrf.exe`, and archived debug evidence under
+  `/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/jan2013_basin_gefs/practical_tests/scaling_t028/run_20260618T230858Z/debug/`.
+  Other practical rows still need explicit approval.
 - Not yet validated: GEFSv12 reforecast plus NAM two-stream forcing
   (`fg_name = 'GEFS','NAM'`, `interval_seconds = 10800`).
 
@@ -231,19 +231,11 @@ The non-fatal `real.exe` soil message observed for the proof was:
 
 ## Next Tests
 
-1. Diagnose the failed practical `scaling_t028` row. Evidence lives under
-   `/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/jan2013_basin_gefs/practical_tests/scaling_t028/run_20260618T213126Z/debug/`.
-   Diagnosis found the scenario `real.exe` and `wrf.exe` symlinked through the
-   base scratch run to Michael Davies' `lawson-group6/u6060939/wrf_build/WRF/main/`
-   binaries, not John's `~/gits/brc-wrf/main/` binaries. The practical harness
-   must source executables from John's build and verify they match before
-   `real.exe`. Follow-up job `13550021` corrected binary provenance and ran
-   John's WRF `V4.8.0`, but failed because the clean scenario `WRF_RUN` lacked
-   `CAMtr_volume_mixing_ratio`. Stage runtime physics files from John's
-   `~/gits/brc-wrf/run/` before rerunning.
-2. Write the practical-test SOP in `brc-docs`: exact source run directory,
-   executable provenance, cleanup/refusal rules, resubmit command, and result
-   table.
+1. Walk through the existing Gate 10 quicklooks with meteorological review.
+2. Choose whether to approve exactly one additional practical benchmark row;
+   `scaling_t028` has already passed after the wrapper sourced executables from
+   John's build, byte-checked them, and staged runtime physics files from
+   John's `~/gits/brc-wrf/run/`.
 3. GEFS+NAM two-stream WPS/real path: build or select a GEFSv12 reforecast
    Vtable, ungrib GEFS and NAM separately, run metgrid with
    `fg_name = 'GEFS','NAM'`, then prove `real.exe`.

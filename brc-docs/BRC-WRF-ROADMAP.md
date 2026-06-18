@@ -24,21 +24,21 @@ ready for practical testing, plus 3 optional or follow-on gates.
 Current gate state as of 2026-06-18: Gates 0-11 have passed through the
 John-owned WRF/WPS build proof, fresh NAM-only input contract, NAM-only
 WPS/`real.exe`/`wrf.exe` rerun, archive, quicklooks, and a maintained
-render-only practical-test harness. Scaling, memory sweeps, and the GEFS+NAM
-science branch remain separate follow-ons. Practical testing has started, but
-the first scaling row failed before producing benchmark evidence.
+render-only practical-test harness. Practical testing has one approved
+28-task scaling row complete after fixing executable provenance and WRF runtime
+file staging. Memory sweeps, other scaling rows, and the GEFS+NAM science branch
+remain separate follow-ons.
 
-Current practical chain, submitted 2026-06-18:
+Current practical evidence, submitted 2026-06-18:
 
 | Step | Job ID | Role | Result |
 | --- | --- | --- | --- |
-| 0 | `13548706` | prepare per-scenario `wrf_run` directories | completed |
-| 1 | `13548709` | `scaling_t028` | `real.exe` passed; `wrf.exe` failed with missing `CAMtr_volume_mixing_ratio` |
-| 2 | `13548711` | `scaling_t016` | canceled after dependency failure |
-| 3 | `13548714` | `scaling_t056` | canceled after dependency failure |
-| 4 | `13548717` | `memory_600G` | canceled after dependency failure |
-| 5 | `13548719` | `memory_450G` | canceled after dependency failure |
-| 6 | `13548747` | final Slurm/text summary | canceled |
+| 0 | `13548706` | original prepare per-scenario `wrf_run` directories | completed, but inherited wrong executable source |
+| 1 | `13548709` | original `scaling_t028` | `real.exe` passed; `wrf.exe` failed with missing `CAMtr_volume_mixing_ratio`; log showed WRF `V4.7.1` from Michael-owned binaries |
+| 2 | `13548711`, `13548714`, `13548717`, `13548719`, `13548747` | dependent scaling/memory/summary jobs | canceled after dependency failure |
+| 3 | `13550021` | provenance-fixed `scaling_t028` retry | used John's WRF `V4.8.0`; failed because runtime physics files from John's `run/` directory were absent |
+| 4 | `13550104` | runtime-file fixed `scaling_t028` prep | completed |
+| 5 | `13550110` | `scaling_t028`, 28 tasks, `900G` | passed `real.exe`, `wrf.exe`, archive, and debug summary; archive `run_20260618T230858Z` |
 
 ## Standing Rules
 
@@ -520,26 +520,26 @@ Required evidence:
 
 Goal: find the task-count knee for the proven case.
 
-Status: started on 2026-06-18. Prep `13548706` completed, but
-`scaling_t028` job `13548709` failed in `wrf.exe` after `real.exe` succeeded.
-The WRF log reports WRF `V4.7.1`, so fix executable/source provenance before
-resubmitting. Live diagnosis showed the practical row's `real.exe` and
-`wrf.exe` symlinked through the base scratch run to Michael Davies'
-`lawson-group6/u6060939/wrf_build/WRF/main/` binaries instead of John's
-`~/gits/brc-wrf/main/` binaries. Follow-up job `13550021` corrected binary
-provenance and launched WRF `V4.8.0`, but the clean scenario run directory was
-missing John's runtime physics files; with default `ghg_input=1`, RRTMG needs
-`CAMtr_volume_mixing_ratio`.
+Status: one row passed on 2026-06-18. The original `scaling_t028` job
+`13548709` failed after using Michael-owned WRF `V4.7.1` binaries through
+scratch symlinks. Follow-up job `13550021` corrected binary provenance and
+launched John's WRF `V4.8.0`, but the clean scenario run directory lacked
+runtime physics files such as `CAMtr_volume_mixing_ratio`. After the wrapper
+started sourcing executables from John's `main/` directory, byte-checking them,
+and staging required runtime files from John's `run/` directory, prep job
+`13550104` and `scaling_t028` job `13550110` passed. Evidence:
+`/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/jan2013_basin_gefs/practical_tests/scaling_t028/run_20260618T230858Z/debug/`.
 
 Approval boundary: Slurm and WRF execution. The failed chain was approved for
-that attempt only; do not add or resubmit rows without a fresh reason.
+that attempt only; job `13550110` was the single approved retry. Do not add or
+resubmit rows without a fresh reason and explicit approval.
 
 Candidate table:
 
 | Tasks | Memory | Expected use | Evidence |
 | ---: | ---: | --- | --- |
 | 16 | TBD | slower but cheaper baseline | wall time, sim hours, marker, archive |
-| 28 | TBD | likely middle point | wall time, sim hours, marker, archive |
+| 28 | `900G` | passed first practical row | `wrf.exe` 2296 s, success marker, archive `run_20260618T230858Z` |
 | 56 | `900G` first | high-power default | wall time, sim hours, marker, archive |
 
 Do not compare runs unless source SHA, WRF/WPS roots, input contract, namelists,
@@ -550,10 +550,11 @@ and archive completeness are the same.
 Goal: replace `900G` with an evidence-backed request for the proven case.
 
 Status: not run. Jobs `13548717` (`600G`) and `13548719` (`450G`) were canceled
-after the upstream scaling failure.
+after the original upstream scaling failure. The later approved 28-task rerun
+passed at `900G`, but it is not a memory right-sizing result.
 
-Approval boundary: Slurm and WRF execution. Diagnose the first failed upstream
-job before rerunning memory rows.
+Approval boundary: Slurm and WRF execution. Approve exactly one memory row and
+stop on its result; do not launch a sweep by default.
 
 Evidence:
 
@@ -594,8 +595,10 @@ Read, in order:
 
 Pick exactly one gate or follow-on from brc-docs/BRC-WRF-ROADMAP.md. Gates 0-11
 are complete as of 2026-06-18 if live docs still match this branch. Practical
-testing has started but is blocked by failed job 13548709. Diagnose executable
-and run-directory provenance before submitting anything else.
+testing has one completed 28-task row, job 13550110, after fixing executable
+provenance and WRF runtime-file staging. The next single gate is science review
+of Gate 10 quicklooks or explicit approval of exactly one additional benchmark
+row.
 
 Hard boundaries:
 - No compile, WPS, real.exe, wrf.exe, sbatch, large staging, strict artifact

@@ -163,27 +163,28 @@ Practical-test countdown:
 | 4 | Keep the successful NAM-only rerun and quicklooks wired into docs. | Done for Gates 6-10 evidence; continue only for maintained templates. | Do not overstate this as GEFS+NAM proof. |
 | 5 | Build the maintained practical-test harness. | Done on 2026-06-18. | `wrf_case.py render-practical-harness` renders wrapper/checklist/result tables; no new WRF submission unless approved. |
 | 6 | Decide whether GEFS+NAM two-stream is worth pursuing now. | Codex can prepare the design table; human chooses the science path. | Do not run WPS yet. |
-| 7 | Run practical WRF setting tests: scaling and memory on `notch392`. | Codex can render scripts and result tables. | No benchmark `sbatch` without explicit approval. |
+| 7 | Run practical WRF setting tests: scaling and memory on `notch392`. | First 28-task row passed; Codex can render scripts and result tables. | No additional benchmark `sbatch` without explicit approval. |
 
-Current practical blocker: the first approved `scaling_t028` row did not use
-John's compiled WRF binaries. Live diagnosis on 2026-06-18 showed the scenario
-`real.exe` and `wrf.exe` symlinked through the base scratch run to Michael
+Practical-test status: the first approved `scaling_t028` chain exposed two
+setup bugs and then passed after fixes. Live diagnosis on 2026-06-18 showed the
+original scenario `real.exe` and `wrf.exe` symlinked through scratch to Michael
 Davies' `lawson-group6/u6060939/wrf_build/WRF/main/` binaries instead of
-John's `~/gits/brc-wrf/main/` binaries. Keep future practical preparation
-strict: executables and runtime physics files come from John's
-`paths.wrf_build/{main,run}`, while `namelist.input` and `met_em` come from the
-approved proven run artifacts in an approved off-login context. Follow-up job
-`13550021` proved John's WRF `V4.8.0` binaries were used and then failed because
-the clean scenario run directory lacked `CAMtr_volume_mixing_ratio`; default
-`ghg_input=1` with RRTMG needs that file from John's `run/` directory.
+John's `~/gits/brc-wrf/main/` binaries. Follow-up job `13550021` proved John's
+WRF `V4.8.0` binaries were used and then failed because the clean scenario run
+directory lacked `CAMtr_volume_mixing_ratio`; default `ghg_input=1` with RRTMG
+needs that file from John's `run/` directory. Prep job `13550104` and
+`scaling_t028` job `13550110` passed after the wrapper sourced executables and
+runtime physics files from John's `paths.wrf_build/{main,run}`. Evidence:
+`/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/jan2013_basin_gefs/practical_tests/scaling_t028/run_20260618T230858Z/debug/`.
 
 ## Recommended Next No-Run Batch
 
-The `brc-tools` hygiene batch is merged upstream and Roadmap Gates 3-11 are now
-complete for the NAM-only baseline and maintained render-only harness. Keep the
-next `brc-wrf` work on approval-gated practical testing prep: choose scaling or
-memory rows from the harness packet, or stay in no-run design work for GEFS+NAM
-and domain/geog review.
+The `brc-tools` hygiene batch is merged upstream, Roadmap Gates 3-11 are
+complete for the NAM-only baseline and maintained harness, and `scaling_t028`
+has one successful 28-task row. Keep the next `brc-wrf` work on science review:
+inspect Gate 10 quicklooks with John/Michael, approve exactly one additional
+benchmark row, or stay in no-run design work for GEFS+NAM and domain/geog
+review.
 
 The current John/Michael no-run handout is
 `brc-docs/BRC-WRF-MICHAEL-PRACTICAL-PACKET.md`. It packages the first contract
