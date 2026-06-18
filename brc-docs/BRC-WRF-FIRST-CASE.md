@@ -16,6 +16,10 @@ human approval before they run.
   `2013-01-31_12:00:00` through `2013-02-02_00:00:00`.
 - Validated runtime target: `notch392`, `lawson-np`, one node, 56 tasks,
   Intel MPI launched with `srun --mpi=pmi2`.
+- John-owned WPS executable root is now proven at
+  `/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_build/WPS`.
+  Gate 3 evidence:
+  `/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_build_logs/brc-wrf/gate3_20260618T054456Z_13539773/`.
 - Not yet validated: GEFSv12 reforecast plus NAM two-stream forcing
   (`fg_name = 'GEFS','NAM'`, `interval_seconds = 10800`).
 
@@ -32,7 +36,7 @@ use `prefix = 'NAM'` and `fg_name = 'NAM'` if those names are kept paired.
 | Step | Owner | Node class | Main output |
 | --- | --- | --- | --- |
 | Plan and stage GRIB input | `../brc-tools` | DTN | `/scratch/general/vast/$USER/wrf_inputs/<case>/` |
-| Validate staged input | `../brc-tools` | login or DTN | `manifest_<case>.json` check results |
+| Validate staged input | `../brc-tools` | approved compute/batch or DTN | `manifest_<case>.json` check results |
 | WPS setup and run | WPS plus this runbook | allocation or batch | `met_em.d0*` |
 | `real.exe` and `wrf.exe` | `brc-wrf` build/run tree | `notch392` batch | `wrfinput_d0*`, `wrfbdy_d01`, `wrfout_d0*` |
 | Archive and explain result | `brc-wrf` wrapper | end of batch | `lawson-group6/<namespace>/wrf_archive/<case>/run_<UTC>/` |
@@ -68,15 +72,21 @@ for the validated consumption path, so the case validator has a durable
 handshake to read. Do not treat the missing old scratch sidecar as evidence that
 fresh `brc-tools` staging lacks the contract feature.
 
-Cheap checks that do not submit jobs:
+Login-safe planning plus off-login verification:
 
 ```bash
 cd ~/gits/brc-tools
 python scripts/stage_wrf_inputs.py --plan --case jan2013_basin_gefs \
   --init-time "2013-01-31 12Z" --source nam_analysis
+
+# Off-login only: this hashes existing staged GRIB files.
 python scripts/stage_wrf_inputs.py --verify-manifest \
   /scratch/general/vast/$USER/wrf_inputs/jan2013_basin_gefs/manifest_jan2013_basin_gefs.json
 ```
+
+The `--plan` command is metadata planning. Manifest verification reads scratch
+artifacts and should run only in an approved compute/batch context or on the
+appropriate transfer node.
 
 Current checked evidence: the existing staged proof manifest verifies `28/28 OK`
 for 7 NAM files plus 21 optional GEFS reforecast files. The validated WPS run
@@ -166,12 +176,15 @@ The non-fatal `real.exe` soil message observed for the proof was:
 
 ## Next Tests
 
-1. GEFS+NAM two-stream WPS/real path: build or select a GEFSv12 reforecast
+1. Fresh NAM-only input contract: produce or locate current `brc-tools`
+   `manifest_<case>.json` and `contract_<case>.json`, then validate them
+   off-login before any WPS execution.
+2. GEFS+NAM two-stream WPS/real path: build or select a GEFSv12 reforecast
    Vtable, ungrib GEFS and NAM separately, run metgrid with
    `fg_name = 'GEFS','NAM'`, then prove `real.exe`.
-2. Scaling sweep on `notch392`: run the same case at 16, 28, and 56 tasks, then
+3. Scaling sweep on `notch392`: run the same case at 16, 28, and 56 tasks, then
    record wall time per simulated hour and peak memory.
-3. Use `brc-cases/` to review the case manifest, validate cheap metadata, and
+4. Use `brc-cases/` to review the case manifest, validate cheap metadata, and
    render Slurm text before any submitted run.
-4. Promote the run wrapper into a maintained brc-wrf-side template only after
+5. Promote the run wrapper into a maintained brc-wrf-side template only after
    the exact build/WPS/run directory contract is settled.

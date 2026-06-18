@@ -90,6 +90,12 @@ CHPC WRF quickstart validates that setup. The CMake-oriented path still matters
 for this fork, but it should be treated as a later comparison until it is
 validated on CHPC with the same level of evidence.
 
+For AI-led build/run progression, use `../doc/BRC_WRF_END_TO_END_AI_HANDOFF.md`
+as the routing map. It keeps CHPC architecture choices in `brc-knowledge`,
+treats Michael's proven build/run path as a yardstick only, and requires John's
+WRF executables to be compiled from this fork rather than loaded as a prebuilt
+WRF product.
+
 The CHPC WRF guide validated this module stack for WRF/WPS work on Notchpeak:
 
 ```bash

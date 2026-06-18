@@ -4,9 +4,19 @@ This is the WRF-run-side control board for a Codex session picking up the
 remaining input-staging handshake, WPS/WRF proof, run-tuning, and documentation
 refresh work.
 
+For the AI-optimized route to the overarching end-to-end goal, including
+compiling John's fork for CHPC, pairing it with a John-owned WPS root, and using
+Michael's proven path only as a yardstick, read
+`doc/BRC_WRF_END_TO_END_AI_HANDOFF.md`.
+
 It is intentionally a planning and routing artifact. It is not approval to run
 DTN staging, WPS, `real.exe`, `wrf.exe`, Slurm submissions, scaling sweeps, or
 large downloads.
+
+Current gate state as of 2026-06-18: Roadmap Gate 3 passed for the John-owned
+WPS executable proof, and Gate 4 passed as metadata-only case-root review. The
+next required gate is Gate 5, a fresh NAM-only input contract from `brc-tools`
+before any WPS execution.
 
 The file includes `brc-tools` tasks because WRF cannot safely consume staged
 forcing until the manifest/contract side is trustworthy. Keep implementation
@@ -33,17 +43,19 @@ Then read only the task-owned files named below. Do not broad-scan WRF source
 or load high-token scripts until `rg` points to a specific function, test, or
 doc section.
 
-Cheap checks that are allowed from this repo:
+Login-node-safe checks from this repo:
 
 ```bash
-python ../brc-tools/scripts/stage_wrf_inputs.py --verify-manifest \
-  /scratch/general/vast/$USER/wrf_inputs/jan2013_basin_gefs/manifest_jan2013_basin_gefs.json
-
 python brc-cases/wrf_case.py validate \
-  brc-cases/jan2013_basin_nam.case.yaml --strict-files
+  brc-cases/jan2013_basin_nam.case.yaml
 
 git diff --check
 ```
+
+Off-login no-run practical checks include manifest verification, strict case
+validation that reads staged/archive paths, quicklook checks/renders, NetCDF
+reads, and archive inventories. Run those only inside an approved Slurm batch or
+interactive compute context.
 
 Do not run WPS, `real.exe`, `wrf.exe`, `sbatch`, scaling sweeps, or large
 download/stage commands without explicit human approval. Do not run practical
@@ -122,6 +134,8 @@ render path performs practical checks.
 | GEFS+NAM two-stream | Not proven. Treat as a WPS/field-coverage design task until approved WPS evidence exists. | `../brc-tools/docs/WRF-GEFS-NAM-FIELD-MAP.md`; stop before `real.exe`. |
 | WRF run tuning | Not benchmarked. Current max owned-node profile is a safe high-power default, not the efficiency knee. | Prepare 16/28/56 task and memory tables; no `sbatch` without approval. |
 | CHPC settings | Rechecked 2026-06-17 against `brc-knowledge`: WRF default remains single-node `notch392` on `lawson-np`; avoid multi-node for Basin-scale cases unless memory/size proves it. | `../brc-knowledge/scholarium/reference-base/resources/chpc-team-resource-inventory.md`; `wrf-on-chpc-quickstart.md`; `chpc-slurm-job-examples.md`. |
+| John-owned WPS proof | Passed 2026-06-18 from official WPS v4.6.0 source. | `/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_build_logs/brc-wrf/gate3_20260618T054456Z_13539773/`; WPS root `/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_build/WPS`. |
+| Case-root metadata review | Passed 2026-06-18. | `/tmp/jan2013_basin_nam.gate4.20260618T054655Z.report.txt`; rendered review `/tmp/jan2013_basin_nam.gate4.20260618T054655Z.rendered.slurm`; not submitted. |
 | Docs/router state | This file is the detailed queue; `AGENTS.md` and `doc/BRC_WRF_HANDOFF.md` should stay short. | Update detailed counts here, then leave only pointers in router docs. |
 
 ## Current Countdown
@@ -152,13 +166,19 @@ Practical-test countdown:
 
 ## Recommended Next No-Run Batch
 
-The `brc-tools` hygiene batch is merged upstream. Keep the next work here in
-the WRF-run-side lane unless a separate `brc-tools` session is opened.
+The `brc-tools` hygiene batch is merged upstream and Roadmap Gates 3-4 are now
+complete. Keep the next work on Gate 5 input-contract truth unless a separate
+`brc-tools` session is opened.
 
 The current John/Michael no-run handout is
 `brc-docs/BRC-WRF-MICHAEL-PRACTICAL-PACKET.md`. It packages the first contract
 validation checklist, settings map, approval gates, and blank result tables for
 pair-programming without WPS/WRF execution.
+
+The current AI end-to-end handoff is
+`doc/BRC_WRF_END_TO_END_AI_HANDOFF.md`. Use it when the next session is about
+build architecture, WRF/WPS ownership, or progressing toward a real submitted
+run rather than general planning cleanup.
 
 ### Lane 1: Bang Out Here In `brc-wrf`
 
@@ -198,11 +218,13 @@ pointer. Closed here: #32 cross-repo doc sync.
 Use this only after fresh `brc-tools` staging has produced a real sidecar:
 
 ```bash
+# Off-login only: this hashes staged files and reads scratch artifacts.
 python ../brc-tools/scripts/stage_wrf_inputs.py --verify-manifest \
   /scratch/general/vast/$USER/wrf_inputs/<case>/manifest_<case>.json
 
 # Then point a review copy of the case yaml at:
 # /scratch/general/vast/$USER/wrf_inputs/<case>/contract_<case>.json
+# Off-login only when --strict-files reads staged/archive paths.
 python brc-cases/wrf_case.py validate <case>.yaml --strict-files
 ```
 

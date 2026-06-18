@@ -6,7 +6,9 @@ large downloads, or scaling sweeps.
 
 Tags:
 
-- `now`: safe no-run work.
+- `now`: login-node-safe no-run work.
+- `off-login`: no-run but reads staged inputs, NetCDF, archive artifacts, or
+  quicklooks; run only in an approved compute/batch context.
 - `gate`: needs explicit human approval before execution.
 - `science`: needs meteorological judgment.
 - `audit`: code, settings, or provenance review.
@@ -31,7 +33,7 @@ Tags:
 - [ ] 011 `now` Read `brc-cases/jan2013_basin_nam.case.yaml`.
 - [ ] 012 `audit` Mark proven facts versus editable experiment settings.
 - [ ] 013 `now` Run `python brc-cases/wrf_case.py validate brc-cases/jan2013_basin_nam.case.yaml`.
-- [ ] 014 `now` Run strict validation against the current reconstructed contract.
+- [ ] 014 `off-login` Run strict validation against the current reconstructed contract.
 - [ ] 015 `audit` Confirm `forcing.sources` is NAM-only for the proven path.
 - [ ] 016 `audit` Confirm `forcing.wps_fg_name` is `NAM`.
 - [ ] 017 `audit` Preserve the old proof nuance: WPS scratch used `FILE`.
@@ -41,7 +43,7 @@ Tags:
 
 ## 3. Input Staging Contract
 
-- [ ] 021 `now` Verify the existing proof manifest reports `28/28 OK`.
+- [ ] 021 `off-login` Verify the existing proof manifest reports `28/28 OK`.
 - [ ] 022 `tools` Read `../brc-tools/docs/WRF-INPUT-STAGING.md`.
 - [ ] 023 `tools` Read `../brc-tools/docs/WRF-STAGING-STATE-PLAYBOOK.md`.
 - [ ] 024 `tools` Confirm fresh staging emits `manifest_<case>.json`.
@@ -69,12 +71,12 @@ Tags:
 
 - [ ] 041 `science` Review domain bounds against the Uinta Basin question.
 - [ ] 042 `knowledge` Confirm the intended `WPS_GEOG` path.
-- [ ] 043 `science` Inspect terrain quicklook.
-- [ ] 044 `science` Inspect d02 landmask quicklook.
-- [ ] 045 `science` Inspect skin temperature and snow quicklook.
-- [ ] 046 `science` Inspect d02 2 m temperature quicklook.
-- [ ] 047 `science` Inspect d02 10 m wind quicklook.
-- [ ] 048 `science` Inspect snow-depth quicklook.
+- [ ] 043 `off-login` `science` Inspect terrain quicklook.
+- [ ] 044 `off-login` `science` Inspect d02 landmask quicklook.
+- [ ] 045 `off-login` `science` Inspect skin temperature and snow quicklook.
+- [ ] 046 `off-login` `science` Inspect d02 2 m temperature quicklook.
+- [ ] 047 `off-login` `science` Inspect d02 10 m wind quicklook.
+- [ ] 048 `off-login` `science` Inspect snow-depth quicklook.
 - [ ] 049 `science` Record whether the NAM-only baseline is plausible.
 - [ ] 050 `science` Record whether the soil warning changes trust in the proof.
 
@@ -106,14 +108,14 @@ Tags:
 
 ## 8. Output, Archive, And Reproducibility
 
-- [ ] 071 `now` Inventory the existing archive run path.
-- [ ] 072 `audit` Count archived `wrfout_d01_*` files.
-- [ ] 073 `audit` Count archived `wrfout_d02_*` files.
-- [ ] 074 `audit` Confirm archived `namelist.input`.
-- [ ] 075 `audit` Confirm archived `rsl.out.0000`.
-- [ ] 076 `audit` Confirm archived `real.rsl.out.0000`.
-- [ ] 077 `audit` Record archive size and file count.
-- [ ] 078 `audit` Link quicklooks to the archive they came from.
+- [ ] 071 `off-login` Inventory the existing archive run path.
+- [ ] 072 `off-login` `audit` Count archived `wrfout_d01_*` files.
+- [ ] 073 `off-login` `audit` Count archived `wrfout_d02_*` files.
+- [ ] 074 `off-login` `audit` Confirm archived `namelist.input`.
+- [ ] 075 `off-login` `audit` Confirm archived `rsl.out.0000`.
+- [ ] 076 `off-login` `audit` Confirm archived `real.rsl.out.0000`.
+- [ ] 077 `off-login` `audit` Record archive size and file count.
+- [ ] 078 `off-login` `audit` Link quicklooks to the archive they came from.
 - [ ] 079 `gate` Decide whether scratch inputs should be promoted.
 - [ ] 080 `audit` Update runbook only from checked logs or artifacts.
 

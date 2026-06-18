@@ -20,9 +20,12 @@ Read:
 Goal: tighten the brc-tools <-> brc-wrf handoff without running WPS, WRF, Slurm,
 or heavy downloads unless explicitly approved.
 
-Start with cheap checks:
-python scripts/stage_wrf_inputs.py --verify-manifest \
-  /scratch/general/vast/$USER/wrf_inputs/jan2013_basin_gefs/manifest_jan2013_basin_gefs.json
+Start with login-safe planning checks. Do not run manifest verification from a
+login node; it hashes staged scratch artifacts and belongs in an approved
+compute/batch context or on the appropriate transfer node.
+
+python scripts/stage_wrf_inputs.py --plan --case jan2013_basin_gefs \
+  --init-time "2013-01-31 00Z" --source nam_analysis --fxx-window 12,48
 
 Then address the open link issues below in small commits.
 ```
@@ -64,14 +67,15 @@ Then address the open link issues below in small commits.
 ```bash
 cd ~/gits/brc-tools
 
-python scripts/stage_wrf_inputs.py --verify-manifest \
-  /scratch/general/vast/$USER/wrf_inputs/jan2013_basin_gefs/manifest_jan2013_basin_gefs.json
-
 python scripts/stage_wrf_inputs.py --plan --case jan2013_basin_gefs \
   --init-time "2013-01-31 00Z" --source nam_analysis --fxx-window 12,48
+
+python scripts/stage_wrf_inputs.py --verify-manifest \
+  /scratch/general/vast/$USER/wrf_inputs/jan2013_basin_gefs/manifest_jan2013_basin_gefs.json
 
 pytest -q tests/test_wrf_staging.py
 ```
 
-These commands are cheap except the test suite can take normal Python-test time.
-Do not submit DTN or WRF jobs from this handoff.
+The `--verify-manifest` command is off-login because it hashes staged files.
+The `--plan` command is login-safe metadata planning. The test suite can take
+normal Python-test time. Do not submit DTN or WRF jobs from this handoff.

@@ -18,6 +18,9 @@ entry point for human contributors; AI-assisted routing lives in `AGENTS.md`.
   cheap-before-expensive orientation.
 - `doc/BRC_WRF_HANDOFF.md`: slim pointer to the current WRF-run-side control
   board.
+- `doc/BRC_WRF_END_TO_END_AI_HANDOFF.md`: AI-optimized pointer map for building
+  John's fork, pairing it with a John-owned WPS root, and progressing toward a
+  repeatable CHPC WRF run.
 - `brc-docs/`: concise BRC-facing usage and roadmap notes for CHPC work.
   Start with `brc-docs/BRC-WRF-FORK-HIGHLIGHTS.md` and
   `brc-docs/BRC-WRF-STATE-PLAYBOOK.md` for a print-sized milestone overview.
@@ -38,6 +41,8 @@ internals broadly.
 - BRC docs index: `brc-docs/README.md`.
 - Current WRF-run-side control board:
   `doc/BRC_WRF_MICROTASK_HANDOFF.md`.
+- End-to-end AI handoff:
+  `doc/BRC_WRF_END_TO_END_AI_HANDOFF.md`.
 - Current first-case runbook: `brc-docs/BRC-WRF-FIRST-CASE.md`.
 - CHPC infrastructure truth:
   `../brc-knowledge/scholarium/reference-base/resources/chpc-team-resource-inventory.md`.
@@ -70,7 +75,7 @@ guesswork, then grow toward repeatable ensembles.
 | Order | Goal | Why It Comes Next | Mini To-Dos |
 | --- | --- | --- | --- |
 | 1 | Confirm CHPC authority | Prevents cargo-cult modules, paths, and Slurm flags. | Treat `../brc-knowledge/scholarium/reference-base/resources/chpc-team-resource-inventory.md` as canonical infrastructure truth; use its delegated WRF quickstart for WRF-specific build/run details. |
-| 2 | Prove the install recipe | This is the first proof of concept for the fork, compilers, modules, and WPS pairing. | Use the legacy WRF/WPS path first because the CHPC WRF quickstart has validated it; keep CMake as a later comparison. Compile John's `~/gits/brc-wrf` checkout, keep build logs in persistent `lawson-group6` storage outside the repo, and record Git SHA, module list, build path, and executables. |
+| 2 | Prove the install recipe | This is the first proof of concept for the fork, compilers, modules, and WPS pairing. | Use `doc/BRC_WRF_END_TO_END_AI_HANDOFF.md` as the AI routing map. Use the legacy WRF/WPS path first because the CHPC WRF quickstart has validated it; keep CMake as a later comparison. Compile John's `~/gits/brc-wrf` checkout, keep build logs in persistent `lawson-group6` storage outside the repo, and record Git SHA, module list, build path, and executables. |
 | 3 | Run one submitted real-data case | Batch precedent beats login-node calamity and leaves pollable evidence. | Render and submit a guarded Slurm job; collect stdout, stderr, `rsl.*`, scheduler metadata, and success markers. |
 | 4 | Target the first Basin weather case | A small real case teaches more than a toy run once installation is proven. | Use the validated NAM-only Jan-2013 12/4 km nested Basin proof as the first run record. Keep GEFS+NAM reforecast forcing as the next unproven path. |
 | 5 | Make the outputs worth looking at | Build success is not the same as a useful simulation. | Archive namelists, `wrfout*`, WPS/WRF logs, provenance, and quick visual checks against expected snowy-weather behavior. Preserve `brc-tools` input manifests and contracts. |

@@ -38,6 +38,7 @@ owner repo, and stop point.
 | CHPC posture | Usable. Canonical CHPC facts live in `brc-knowledge`; this repo points there. |
 | First case | Proven NAM-only path for Jan 31-Feb 2 2013, d01/d02 Basin nest. |
 | Case review | Usable. `brc-cases/wrf_case.py` validates metadata and renders Slurm text only. |
+| WRF/WPS build proof | Gates 2-3 passed. John's `main/real.exe` and `main/wrf.exe` exist, and John-owned WPS v4.6.0 is built at `/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_build/WPS`. |
 | Visual QA | Usable. `brc-cases/wrf_quicklook.py` renders five no-run PNGs from existing proof artifacts. |
 | Slurm profile | Aligned to max owned-node profile: `lawson-np`, `notch392`, 1 node, 56 tasks, `900G`, `srun --mpi=pmi2`. |
 | GEFS+NAM | Not proven. Treat as a design/proof task, not a working production method. |
@@ -46,11 +47,10 @@ owner repo, and stop point.
 
 | Order | Next move | Stop point |
 | --- | --- | --- |
-| 1 | Review the quicklook PNGs with meteorological eyes. | Decide whether the NAM-only proof looks physically plausible enough to keep as baseline. |
-| 2 | Commit this docs/validator/quicklook checkpoint. | Branch has a clean, reviewable milestone. |
-| 3 | Push or otherwise account for the current local commit stack. | Remote and local state are not ambiguous. |
-| 4 | Decide whether GEFS+NAM is still needed for the next science question. | If yes, draft the two-stream WPS proof; if no, improve NAM-only repeatability. |
-| 5 | For any real run, render Slurm and inspect it against `brc-knowledge` before `sbatch`. | Human approval only after the rendered script matches current CHPC truth. |
+| 1 | Prove a fresh NAM-only `contract_<case>.json` from `brc-tools`. | Do not run WPS until the current input contract is trustworthy. |
+| 2 | Decide whether GEFS+NAM is still needed for the next science question. | If yes, draft the two-stream WPS proof; if no, improve NAM-only repeatability. |
+| 3 | For any real run, render Slurm and inspect it against `brc-knowledge` before `sbatch`. | Human approval only after the rendered script matches current CHPC truth. |
+| 4 | Review the old quicklook PNGs with meteorological eyes. | Decide whether the NAM-only proof remains a physically useful baseline. |
 
 ## Reading Packet
 
@@ -58,17 +58,19 @@ Read these in order for a milestone review:
 
 1. `brc-docs/BRC-WRF-MICHAEL-PRACTICAL-PACKET.md` for a pair-programming
    walkthrough.
-2. `brc-docs/BRC-WRF-FORK-HIGHLIGHTS.md`
-3. `brc-docs/BRC-WRF-FIRST-CASE.md`
-4. `brc-cases/README.md`
-5. `brc-docs/BRC-WRF-USAGE.md`
-6. `../brc-tools/docs/WRF-STAGING-STATE-PLAYBOOK.md`
-7. `brc-docs/BRC-TOOLS-LINK-HANDOFF.md` if opening a `brc-tools` session
-8. `../brc-knowledge/scholarium/reference-base/resources/chpc-team-resource-inventory.md` sections 1-3 and Q1
-9. `../brc-knowledge/scholarium/reference-base/resources/wrf-on-chpc-quickstart.md` sections 2, 3, and 8
+2. `doc/BRC_WRF_END_TO_END_AI_HANDOFF.md` for an AI-led build/WPS/WRF
+   progression map.
+3. `brc-docs/BRC-WRF-FORK-HIGHLIGHTS.md`
+4. `brc-docs/BRC-WRF-FIRST-CASE.md`
+5. `brc-cases/README.md`
+6. `brc-docs/BRC-WRF-USAGE.md`
+7. `../brc-tools/docs/WRF-STAGING-STATE-PLAYBOOK.md`
+8. `brc-docs/BRC-TOOLS-LINK-HANDOFF.md` if opening a `brc-tools` session
+9. `../brc-knowledge/scholarium/reference-base/resources/chpc-team-resource-inventory.md` sections 1-3 and Q1
+10. `../brc-knowledge/scholarium/reference-base/resources/wrf-on-chpc-quickstart.md` sections 2, 3, and 8
 
-For Michael, start with items 1, 3, 4, and 6 before the full CHPC resource
-inventory. For John, start with items 2, 3, 6, 8, and 9; add item 7 when the
+For Michael, start with items 1, 4, 5, and 7 before the full CHPC resource
+inventory. For John, start with items 2, 3, 4, 7, 9, and 10; add item 8 when the
 next task is in `brc-tools`.
 
 ## Maximum Owned-Node WRF Profile

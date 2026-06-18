@@ -13,6 +13,9 @@ files concise and route deeper operational records to `doc/`, `brc-cases/`,
 - `BRC-WRF-MICHAEL-PRACTICAL-PACKET.md`: short John/Michael pair-programming
   handout with no-run walkthrough commands, editable settings, approval gates,
   and blank result tables.
+- `../doc/BRC_WRF_END_TO_END_AI_HANDOFF.md`: AI-facing pointer map for the
+  end-to-end build/WPS/WRF goal, using Michael's proven path as a yardstick but
+  keeping John's fork/build ownership separate.
 - `TOP-100-START-HERE-JUNE.md`: terse 100-item microtask menu for practical
   WRF tests, science checks, and code/provenance auditing.
 - `BRC-TOOLS-LINK-HANDOFF.md`: current handoff to `../brc-tools` for tightening
