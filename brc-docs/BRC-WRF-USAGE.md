@@ -151,8 +151,11 @@ The current Jan-2013 case manifest uses the high-powered owned-node profile
 the current `brc-knowledge` WRF quickstart for a non-preemptible single run.
 Practical testing has started, but the first 28-task row failed before timing
 evidence because the run log identified WRF `V4.7.1` and a missing
-`CAMtr_volume_mixing_ratio`. Do not resubmit until the practical `wrf_run`
-source and executable provenance are fixed.
+`CAMtr_volume_mixing_ratio`. Live diagnosis showed that the practical row's
+`real.exe` and `wrf.exe` resolved to Michael Davies'
+`lawson-group6/u6060939/wrf_build/WRF/main/` binaries through scratch symlinks,
+not John's `~/gits/brc-wrf/main/` binaries. Do not resubmit until the practical
+`wrf_run` source and executable provenance are fixed.
 
 Do not use bare `mpirun` for WRF on this Intel MPI stack. Do not use bare
 `srun -n N ./wrf.exe` without `--mpi=pmi2`.

@@ -529,8 +529,11 @@ Boundaries:
 
 Default recommendation: start from job `13548709`. `real.exe` passed, then
 `wrf.exe` failed with `CLWRF: 'CAMtr_volume_mixing_ratio' does not exist`; the
-log reports WRF `V4.7.1`. Verify the source `wrf_run`, executables, namelist,
-and `met_em` provenance before rerunning anything.
+log reports WRF `V4.7.1`. Live diagnosis found the scenario `real.exe` and
+`wrf.exe` symlinked through scratch to Michael Davies'
+`lawson-group6/u6060939/wrf_build/WRF/main/` binaries. Source executables from
+John's `~/gits/brc-wrf/main`, use approved proven artifacts only for
+`namelist.input`/`met_em`, and verify byte-match before rerunning anything.
 ```
 
 ## Closeout Template

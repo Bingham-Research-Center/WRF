@@ -159,6 +159,9 @@ archive:
             self.assertIn("practical_tests/baseline/wrf_run", prepare)
             self.assertIn("practical_tests/scaling_t016/wrf_run", prepare)
             self.assertIn("Approved batch, DTN, or interactive compute context only", prepare)
+            self.assertIn("JOHN_WRF_BUILD=/tmp/brc_wrf_unit_missing_wrf_build", prepare)
+            self.assertIn('rsync -av "$JOHN_WRF_BUILD"/main/wrf.exe "$WRF_RUN"/', prepare)
+            self.assertIn('cmp -s "$JOHN_WRF_BUILD/main/wrf.exe" "$WRF_RUN/wrf.exe"', prepare)
 
             approval = (output_dir / "APPROVAL_PACKET.md").read_text(encoding="utf-8")
             self.assertIn("Job ID | Slurm state | WRF marker", approval)
@@ -168,6 +171,10 @@ archive:
             self.assertIn("#SBATCH --ntasks=16", scaling)
             self.assertIn("practical_tests/scaling_t016/wrf_run", scaling)
             self.assertIn('require_executable "$WRF_RUN/real.exe"', scaling)
+            self.assertIn("WRF_BUILD=/tmp/brc_wrf_unit_missing_wrf_build", scaling)
+            self.assertIn("EXPECTED_WRF=/tmp/brc_wrf_unit_missing_wrf_build/main/wrf.exe", scaling)
+            self.assertIn('require_matching_executable "$EXPECTED_WRF" "$WRF_RUN/wrf.exe" "wrf.exe"', scaling)
+            self.assertIn("does not match John-owned WRF build", scaling)
 
     def test_custom_tasks_and_memory_candidates_render(self) -> None:
         with tempfile.TemporaryDirectory() as raw:

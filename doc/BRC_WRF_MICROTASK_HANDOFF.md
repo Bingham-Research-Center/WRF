@@ -165,6 +165,15 @@ Practical-test countdown:
 | 6 | Decide whether GEFS+NAM two-stream is worth pursuing now. | Codex can prepare the design table; human chooses the science path. | Do not run WPS yet. |
 | 7 | Run practical WRF setting tests: scaling and memory on `notch392`. | Codex can render scripts and result tables. | No benchmark `sbatch` without explicit approval. |
 
+Current practical blocker: the first approved `scaling_t028` row did not use
+John's compiled WRF binaries. Live diagnosis on 2026-06-18 showed the scenario
+`real.exe` and `wrf.exe` symlinked through the base scratch run to Michael
+Davies' `lawson-group6/u6060939/wrf_build/WRF/main/` binaries instead of
+John's `~/gits/brc-wrf/main/` binaries. Keep future practical preparation
+strict: executables come from `paths.wrf_build/main`, while `namelist.input`
+and `met_em` come from the approved proven run artifacts in an approved
+off-login context.
+
 ## Recommended Next No-Run Batch
 
 The `brc-tools` hygiene batch is merged upstream and Roadmap Gates 3-11 are now

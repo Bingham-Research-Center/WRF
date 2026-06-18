@@ -72,10 +72,12 @@ The checkpoint is intentionally small:
    Generated wrappers keep per-scenario scratch and archive paths under
    `practical_tests/<scenario>/`, fail fast if the scenario `wrf_run` directory
    is not prepared with `real.exe`, `wrf.exe`, `namelist.input`, and `met_em`
-   files, and still require explicit approval before `sbatch`. The prepare
-   checklist describes how to stage those per-scenario `wrf_run` directories
-   from the approved proven run artifacts, but any copy/check of scratch or
-   archive WRF files remains off-login and approval-gated.
+   files, or if the scenario executables do not byte-match
+   `paths.wrf_build/main/{real.exe,wrf.exe}`. The prepare checklist sources
+   executables from John's compiled WRF build and uses the approved proven run
+   artifacts only for `namelist.input` and `met_em` files. Any copy/check of
+   scratch or archive WRF files remains off-login and approval-gated, and
+   `sbatch` still requires explicit approval.
 
 6. Render a one-command no-run report when you want a compact login-safe
    checkpoint for handoff or approval review:

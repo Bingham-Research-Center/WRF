@@ -134,3 +134,9 @@ CLWRF: 'CAMtr_volume_mixing_ratio' does not exist
 
 The WRF log reports WRF `V4.7.1`. The next SOP must require a checked
 John-owned WRF 4.8.0 executable/run source before resubmitting benchmarks.
+Live diagnosis on 2026-06-18 found the practical `real.exe` and `wrf.exe`
+were symlinks through the base scratch run directory to Michael Davies'
+`lawson-group6/u6060939/wrf_build/WRF/main/` binaries, not John's
+`~/gits/brc-wrf/main/` binaries. Future practical wrappers now need an
+executable byte-match check against John's `paths.wrf_build/main` before model
+execution.

@@ -233,6 +233,11 @@ The non-fatal `real.exe` soil message observed for the proof was:
 
 1. Diagnose the failed practical `scaling_t028` row. Evidence lives under
    `/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/jan2013_basin_gefs/practical_tests/scaling_t028/run_20260618T213126Z/debug/`.
+   Diagnosis found the scenario `real.exe` and `wrf.exe` symlinked through the
+   base scratch run to Michael Davies' `lawson-group6/u6060939/wrf_build/WRF/main/`
+   binaries, not John's `~/gits/brc-wrf/main/` binaries. The practical harness
+   must source executables from John's build and verify they match before
+   `real.exe`.
 2. Write the practical-test SOP in `brc-docs`: exact source run directory,
    executable provenance, cleanup/refusal rules, resubmit command, and result
    table.
