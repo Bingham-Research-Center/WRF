@@ -65,13 +65,17 @@ The checkpoint is intentionally small:
      --output-dir /tmp/brc_gate11_jan2013_basin_gefs
    ```
 
-   The packet contains a `README.md`, a baseline Slurm wrapper, scaling wrappers
-   for 16/28/56 tasks, optional memory-candidate wrappers, approval boundaries,
+   The packet contains a `README.md`, `PREPARE_CHECKLIST.md`,
+   `APPROVAL_PACKET.md`, a baseline Slurm wrapper, scaling wrappers for
+   16/28/56 tasks, optional memory-candidate wrappers, approval boundaries,
    validation commands, blank result tables, and a closeout record template.
    Generated wrappers keep per-scenario scratch and archive paths under
    `practical_tests/<scenario>/`, fail fast if the scenario `wrf_run` directory
    is not prepared with `real.exe`, `wrf.exe`, `namelist.input`, and `met_em`
-   files, and still require explicit approval before `sbatch`.
+   files, and still require explicit approval before `sbatch`. The prepare
+   checklist describes how to stage those per-scenario `wrf_run` directories
+   from the approved proven run artifacts, but any copy/check of scratch or
+   archive WRF files remains off-login and approval-gated.
 
 6. Render no-run visual quicklooks from the existing proof artifacts:
 

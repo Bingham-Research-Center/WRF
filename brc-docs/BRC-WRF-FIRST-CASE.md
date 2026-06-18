@@ -143,11 +143,11 @@ python brc-cases/wrf_case.py render-practical-harness \
   --output-dir /tmp/brc_gate11_jan2013_basin_gefs
 ```
 
-That command writes a review packet, baseline wrapper, scaling wrappers, blank
-result tables, approval boundaries, and closeout template outside the repo. It
-does not submit jobs or read staged/archive artifacts; generated wrappers still
-need prepared per-scenario `wrf_run` directories and explicit approval before
-`sbatch`.
+That command writes a review packet, per-scenario prepare/check checklist,
+approval packet, baseline wrapper, scaling wrappers, blank result tables,
+approval boundaries, and closeout template outside the repo. It does not submit
+jobs or read staged/archive artifacts; generated wrappers still need prepared
+per-scenario `wrf_run` directories and explicit approval before `sbatch`.
 
 The wrapper must keep these CHPC-specific details:
 

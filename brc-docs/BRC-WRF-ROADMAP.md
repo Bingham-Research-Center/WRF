@@ -448,6 +448,8 @@ Required pieces:
 | Settings readback | Run logs show case window, forcing, WPS cadence, Vtable/prefix/`fg_name`, Slurm shape, launcher, scratch path, archive path. |
 | Debug artifacts | Summary, phase timing, and file inventory are created for every run. |
 | Validation checklist | Cheap metadata checks are separate from strict off-login artifact checks. |
+| Scenario prepare/check plan | `PREPARE_CHECKLIST.md` names every per-scenario `WRF_RUN`, explains approved-context staging from the proven run artifacts, and keeps artifact reads/copies off login nodes. |
+| Approval packet | `APPROVAL_PACKET.md` carries no-run rows for baseline, scaling, and memory candidates with job ID, Slurm state, WRF marker, wall time, simulated hours, peak memory evidence, archive path, debug path, and recommendation fields. |
 | Result tables | Scaling and memory tables are ready but empty until approved runs happen. |
 | Closeout prompt | A next AI session can pick up from exact commands, job IDs, archive paths, and stop points. |
 
@@ -460,10 +462,11 @@ python brc-cases/wrf_case.py render-practical-harness \
 ```
 
 The generated packet refuses repo-local output by default, uses per-scenario
-scratch/archive subdirectories under `practical_tests/<scenario>/`, and keeps
-benchmark result tables blank until approved runs produce evidence. Generated
-run wrappers fail fast unless the scenario `wrf_run` directory is prepared with
-`real.exe`, `wrf.exe`, `namelist.input`, and `met_em` files.
+scratch/archive subdirectories under `practical_tests/<scenario>/`, includes a
+maintained prepare/check plan and no-run approval packet, and keeps benchmark
+result tables blank until approved runs produce evidence. Generated run wrappers
+fail fast unless the scenario `wrf_run` directory is prepared with `real.exe`,
+`wrf.exe`, `namelist.input`, and `met_em` files.
 
 Ready-for-practical-testing means: John can approve a scaling or memory run by
 choosing a row in a table, not by reconstructing the entire WRF/WPS path from

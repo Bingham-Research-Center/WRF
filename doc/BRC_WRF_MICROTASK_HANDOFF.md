@@ -203,9 +203,10 @@ python brc-cases/wrf_case.py render-practical-harness \
 ```
 
 The generated packet contains the baseline wrapper, scaling wrappers for
-16/28/56 tasks, optional memory-candidate wrappers, login-safe metadata checks,
-off-login artifact checks, blank result tables, and the closeout record. It
-refuses repo-local output and does not submit anything.
+16/28/56 tasks, optional memory-candidate wrappers, `PREPARE_CHECKLIST.md`,
+`APPROVAL_PACKET.md`, login-safe metadata checks, off-login artifact checks,
+blank result tables, and the closeout record. It refuses repo-local output and
+does not submit anything.
 
 ### Lane 2: Future `brc-tools` Batch
 

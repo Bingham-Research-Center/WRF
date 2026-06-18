@@ -811,14 +811,222 @@ def practical_variant(
     return variant
 
 
+def practical_scenario_record(
+    *,
+    scenario: str,
+    kind: str,
+    script_name: str,
+    description: str,
+    variant: dict[str, Any],
+) -> dict[str, str]:
+    slurm = variant["slurm"]
+    paths = variant["paths"]
+    return {
+        "scenario": safe_name(scenario),
+        "kind": kind,
+        "script": script_name,
+        "description": description,
+        "tasks": str(slurm["ntasks"]),
+        "memory": str(slurm["memory"]),
+        "wrf_run": str(paths["wrf_run"]),
+        "archive_root": str(paths["archive_root"]),
+    }
+
+
+def render_prepare_checklist(
+    data: dict[str, Any],
+    case_file: Path,
+    *,
+    scenarios: list[dict[str, str]],
+) -> str:
+    case = data["case"]
+    paths = data["paths"]
+    source_wrf_run = str(as_path(paths["wrf_run"]))
+
+    lines = [
+        f"# Gate 11 Scenario Prepare/Check Plan: {case['name']}",
+        "",
+        "This is a preparation plan, not approval to copy files, inspect heavy",
+        "artifacts, submit Slurm, run WPS, run `real.exe`, or run `wrf.exe`.",
+        "Any command that reads or copies scratch/archive WRF artifacts belongs",
+        "inside an approved batch, DTN, or interactive compute context.",
+        "",
+        "## Scenario Targets",
+        "",
+        "| Scenario | Script | Tasks | Memory | Target `WRF_RUN` | Target archive root |",
+        "| --- | --- | ---: | ---: | --- | --- |",
+    ]
+    for record in scenarios:
+        lines.append(
+            f"| {record['scenario']} | `{record['script']}` | {record['tasks']} | "
+            f"`{record['memory']}` | `{record['wrf_run']}` | `{record['archive_root']}` |"
+        )
+
+    lines.extend(
+        [
+            "",
+            "## Source Artifacts",
+            "",
+            "Use the approved NAM-only Gate 7/8 WRF run directory as the source",
+            "for per-scenario preparation. The case manifest currently names this",
+            f"default source candidate as `{source_wrf_run}`. Before any copy or",
+            "symlink operation, confirm it is the preserved John-owned proven run",
+            "artifact directory, not a Michael-owned comparison path and not a",
+            "repo-local scratch area.",
+            "",
+            "| Required in each target `WRF_RUN` | Source class | Notes |",
+            "| --- | --- | --- |",
+            "| `real.exe` | John-owned WRF executable used by the proven run | Copy or symlink with executable bit preserved. |",
+            "| `wrf.exe` | John-owned WRF executable used by the proven run | Copy or symlink with executable bit preserved. |",
+            "| `namelist.input` | Proven NAM-only WRF run setup | Keep source SHA, WRF/WPS roots, and case window unchanged across benchmark rows. |",
+            "| `met_em.d0*.nc` | Gate 6 WPS output consumed by the proven run | Do not inspect or copy on a login node. |",
+            "",
+            "Do not pre-copy `wrfout_d0*` into a scenario directory. Each approved",
+            "benchmark row must produce its own WRF output and archive evidence.",
+            "",
+            "## Approved-Context Preparation Template",
+            "",
+            "Use this only after a human approves the file-copy context. Fill",
+            "`PROVEN_WRF_RUN` from the checked Gate 7/8 evidence path, choose one",
+            "`SCENARIO`, and set `WRF_RUN` from the target table above.",
+            "",
+            "```bash",
+            "# Approved batch, DTN, or interactive compute context only.",
+            "# Do not run this from a login node.",
+            f"CASE_FILE={shell_quote(case_file)}",
+            "PROVEN_WRF_RUN=/path/to/approved/gate7_or_gate8/wrf_run",
+            "SCENARIO=baseline",
+            "WRF_RUN=/path/from/the/scenario-target-table",
+            "",
+            'mkdir -p "$WRF_RUN"',
+            'rsync -av "$PROVEN_WRF_RUN"/real.exe "$WRF_RUN"/',
+            'rsync -av "$PROVEN_WRF_RUN"/wrf.exe "$WRF_RUN"/',
+            'rsync -av "$PROVEN_WRF_RUN"/namelist.input "$WRF_RUN"/',
+            'rsync -av "$PROVEN_WRF_RUN"/met_em.d0*.nc "$WRF_RUN"/',
+            "```",
+            "",
+            "## Approved-Context Pre-Submit Check",
+            "",
+            "The rendered Slurm wrappers repeat these checks and fail fast. Run this",
+            "manual check only in the same approved context as the preparation copy.",
+            "",
+            "```bash",
+            'test -x "$WRF_RUN/real.exe"',
+            'test -x "$WRF_RUN/wrf.exe"',
+            'test -f "$WRF_RUN/namelist.input"',
+            'compgen -G "$WRF_RUN/met_em.d0*.nc" >/dev/null',
+            "```",
+            "",
+            "## Login-Safe Review",
+            "",
+            "From a login node, review this checklist, the generated Slurm text, and",
+            "`APPROVAL_PACKET.md` only. Do not hash manifests, inspect NetCDF, list",
+            "large scratch directories, copy `met_em`, or run quicklook checks.",
+            "",
+        ]
+    )
+    return "\n".join(lines)
+
+
+def render_approval_packet(
+    data: dict[str, Any],
+    case_file: Path,
+    *,
+    scenarios: list[dict[str, str]],
+) -> str:
+    case = data["case"]
+    forcing = data["forcing"]
+    scaling = [record for record in scenarios if record["kind"] == "scaling"]
+    memory = [record for record in scenarios if record["kind"] == "memory"]
+    baseline = [record for record in scenarios if record["kind"] == "baseline"]
+
+    lines = [
+        f"# Gate 11 Benchmark Approval Packet: {case['name']}",
+        "",
+        "This packet is a no-run approval surface. A rendered script is not",
+        "approval to submit. Fill one row before `sbatch`, and fill the evidence",
+        "fields only after the approved run finishes and artifacts are checked in",
+        "the appropriate compute/batch context.",
+        "",
+        "## Approval Boundary",
+        "",
+        "| Field | Value |",
+        "| --- | --- |",
+        f"| Case file | `{case_file}` |",
+        f"| Case window | `{case['start']}` to `{case['end']}` |",
+        f"| Forcing | `{text_value(forcing['sources'])}` |",
+        f"| WPS fg_name | `{text_value(forcing['wps_fg_name'])}` |",
+        f"| WPS cadence | `{forcing['interval_seconds']}` seconds |",
+        "| Submit boundary | Human approval required before `sbatch`, WPS, `real.exe`, or `wrf.exe`. |",
+        "| Artifact-read boundary | Strict validation, NetCDF/archive reads, and quicklooks require approved off-login context. |",
+        "",
+        "## Evidence Columns",
+        "",
+        "Every completed benchmark row must record: job ID, Slurm state, WRF",
+        "marker, wall time, simulated hours, peak memory evidence, archive path,",
+        "debug path, and recommendation.",
+        "",
+    ]
+
+    def append_rows(title: str, records: list[dict[str, str]], empty_note: str) -> None:
+        lines.extend(
+            [
+                f"## {title}",
+                "",
+                "| Scenario | Script | Tasks | Memory request | Approval status | Approved by/date | Job ID | Slurm state | WRF marker | Wall time | Sim hours | Peak memory evidence | Archive path | Debug path | Recommendation |",
+                "| --- | --- | ---: | ---: | --- | --- | --- | --- | --- | ---: | ---: | --- | --- | --- | --- |",
+            ]
+        )
+        if not records:
+            lines.append(empty_note)
+        for record in records:
+            archive_run = f"{record['archive_root']}/run_<UTC>_<jobid>"
+            debug_path = f"{archive_run}/debug/"
+            lines.append(
+                f"| {record['scenario']} | `{record['script']}` | {record['tasks']} | "
+                f"`{record['memory']}` | not approved | TBD | TBD | TBD | TBD | "
+                f"TBD | TBD | TBD | `{archive_run}` | `{debug_path}` | TBD |"
+            )
+        lines.append("")
+
+    append_rows(
+        "Baseline Approval Row",
+        baseline,
+        "| TBD | TBD | TBD | TBD | not approved | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD |",
+    )
+    append_rows(
+        "Scaling Approval Rows",
+        scaling,
+        "| TBD | Rerender with `--tasks` | TBD | TBD | not approved | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD |",
+    )
+    append_rows(
+        "Memory Approval Rows",
+        memory,
+        "| memory_candidate_tbd | Rerender with `--memory-candidates <mem1,mem2>` | TBD | TBD | not approved | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD |",
+    )
+
+    lines.extend(
+        [
+            "## Recommendation Rule",
+            "",
+            "Do not write a recommendation until the row has a completed Slurm",
+            "state, a `SUCCESS COMPLETE WRF` marker, wall-time evidence, simulated",
+            "hours, peak memory evidence, archive path, and debug path. If archive",
+            "work fails after WRF succeeds, record WRF success and archive failure as",
+            "separate facts.",
+            "",
+        ]
+    )
+    return "\n".join(lines)
+
+
 def render_practical_packet(
     data: dict[str, Any],
     case_file: Path,
     *,
     output_dir: Path,
-    tasks: list[int],
-    memory_candidates: list[str],
     scripts: list[tuple[str, str]],
+    scenarios: list[dict[str, str]],
 ) -> str:
     case = data["case"]
     forcing = data["forcing"]
@@ -853,6 +1061,14 @@ def render_practical_packet(
         f"| Default Slurm | `{slurm['account']}` / `{slurm['partition']}`, `{slurm.get('nodelist', 'any')}`, `{slurm['nodes']}` node, `{slurm['ntasks']}` tasks, `{slurm['memory']}` |",
         f"| Launcher | `{slurm['mpi_launcher']}` |",
         "",
+        "## Packet Files",
+        "",
+        "| File | Purpose |",
+        "| --- | --- |",
+        "| `README.md` | Overview, render commands, result tables, and closeout record. |",
+        "| `PREPARE_CHECKLIST.md` | Per-scenario `WRF_RUN` targets and approved-context preparation/check plan. |",
+        "| `APPROVAL_PACKET.md` | No-run approval rows for baseline, scaling, and memory candidates. |",
+        "",
         "## Rendered Scripts",
         "",
         "| Script | Scenario | Approval boundary |",
@@ -876,9 +1092,15 @@ def render_practical_packet(
             "`practical_tests/<scenario>/` so benchmark results do not collide",
             "with the proof archive or with each other.",
             "",
-            "Before approved submission, each per-scenario `WRF_RUN` must be",
-            "prepared with `real.exe`, `wrf.exe`, `namelist.input`, and `met_em`",
-            "files. The rendered scripts fail fast if those inputs are missing.",
+            "`PREPARE_CHECKLIST.md` names every per-scenario `WRF_RUN` and explains",
+            "how to stage `real.exe`, `wrf.exe`, `namelist.input`, and `met_em`",
+            "files from the approved proven run artifacts. The rendered scripts",
+            "fail fast if those inputs are missing.",
+            "",
+            "`APPROVAL_PACKET.md` carries the no-run approval rows and evidence",
+            "fields for baseline, 16/28/56-style scaling rows, and optional memory",
+            "candidates. Fill those rows only after an approved run produces",
+            "evidence.",
             "",
             "## Login-Safe Checks",
             "",
@@ -906,29 +1128,40 @@ def render_practical_packet(
             "",
             "## Scaling Result Table",
             "",
-            "| Tasks | Memory request | Job ID | Wall time | Sim hours | Wall time per sim hour | WRF marker | Archive path | Recommendation |",
-            "| ---: | --- | --- | ---: | ---: | ---: | --- | --- | --- |",
+            "| Scenario | Tasks | Memory request | Job ID | Slurm state | WRF marker | Wall time | Sim hours | Peak memory evidence | Archive path | Debug path | Recommendation |",
+            "| --- | ---: | --- | --- | --- | --- | ---: | ---: | --- | --- | --- | --- |",
         ]
     )
-    for task_count in tasks:
-        memory = str(slurm["memory"])
-        lines.append(f"| {task_count} | `{memory}` | TBD | TBD | TBD | TBD | TBD | TBD | TBD |")
+    for record in scenarios:
+        if record["kind"] != "scaling":
+            continue
+        archive_run = f"{record['archive_root']}/run_<UTC>_<jobid>"
+        debug_path = f"{archive_run}/debug/"
+        lines.append(
+            f"| {record['scenario']} | {record['tasks']} | `{record['memory']}` | "
+            f"TBD | TBD | TBD | TBD | TBD | TBD | `{archive_run}` | `{debug_path}` | TBD |"
+        )
 
     lines.extend(
         [
             "",
             "## Memory Result Table",
             "",
-            "| Run | Memory request | Job ID | Peak memory evidence | WRF marker | Archive path | Recommendation |",
-            "| --- | ---: | --- | --- | --- | --- | --- |",
-            f"| Baseline | `{slurm['memory']}` | TBD | TBD | TBD | TBD | TBD |",
+            "| Scenario | Tasks | Memory request | Job ID | Slurm state | WRF marker | Wall time | Sim hours | Peak memory evidence | Archive path | Debug path | Recommendation |",
+            "| --- | ---: | --- | --- | --- | --- | ---: | ---: | --- | --- | --- | --- |",
         ]
     )
-    if memory_candidates:
-        for memory in memory_candidates:
-            lines.append(f"| Candidate | `{memory}` | TBD | TBD | TBD | TBD | TBD |")
+    memory_rows = [record for record in scenarios if record["kind"] == "memory"]
+    if memory_rows:
+        for record in memory_rows:
+            archive_run = f"{record['archive_root']}/run_<UTC>_<jobid>"
+            debug_path = f"{archive_run}/debug/"
+            lines.append(
+                f"| {record['scenario']} | {record['tasks']} | `{record['memory']}` | "
+                f"TBD | TBD | TBD | TBD | TBD | TBD | `{archive_run}` | `{debug_path}` | TBD |"
+            )
     else:
-        lines.append("| Candidate | TBD | TBD | TBD | TBD | TBD | TBD |")
+        lines.append("| memory_candidate_tbd | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD |")
 
     lines.extend(
         [
@@ -1014,6 +1247,7 @@ def cmd_render_practical_harness(args: argparse.Namespace) -> int:
     output_dir.mkdir(parents=True, exist_ok=True)
 
     scripts: list[tuple[str, str]] = []
+    scenarios: list[dict[str, str]] = []
     baseline = practical_variant(
         data,
         scenario="baseline",
@@ -1021,7 +1255,17 @@ def cmd_render_practical_harness(args: argparse.Namespace) -> int:
     )
     baseline_name = "baseline.slurm"
     (output_dir / baseline_name).write_text(render_slurm(baseline, case_file), encoding="utf-8")
-    scripts.append((baseline_name, "baseline current case profile"))
+    baseline_description = "baseline current case profile"
+    scripts.append((baseline_name, baseline_description))
+    scenarios.append(
+        practical_scenario_record(
+            scenario="baseline",
+            kind="baseline",
+            script_name=baseline_name,
+            description=baseline_description,
+            variant=baseline,
+        )
+    )
 
     for task_count in tasks:
         scenario = f"scaling_t{task_count:03d}"
@@ -1033,7 +1277,17 @@ def cmd_render_practical_harness(args: argparse.Namespace) -> int:
             ntasks=task_count,
         )
         (output_dir / script_name).write_text(render_slurm(variant, case_file), encoding="utf-8")
-        scripts.append((script_name, f"scaling candidate: {task_count} tasks"))
+        description = f"scaling candidate: {task_count} tasks"
+        scripts.append((script_name, description))
+        scenarios.append(
+            practical_scenario_record(
+                scenario=scenario,
+                kind="scaling",
+                script_name=script_name,
+                description=description,
+                variant=variant,
+            )
+        )
 
     for memory in memory_candidates:
         scenario = f"memory_{safe_name(memory)}"
@@ -1045,22 +1299,43 @@ def cmd_render_practical_harness(args: argparse.Namespace) -> int:
             memory=memory,
         )
         (output_dir / script_name).write_text(render_slurm(variant, case_file), encoding="utf-8")
-        scripts.append((script_name, f"memory candidate: {memory}"))
+        description = f"memory candidate: {memory}"
+        scripts.append((script_name, description))
+        scenarios.append(
+            practical_scenario_record(
+                scenario=scenario,
+                kind="memory",
+                script_name=script_name,
+                description=description,
+                variant=variant,
+            )
+        )
 
     packet = render_practical_packet(
         data,
         case_file,
         output_dir=output_dir,
-        tasks=tasks,
-        memory_candidates=memory_candidates,
         scripts=scripts,
+        scenarios=scenarios,
     )
     packet_name = "README.md"
     (output_dir / packet_name).write_text(packet, encoding="utf-8")
+    prepare_name = "PREPARE_CHECKLIST.md"
+    (output_dir / prepare_name).write_text(
+        render_prepare_checklist(data, case_file, scenarios=scenarios),
+        encoding="utf-8",
+    )
+    approval_name = "APPROVAL_PACKET.md"
+    (output_dir / approval_name).write_text(
+        render_approval_packet(data, case_file, scenarios=scenarios),
+        encoding="utf-8",
+    )
     print(f"Wrote Gate 11 practical-test harness packet: {output_dir}")
     for name, _scenario in scripts:
         print(f"  {output_dir / name}")
     print(f"  {output_dir / packet_name}")
+    print(f"  {output_dir / prepare_name}")
+    print(f"  {output_dir / approval_name}")
     return 0
 
 
