@@ -3,6 +3,10 @@
 This file is intentionally slim; the active WRF-run-side control board is
 `doc/BRC_WRF_MICROTASK_HANDOFF.md`.
 
+For the next Codex session focused on the outstanding `scaling_t016` practical
+benchmark recovery, read `doc/BRC_WRF_NEXT_SESSION_HANDOFF.md` first after
+`AGENTS.md`.
+
 For the end-to-end AI route toward compiling John's fork, pairing it with a
 John-owned WPS root, and proving a repeatable CHPC run, read
 `doc/BRC_WRF_END_TO_END_AI_HANDOFF.md`.
