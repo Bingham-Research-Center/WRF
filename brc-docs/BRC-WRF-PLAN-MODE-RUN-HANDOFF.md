@@ -75,7 +75,7 @@ Proven state:
 | Run target | `lawson-np`, `notch392`, one node, 56 tasks, `900G`, `srun --mpi=pmi2`. |
 | Gates | Roadmap Gates 0-11 passed; one 28-task scaling row passed; memory right-sizing and GEFS+NAM are not proven. |
 | Gate 11 | `render-practical-harness` writes review packet, baseline/scaling/memory scripts, `PREPARE_CHECKLIST.md`, and `APPROVAL_PACKET.md` outside the repo. |
-| Practical testing | One 28-task row passed. Job `13550110` ran John's WRF `V4.8.0`, passed `real.exe`/`wrf.exe`, and archived debug evidence under `practical_tests/scaling_t028/run_20260618T230858Z/`; other rows remain unapproved. |
+| Practical testing | One 28-task row passed. Job `13550110` ran John's WRF `V4.8.0`, passed `real.exe`/`wrf.exe`, and archived debug evidence under `practical_tests/scaling_t028/run_20260618T230858Z/`. Attempted `scaling_t016` job `13550555` failed before runtime evidence because it used a node-local `/tmp` packet; rerender with shared Slurm `--chdir` and stdout/stderr before any approved retry. |
 
 ## Directory Truth
 

@@ -176,6 +176,12 @@ needs that file from John's `run/` directory. Prep job `13550104` and
 `scaling_t028` job `13550110` passed after the wrapper sourced executables and
 runtime physics files from John's `paths.wrf_build/{main,run}`. Evidence:
 `/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/jan2013_basin_gefs/practical_tests/scaling_t028/run_20260618T230858Z/debug/`.
+The next attempted row, `scaling_t016` job `13550555`, failed before WRF
+runtime evidence because the fresh Gate 11 packet was submitted from node-local
+`/tmp`; Slurm recorded `/tmp/..._gate11_packet` as `WorkDir`, stdout, and
+stderr. Accounting: `FAILED`, exit `2:0`, elapsed `00:00:04` on `notch392`.
+No `rsl.*`, archive, or debug evidence was produced. Treat this as a
+submission/log-path issue, not a WRF benchmark result.
 
 ## Recommended Next No-Run Batch
 
@@ -186,7 +192,10 @@ have John/Michael accept or reject
 `brc-docs/BRC-WRF-GATE10-QUICKLOOK-REVIEW.md`, approve exactly one additional
 benchmark row, or stay in no-run design work for GEFS+NAM and domain/geog
 review. If another benchmark is approved, the recommended next row is
-`scaling_t016` because `scaling_t028` has already passed.
+`scaling_t016` because `scaling_t028` has already passed. Rerender the Gate 11
+packet first so generated practical scripts set a shared Slurm `--chdir` and
+shared stdout/stderr under `lawson-group6/.../wrf_build_logs/brc-wrf`; do not
+reuse the `13550555` `/tmp` submission pattern.
 
 The current John/Michael no-run handout is
 `brc-docs/BRC-WRF-MICHAEL-PRACTICAL-PACKET.md`. It packages the first contract

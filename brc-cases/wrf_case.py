@@ -26,6 +26,9 @@ from typing import Any
 DATE_FORMAT = "%Y-%m-%d_%H:%M:%S"
 CASE_NAME_RE = re.compile(r"^[A-Za-z0-9_.-]+$")
 DEFAULT_PRACTICAL_TASKS = (16, 28, 56)
+PRACTICAL_SLURM_LOG_ROOT = Path(
+    "/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_build_logs/brc-wrf"
+)
 REQUIRED_WRF_RUNTIME_FILES = (
     "CAMtr_volume_mixing_ratio",
     "RRTMG_LW_DATA",
@@ -621,6 +624,13 @@ def render_slurm(data: dict[str, Any], case_file: Path) -> str:
     expected_real = wrf_build / "main" / "real.exe"
     expected_wrf = wrf_build / "main" / "wrf.exe"
     mpi_launcher = str(slurm["mpi_launcher"])
+    slurm_chdir = slurm.get("chdir")
+    slurm_output = slurm.get("output")
+    if slurm.get("profile") == "gate11_practical_review":
+        if not slurm_chdir:
+            slurm_chdir = PRACTICAL_SLURM_LOG_ROOT
+        if not slurm_output:
+            slurm_output = PRACTICAL_SLURM_LOG_ROOT / f"{safe_name(job_name)}_%j.out"
     wps_prefix = wps.get("ungrib_prefix", "unset")
     namelist_fg_name = text_value(wps.get("namelist_fg_name", forcing["wps_fg_name"]))
 
@@ -638,6 +648,11 @@ def render_slurm(data: dict[str, Any], case_file: Path) -> str:
     ]
     if slurm.get("nodelist"):
         lines.append(f"#SBATCH --nodelist={slurm['nodelist']}")
+    if slurm_chdir:
+        lines.append(f"#SBATCH --chdir={slurm_chdir}")
+    if slurm_output:
+        lines.append(f"#SBATCH --output={slurm_output}")
+        lines.append(f"#SBATCH --error={slurm_output}")
     lines.extend(
         [
             "",
@@ -1050,7 +1065,7 @@ def render_approval_packet(
                 "| Scenario | Status | Evidence |",
                 "| --- | --- | --- |",
                 "| `scaling_t028` | Completed with John's WRF `V4.8.0`, 28 tasks, `900G`; `real.exe`, `wrf.exe`, archive, and debug summary exited `0`. | `/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/jan2013_basin_gefs/practical_tests/scaling_t028/run_20260618T230858Z/debug/` |",
-                "| `scaling_t016` | Recommended next single row if John/Michael accept the Gate 10 visual baseline. | Not approved, not submitted. |",
+                "| `scaling_t016` | Job `13550555` failed before WRF runtime evidence after being submitted from a node-local `/tmp` packet; Slurm state `FAILED`, exit `2:0`, elapsed `00:00:04`, no `rsl.*`, no archive, no debug path. | Rerender with shared Slurm `--chdir` and stdout/stderr, then retry only with explicit approval. |",
                 "",
                 "Do not rerun `scaling_t028` by default. The approval rows below are",
                 "templates; fill exactly one unapproved row before any new `sbatch`.",
@@ -1181,6 +1196,11 @@ def render_practical_packet(
             "The scaling variants use per-scenario scratch and archive roots under",
             "`practical_tests/<scenario>/` so benchmark results do not collide",
             "with the proof archive or with each other.",
+            "",
+            f"Practical scripts set Slurm's working directory, stdout, and stderr",
+            f"to the shared log root `{PRACTICAL_SLURM_LOG_ROOT}` so early scheduler",
+            "or wrapper failures remain visible even when the review packet itself",
+            "lives under node-local `/tmp`.",
             "",
             "`PREPARE_CHECKLIST.md` names every per-scenario `WRF_RUN` and explains",
             "how to stage `real.exe` and `wrf.exe` from John's WRF build, plus",

@@ -158,6 +158,9 @@ now sources executables from John's `~/gits/brc-wrf/main/`, byte-checks them,
 and stages runtime physics files from John's `~/gits/brc-wrf/run/`. Job
 `13550110` passed `scaling_t028` at 28 tasks, `900G`; evidence is under
 `/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/jan2013_basin_gefs/practical_tests/scaling_t028/run_20260618T230858Z/debug/`.
+Attempted `scaling_t016` job `13550555` failed before WRF runtime evidence
+because it was submitted from a node-local `/tmp` packet; it produced no
+`rsl.*`, archive, or debug evidence and is not a benchmark result.
 
 Do not use bare `mpirun` for WRF on this Intel MPI stack. Do not use bare
 `srun -n N ./wrf.exe` without `--mpi=pmi2`.

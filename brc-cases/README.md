@@ -78,9 +78,12 @@ The checkpoint is intentionally small:
    uses the approved proven run artifacts only for `namelist.input` and
    `met_em` files. Current-case runtime preflight includes
    `CAMtr_volume_mixing_ratio`, `RRTMG_LW_DATA`, `RRTMG_SW_DATA`, ozone files,
-   and core land-surface tables. Any copy/check of scratch or archive WRF files
-   remains off-login and approval-gated, and `sbatch` still requires explicit
-   approval.
+   and core land-surface tables. Practical scripts set Slurm `--chdir`,
+   stdout, and stderr to the shared
+   `/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_build_logs/brc-wrf`
+   root so early failures remain visible even when review packets are rendered
+   under `/tmp`. Any copy/check of scratch or archive WRF files remains
+   off-login and approval-gated, and `sbatch` still requires explicit approval.
 
 6. Render a one-command no-run report when you want a compact login-safe
    checkpoint for handoff or approval review:

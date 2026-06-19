@@ -29,7 +29,7 @@ By the end of the first session, Michael should be able to explain:
 | Not proven | GEFSv12 reforecast plus NAM two-stream forcing with `fg_name = 'GEFS','NAM'` and `interval_seconds = 10800`. |
 | Current run profile | `owned_notch392_max`: `lawson-np`, `notch392`, one node, 56 tasks, `900G`, `srun --mpi=pmi2`. |
 | Fresh staging contract | Fresh `brc-tools` staging should emit `manifest_<case>.json` and `contract_<case>.json`. This repo currently carries a reconstructed legacy NAM-only contract for strict validation. |
-| Practical testing | One 28-task row passed. Job `13550110` ran John's WRF `V4.8.0`, passed `real.exe`/`wrf.exe`, and archived debug evidence under `practical_tests/scaling_t028/run_20260618T230858Z/`. Other rows remain unapproved. |
+| Practical testing | One 28-task row passed. Job `13550110` ran John's WRF `V4.8.0`, passed `real.exe`/`wrf.exe`, and archived debug evidence under `practical_tests/scaling_t028/run_20260618T230858Z/`. Attempted `scaling_t016` job `13550555` failed before WRF runtime evidence because it used a node-local `/tmp` packet; no `rsl.*`, archive, or debug evidence exists. |
 
 ## Settings Readback Before Any Run
 

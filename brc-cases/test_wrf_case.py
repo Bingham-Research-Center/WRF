@@ -171,6 +171,18 @@ archive:
 
             scaling = (output_dir / "scaling_t016.slurm").read_text(encoding="utf-8")
             self.assertIn("#SBATCH --ntasks=16", scaling)
+            self.assertIn(
+                "#SBATCH --chdir=/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_build_logs/brc-wrf",
+                scaling,
+            )
+            self.assertIn(
+                "#SBATCH --output=/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_build_logs/brc-wrf/wrf_unit_case_t016_%j.out",
+                scaling,
+            )
+            self.assertIn(
+                "#SBATCH --error=/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_build_logs/brc-wrf/wrf_unit_case_t016_%j.out",
+                scaling,
+            )
             self.assertIn("practical_tests/scaling_t016/wrf_run", scaling)
             self.assertIn('require_executable "$WRF_RUN/real.exe"', scaling)
             self.assertIn("WRF_BUILD=/tmp/brc_wrf_unit_missing_wrf_build", scaling)
@@ -228,7 +240,8 @@ archive:
             approval = (output_dir / "APPROVAL_PACKET.md").read_text(encoding="utf-8")
             self.assertIn("## Current Practical Evidence", approval)
             self.assertIn("`scaling_t028` | Completed with John's WRF `V4.8.0`", approval)
-            self.assertIn("`scaling_t016` | Recommended next single row", approval)
+            self.assertIn("`scaling_t016` | Job `13550555` failed before WRF runtime evidence", approval)
+            self.assertIn("Rerender with shared Slurm `--chdir` and stdout/stderr", approval)
             self.assertIn("Do not rerun `scaling_t028` by default", approval)
 
     def test_no_run_report_writes_report_packet_and_slurm_syntax_check(self) -> None:

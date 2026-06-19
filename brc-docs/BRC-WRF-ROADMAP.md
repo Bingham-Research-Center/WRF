@@ -26,8 +26,10 @@ John-owned WRF/WPS build proof, fresh NAM-only input contract, NAM-only
 WPS/`real.exe`/`wrf.exe` rerun, archive, quicklooks, and a maintained
 render-only practical-test harness. Practical testing has one approved
 28-task scaling row complete after fixing executable provenance and WRF runtime
-file staging. Memory sweeps, other scaling rows, and the GEFS+NAM science branch
-remain separate follow-ons.
+file staging. A later `scaling_t016` submission failed before WRF runtime
+evidence because the rendered packet was submitted from node-local `/tmp`.
+Memory sweeps, successful additional scaling rows, and the GEFS+NAM science
+branch remain separate follow-ons.
 
 Current practical evidence, submitted 2026-06-18:
 
@@ -39,6 +41,7 @@ Current practical evidence, submitted 2026-06-18:
 | 3 | `13550021` | provenance-fixed `scaling_t028` retry | used John's WRF `V4.8.0`; failed because runtime physics files from John's `run/` directory were absent |
 | 4 | `13550104` | runtime-file fixed `scaling_t028` prep | completed |
 | 5 | `13550110` | `scaling_t028`, 28 tasks, `900G` | passed `real.exe`, `wrf.exe`, archive, and debug summary; archive `run_20260618T230858Z` |
+| 6 | `13550555` | attempted `scaling_t016` from `/tmp` Gate 11 packet | failed before WRF runtime evidence; Slurm `WorkDir`/stdout/stderr pointed at node-local `/tmp`, no login-visible batch stdout, no `rsl.*`, no archive/debug |
 
 ## Standing Rules
 
@@ -530,6 +533,11 @@ started sourcing executables from John's `main/` directory, byte-checking them,
 and staging required runtime files from John's `run/` directory, prep job
 `13550104` and `scaling_t028` job `13550110` passed. Evidence:
 `/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/jan2013_basin_gefs/practical_tests/scaling_t028/run_20260618T230858Z/debug/`.
+Attempted `scaling_t016` job `13550555` failed in `00:00:04` with Slurm state
+`FAILED` and exit `2:0` before `real.exe`: the submission used a `/tmp` Gate 11
+packet, so Slurm recorded node-local `/tmp` for `WorkDir`, stdout, and stderr.
+There are no `rsl.*` files and no `scaling_t016` archive/debug directory. Treat
+this as submission/log-path evidence only, not a benchmark result.
 
 Approval boundary: Slurm and WRF execution. The failed chain was approved for
 that attempt only; job `13550110` was the single approved retry. Do not add or
@@ -539,7 +547,7 @@ Candidate table:
 
 | Tasks | Memory | Expected use | Evidence |
 | ---: | ---: | --- | --- |
-| 16 | TBD | slower but cheaper baseline | wall time, sim hours, marker, archive |
+| 16 | `900G` | still the next lower-task benchmark after rerendering with shared Slurm `--chdir` and stdout/stderr | job `13550555` failed before WRF runtime evidence; retry needs fresh approval |
 | 28 | `900G` | passed first practical row | `wrf.exe` 2296 s, success marker, archive `run_20260618T230858Z` |
 | 56 | `900G` first | high-power default | wall time, sim hours, marker, archive |
 
