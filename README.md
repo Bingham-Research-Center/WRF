@@ -36,6 +36,34 @@ entry point for human contributors; AI-assisted routing lives in `AGENTS.md`.
 This is a large source tree. Start with narrow local reads before searching WRF
 internals broadly.
 
+## Recommended Reading
+
+Best next step: read the current state docs and inspect the existing Gate 10
+quicklook review before asking for more coding. If the NAM-only baseline looks
+acceptable, the next operational move is to approve exactly one bounded
+`scaling_t016` prep-and-submit pass using the generated `prepare_scaling_t016.sh`
+helper from a fresh Gate 11 packet.
+
+Read these in order to understand the current WPS/WRF setup:
+
+1. `brc-docs/BRC-WRF-STATE-PLAYBOOK.md` - current proof state and next move.
+2. `brc-docs/BRC-WRF-GATE10-QUICKLOOK-REVIEW.md` - existing visual sanity
+   review for the NAM-only proof.
+3. `AGENTS.md` - optimized router, safety boundaries, and current practical-run
+   gotchas.
+4. `brc-docs/BRC-WRF-ROADMAP.md` - full WRF/WPS gate structure from build
+   through practical testing.
+5. `brc-cases/README.md` - case validator, Slurm renderer, Gate 11 packet, and
+   approval-gated `prepare_<scenario>.sh` helper mechanics.
+6. `doc/BRC_WRF_NEXT_SESSION_HANDOFF.md` - exact `scaling_t016` recovery runbook.
+7. `brc-docs/BRC-WRF-FIRST-CASE.md` - narrative NAM-only proof path.
+
+Current docs reflect the recent Gate 11 hardening: wrappers byte-match John's
+`paths.wrf_build/main/{real.exe,wrf.exe}` and required runtime files from
+`paths.wrf_build/run/`; generated prep helpers require `BRC_PREP_APPROVED=YES`,
+refuse Michael-owned comparison paths, copy/check files only, and do not submit
+Slurm or execute WRF.
+
 ## Human Resource List
 
 - BRC docs index: `brc-docs/README.md`.
