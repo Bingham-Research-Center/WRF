@@ -16,13 +16,13 @@ SCRIPT = Path(__file__).with_name("wrf_case.py")
 
 
 class RenderPracticalHarnessTests(unittest.TestCase):
-    def write_case(self, workdir: Path) -> Path:
+    def write_case(self, workdir: Path, case_name: str = "unit_case") -> Path:
         manifest = workdir / "manifest.json"
         manifest.write_text(
             json.dumps(
                 {
                     "manifest_kind": "wrf_input_staging",
-                    "case": {"name": "unit_case", "sources": ["nam_analysis"]},
+                    "case": {"name": case_name, "sources": ["nam_analysis"]},
                 }
             ),
             encoding="utf-8",
@@ -32,20 +32,20 @@ class RenderPracticalHarnessTests(unittest.TestCase):
             json.dumps(
                 {
                     "contract_kind": "wps_wrf_case_contract",
-                    "case": "unit_case",
+                    "case": case_name,
                     "wps_fg_name": ["NAM"],
                     "interval_seconds": 21600,
                 }
             ),
             encoding="utf-8",
         )
-        case_file = workdir / "unit.case.yaml"
+        case_file = workdir / f"{case_name}.case.yaml"
         case_file.write_text(
             f"""
 schema_version: 1
 
 case:
-  name: unit_case
+  name: {case_name}
   start: "2013-01-31_12:00:00"
   end: "2013-02-02_00:00:00"
   domains: 2
@@ -63,16 +63,16 @@ paths:
   wrf_src: "{REPO_ROOT}"
   wrf_build: "/tmp/brc_wrf_unit_missing_wrf_build"
   wps_root: "/tmp/brc_wrf_unit_missing_wps"
-  input_root: "/scratch/general/vast/${{USER}}/wrf_inputs/unit_case"
-  run_root: "/scratch/general/vast/${{USER}}/wrf_runs/unit_case"
-  wps_run: "/scratch/general/vast/${{USER}}/wrf_runs/unit_case/wps_run"
-  wrf_run: "/scratch/general/vast/${{USER}}/wrf_runs/unit_case/wrf_run"
+  input_root: "/scratch/general/vast/${{USER}}/wrf_inputs/{case_name}"
+  run_root: "/scratch/general/vast/${{USER}}/wrf_runs/{case_name}"
+  wps_run: "/scratch/general/vast/${{USER}}/wrf_runs/{case_name}/wps_run"
+  wrf_run: "/scratch/general/vast/${{USER}}/wrf_runs/{case_name}/wrf_run"
   geog_data_path: "/tmp/brc_wrf_unit_missing_geog"
-  archive_root: "/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/unit_case"
+  archive_root: "/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/{case_name}"
 
 slurm:
   profile: owned_notch392_max
-  job_name: wrf_unit_case
+  job_name: wrf_{case_name}
   account: lawson-np
   partition: lawson-np
   nodelist: notch392
@@ -215,6 +215,21 @@ archive:
             memory_script = (output_dir / "memory_450G.slurm").read_text(encoding="utf-8")
             self.assertIn("#SBATCH --mem=450G", memory_script)
             self.assertIn("practical_tests/memory_450G/wrf_run", memory_script)
+
+    def test_jan2013_approval_packet_records_completed_t028(self) -> None:
+        with tempfile.TemporaryDirectory() as raw:
+            workdir = Path(raw)
+            case_file = self.write_case(workdir, case_name="jan2013_basin_gefs")
+            output_dir = workdir / "packet"
+
+            result = self.run_harness(case_file, "--output-dir", str(output_dir))
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            approval = (output_dir / "APPROVAL_PACKET.md").read_text(encoding="utf-8")
+            self.assertIn("## Current Practical Evidence", approval)
+            self.assertIn("`scaling_t028` | Completed with John's WRF `V4.8.0`", approval)
+            self.assertIn("`scaling_t016` | Recommended next single row", approval)
+            self.assertIn("Do not rerun `scaling_t028` by default", approval)
 
     def test_no_run_report_writes_report_packet_and_slurm_syntax_check(self) -> None:
         with tempfile.TemporaryDirectory() as raw:

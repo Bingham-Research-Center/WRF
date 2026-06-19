@@ -1042,6 +1042,22 @@ def render_approval_packet(
         "",
     ]
 
+    if str(case["name"]) == "jan2013_basin_gefs":
+        lines.extend(
+            [
+                "## Current Practical Evidence",
+                "",
+                "| Scenario | Status | Evidence |",
+                "| --- | --- | --- |",
+                "| `scaling_t028` | Completed with John's WRF `V4.8.0`, 28 tasks, `900G`; `real.exe`, `wrf.exe`, archive, and debug summary exited `0`. | `/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/jan2013_basin_gefs/practical_tests/scaling_t028/run_20260618T230858Z/debug/` |",
+                "| `scaling_t016` | Recommended next single row if John/Michael accept the Gate 10 visual baseline. | Not approved, not submitted. |",
+                "",
+                "Do not rerun `scaling_t028` by default. The approval rows below are",
+                "templates; fill exactly one unapproved row before any new `sbatch`.",
+                "",
+            ]
+        )
+
     def append_rows(title: str, records: list[dict[str, str]], empty_note: str) -> None:
         lines.extend(
             [
