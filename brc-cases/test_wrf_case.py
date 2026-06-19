@@ -16,7 +16,13 @@ SCRIPT = Path(__file__).with_name("wrf_case.py")
 
 
 class RenderPracticalHarnessTests(unittest.TestCase):
-    def write_case(self, workdir: Path, case_name: str = "unit_case") -> Path:
+    def write_case(
+        self,
+        workdir: Path,
+        case_name: str = "unit_case",
+        wrf_build: str = "/tmp/brc_wrf_unit_missing_wrf_build",
+        wps_root: str = "/tmp/brc_wrf_unit_missing_wps",
+    ) -> Path:
         manifest = workdir / "manifest.json"
         manifest.write_text(
             json.dumps(
@@ -61,8 +67,8 @@ forcing:
 
 paths:
   wrf_src: "{REPO_ROOT}"
-  wrf_build: "/tmp/brc_wrf_unit_missing_wrf_build"
-  wps_root: "/tmp/brc_wrf_unit_missing_wps"
+  wrf_build: "{wrf_build}"
+  wps_root: "{wps_root}"
   input_root: "/scratch/general/vast/${{USER}}/wrf_inputs/{case_name}"
   run_root: "/scratch/general/vast/${{USER}}/wrf_runs/{case_name}"
   wps_run: "/scratch/general/vast/${{USER}}/wrf_runs/{case_name}/wps_run"
@@ -119,6 +125,21 @@ archive:
             check=False,
         )
 
+    def run_validate(self, case_file: Path, *args: str) -> subprocess.CompletedProcess[str]:
+        return subprocess.run(
+            [
+                sys.executable,
+                str(SCRIPT),
+                "validate",
+                *args,
+                str(case_file),
+            ],
+            cwd=REPO_ROOT,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+
     def test_refuses_repo_local_output(self) -> None:
         with tempfile.TemporaryDirectory() as raw:
             case_file = self.write_case(Path(raw))
@@ -129,6 +150,63 @@ archive:
             self.assertNotEqual(result.returncode, 0)
             self.assertIn("outside the brc-wrf checkout", result.stderr)
             self.assertFalse(output_dir.exists())
+
+    def test_validate_wrf_build_requires_main_executables_and_runtime_sources(self) -> None:
+        with tempfile.TemporaryDirectory() as raw:
+            workdir = Path(raw)
+            wrf_build = workdir / "fake_wrf_build"
+            run_dir = wrf_build / "run"
+            run_dir.mkdir(parents=True)
+            for name in ("real.exe", "wrf.exe"):
+                path = run_dir / name
+                path.write_text("#!/bin/sh\n", encoding="utf-8")
+                path.chmod(0o755)
+            case_file = self.write_case(workdir, wrf_build=str(wrf_build))
+
+            result = self.run_validate(case_file)
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn("WARN: paths.wrf_build missing executable main/real.exe", result.stdout)
+            self.assertIn("WARN: paths.wrf_build missing executable main/wrf.exe", result.stdout)
+            self.assertIn(
+                "WARN: paths.wrf_build missing runtime file run/CAMtr_volume_mixing_ratio",
+                result.stdout,
+            )
+
+    def test_validate_wps_root_requires_top_level_executables(self) -> None:
+        with tempfile.TemporaryDirectory() as raw:
+            workdir = Path(raw)
+            wps_root = workdir / "fake_wps"
+            for subdir, exe in (
+                ("geogrid", "geogrid.exe"),
+                ("ungrib", "ungrib.exe"),
+                ("metgrid", "metgrid.exe"),
+            ):
+                path = wps_root / subdir / exe
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text("#!/bin/sh\n", encoding="utf-8")
+                path.chmod(0o755)
+            (wps_root / "link_grib.csh").write_text("#!/bin/csh\n", encoding="utf-8")
+            vtable = wps_root / "ungrib" / "Variable_Tables" / "Vtable.NAM"
+            vtable.parent.mkdir(parents=True, exist_ok=True)
+            vtable.write_text("# NAM\n", encoding="utf-8")
+            case_file = self.write_case(workdir, wps_root=str(wps_root))
+
+            result = self.run_validate(case_file)
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn(
+                "WARN: paths.wps_root missing top-level executable geogrid.exe",
+                result.stdout,
+            )
+            self.assertIn(
+                "WARN: paths.wps_root missing top-level executable ungrib.exe",
+                result.stdout,
+            )
+            self.assertIn(
+                "WARN: paths.wps_root missing top-level executable metgrid.exe",
+                result.stdout,
+            )
 
     def test_default_packet_names_and_key_settings(self) -> None:
         with tempfile.TemporaryDirectory() as raw:
@@ -163,6 +241,8 @@ archive:
             self.assertIn('rsync -av "$JOHN_WRF_BUILD"/main/wrf.exe "$WRF_RUN"/', prepare)
             self.assertIn('rsync -av --exclude="*.exe" "$JOHN_WRF_BUILD"/run/ "$WRF_RUN"/', prepare)
             self.assertIn('cmp -s "$JOHN_WRF_BUILD/main/wrf.exe" "$WRF_RUN/wrf.exe"', prepare)
+            self.assertIn('test -f "$JOHN_WRF_BUILD/run/$runtime_file"', prepare)
+            self.assertIn('cmp -s "$JOHN_WRF_BUILD/run/$runtime_file" "$WRF_RUN/$runtime_file"', prepare)
             self.assertIn("CAMtr_volume_mixing_ratio", prepare)
 
             approval = (output_dir / "APPROVAL_PACKET.md").read_text(encoding="utf-8")
@@ -190,7 +270,13 @@ archive:
             self.assertIn('require_matching_executable "$EXPECTED_WRF" "$WRF_RUN/wrf.exe" "wrf.exe"', scaling)
             self.assertIn("does not match John-owned WRF build", scaling)
             self.assertIn("for runtime_file in CAMtr_volume_mixing_ratio", scaling)
+            self.assertIn('check_file "$WRF_BUILD/run/$runtime_file"', scaling)
             self.assertIn('check_file "$WRF_RUN/$runtime_file"', scaling)
+            self.assertIn(
+                'require_matching_file "$WRF_BUILD/run/$runtime_file" "$WRF_RUN/$runtime_file" "$runtime_file"',
+                scaling,
+            )
+            self.assertIn("does not match John-owned WRF run directory", scaling)
             self.assertIn("preflight failed; prepare WRF_RUN before resubmitting", scaling)
 
     def test_custom_tasks_and_memory_candidates_render(self) -> None:

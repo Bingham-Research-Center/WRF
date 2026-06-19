@@ -180,20 +180,16 @@ def add_path_finding(
         findings.append(Finding("ERROR", f"{label} is not a file: {path}"))
 
 
-def add_executable_root_findings(
+def add_wrf_build_findings(
     findings: list[Finding],
     root: Path,
-    label: str,
     *,
     strict_files: bool,
-    executables: tuple[str, ...],
-    subdirs: tuple[str, ...] = (),
-    files: tuple[str, ...] = (),
 ) -> None:
     add_path_finding(
         findings,
         root,
-        label,
+        "paths.wrf_build",
         strict_files=strict_files,
         must_be_dir=True,
     )
@@ -201,33 +197,70 @@ def add_executable_root_findings(
         return
 
     severity = "ERROR" if strict_files else "WARN"
-    for exe in executables:
-        candidates = [
-            root / exe,
-            root / "run" / exe,
-            root / "main" / exe,
-            root / "geogrid" / exe,
-            root / "ungrib" / exe,
-            root / "metgrid" / exe,
-            root / "geogrid" / "src" / exe,
-            root / "ungrib" / "src" / exe,
-            root / "metgrid" / "src" / exe,
-        ]
-        if not any(path.exists() and os.access(path, os.X_OK) for path in candidates):
+    for exe in ("real.exe", "wrf.exe"):
+        path = root / "main" / exe
+        if not (path.exists() and os.access(path, os.X_OK)):
             findings.append(
-                Finding(severity, f"{label} missing executable {exe} under {root}")
+                Finding(
+                    severity,
+                    f"paths.wrf_build missing executable main/{exe}: {path}",
+                )
             )
 
-    for subdir in subdirs:
+    run_dir = root / "run"
+    if not run_dir.is_dir():
+        findings.append(Finding(severity, f"paths.wrf_build missing directory run: {run_dir}"))
+        return
+
+    for runtime_file in REQUIRED_WRF_RUNTIME_FILES:
+        path = run_dir / runtime_file
+        if not path.is_file():
+            findings.append(
+                Finding(
+                    severity,
+                    f"paths.wrf_build missing runtime file run/{runtime_file}: {path}",
+                )
+            )
+
+
+def add_wps_root_findings(
+    findings: list[Finding],
+    root: Path,
+    *,
+    strict_files: bool,
+) -> None:
+    add_path_finding(
+        findings,
+        root,
+        "paths.wps_root",
+        strict_files=strict_files,
+        must_be_dir=True,
+    )
+    if not root.exists() or not root.is_dir():
+        return
+
+    severity = "ERROR" if strict_files else "WARN"
+    for exe in ("geogrid.exe", "ungrib.exe", "metgrid.exe"):
+        path = root / exe
+        if not (path.exists() and os.access(path, os.X_OK)):
+            findings.append(
+                Finding(
+                    severity,
+                    f"paths.wps_root missing top-level executable {exe}: {path}",
+                )
+            )
+
+    for subdir in ("geogrid", "metgrid", "ungrib"):
         path = root / subdir
         if not path.is_dir():
-            findings.append(Finding(severity, f"{label} missing directory {subdir}: {path}"))
+            findings.append(Finding(severity, f"paths.wps_root missing directory {subdir}: {path}"))
 
-    for file_name in files:
+    for file_name in ("link_grib.csh", "ungrib/Variable_Tables/Vtable.NAM"):
         path = root / file_name
         if not path.is_file():
-            findings.append(Finding(severity, f"{label} missing file {file_name}: {path}"))
-
+            findings.append(
+                Finding(severity, f"paths.wps_root missing file {file_name}: {path}")
+            )
 
 def add_storage_policy_findings(
     findings: list[Finding],
@@ -492,22 +525,15 @@ def validate_case(data: dict[str, Any], *, strict_files: bool) -> list[Finding]:
         findings, as_path(paths["wrf_src"]), "paths.wrf_src",
         strict_files=True, must_be_dir=True,
     )
-    add_executable_root_findings(
+    add_wrf_build_findings(
         findings,
         as_path(paths["wrf_build"]),
-        "paths.wrf_build",
         strict_files=strict_files,
-        executables=("real.exe", "wrf.exe"),
-        subdirs=("run",),
     )
-    add_executable_root_findings(
+    add_wps_root_findings(
         findings,
         as_path(paths["wps_root"]),
-        "paths.wps_root",
         strict_files=strict_files,
-        executables=("geogrid.exe", "ungrib.exe", "metgrid.exe"),
-        subdirs=("geogrid", "metgrid", "ungrib"),
-        files=("link_grib.csh", "ungrib/Variable_Tables/Vtable.NAM"),
     )
     add_path_finding(
         findings, as_path(paths["geog_data_path"]), "paths.geog_data_path",
@@ -703,6 +729,27 @@ def render_slurm(data: dict[str, Any], case_file: Path) -> str:
             "    printf \"actual_%s\\t%s\\n\" \"$label\" \"$actual_resolved\"",
             "  } >> \"$SUMMARY_LOG\"",
             "}",
+            "require_matching_file() {",
+            "  local expected=\"$1\" actual=\"$2\" label=\"$3\"",
+            "  local expected_resolved actual_resolved",
+            "  require_file \"$expected\"",
+            "  require_file \"$actual\"",
+            "  expected_resolved=$(readlink -f \"$expected\" 2>/dev/null || printf unresolved)",
+            "  actual_resolved=$(readlink -f \"$actual\" 2>/dev/null || printf unresolved)",
+            "  if ! cmp -s \"$expected\" \"$actual\"; then",
+            "    {",
+            "      printf \"runtime_file_%s\\tFAIL\\n\" \"$label\"",
+            "      printf \"expected_runtime_%s\\t%s\\n\" \"$label\" \"$expected_resolved\"",
+            "      printf \"actual_runtime_%s\\t%s\\n\" \"$label\" \"$actual_resolved\"",
+            "    } >> \"$SUMMARY_LOG\"",
+            "    fail \"runtime file $label does not match John-owned WRF run directory; expected $expected_resolved, actual $actual_resolved\"",
+            "  fi",
+            "  {",
+            "    printf \"runtime_file_%s\\tPASS\\n\" \"$label\"",
+            "    printf \"expected_runtime_%s\\t%s\\n\" \"$label\" \"$expected_resolved\"",
+            "    printf \"actual_runtime_%s\\t%s\\n\" \"$label\" \"$actual_resolved\"",
+            "  } >> \"$SUMMARY_LOG\"",
+            "}",
             "",
             "run_phase() {",
             "  local phase=\"$1\"",
@@ -794,6 +841,7 @@ def render_slurm(data: dict[str, Any], case_file: Path) -> str:
             'check_file "$WRF_RUN/namelist.input"',
             'check_glob "$WRF_RUN/met_em.d0*.nc"',
             f"for runtime_file in {' '.join(REQUIRED_WRF_RUNTIME_FILES)}; do",
+            '  check_file "$WRF_BUILD/run/$runtime_file"',
             '  check_file "$WRF_RUN/$runtime_file"',
             "done",
             '(( preflight_missing == 0 )) || fail "preflight failed; prepare WRF_RUN before resubmitting"',
@@ -818,6 +866,9 @@ def render_slurm(data: dict[str, Any], case_file: Path) -> str:
             "write_summary_preamble",
             'require_matching_executable "$EXPECTED_REAL" "$WRF_RUN/real.exe" "real.exe"',
             'require_matching_executable "$EXPECTED_WRF" "$WRF_RUN/wrf.exe" "wrf.exe"',
+            f"for runtime_file in {' '.join(REQUIRED_WRF_RUNTIME_FILES)}; do",
+            '  require_matching_file "$WRF_BUILD/run/$runtime_file" "$WRF_RUN/$runtime_file" "$runtime_file"',
+            "done",
             "",
             "run_phase real.exe ./real.exe",
             'run_phase real_success_marker grep -q "SUCCESS COMPLETE REAL_EM INIT" rsl.out.0000',
@@ -963,7 +1014,7 @@ def render_prepare_checklist(
             "| --- | --- | --- |",
             f"| `real.exe` | John-owned WRF build | Source from `{john_real}`; wrappers byte-compare before `real.exe`. |",
             f"| `wrf.exe` | John-owned WRF build | Source from `{john_wrf}`; wrappers byte-compare before `real.exe`. |",
-            f"| WRF runtime files | John-owned WRF `run/` directory | Stage from `{john_wrf_build}/run/`; current-case preflight requires `{', '.join(REQUIRED_WRF_RUNTIME_FILES)}`. |",
+            f"| WRF runtime files | John-owned WRF `run/` directory | Stage from `{john_wrf_build}/run/`; current-case preflight requires and byte-compares `{', '.join(REQUIRED_WRF_RUNTIME_FILES)}`. |",
             "| `namelist.input` | Proven NAM-only WRF run setup | Keep source SHA, WRF/WPS roots, and case window unchanged across benchmark rows. |",
             "| `met_em.d0*.nc` | Gate 6 WPS output consumed by the proven run | Do not inspect or copy on a login node. |",
             "",
@@ -1008,7 +1059,9 @@ def render_prepare_checklist(
             'cmp -s "$JOHN_WRF_BUILD/main/real.exe" "$WRF_RUN/real.exe"',
             'cmp -s "$JOHN_WRF_BUILD/main/wrf.exe" "$WRF_RUN/wrf.exe"',
             f"for runtime_file in {' '.join(REQUIRED_WRF_RUNTIME_FILES)}; do",
+            '  test -f "$JOHN_WRF_BUILD/run/$runtime_file"',
             '  test -f "$WRF_RUN/$runtime_file"',
+            '  cmp -s "$JOHN_WRF_BUILD/run/$runtime_file" "$WRF_RUN/$runtime_file"',
             "done",
             "```",
             "",
@@ -1214,8 +1267,9 @@ def render_practical_packet(
             "runtime physics files from John's WRF `run/` directory, plus",
             "`namelist.input` and `met_em` files from the approved proven run",
             "artifacts. The rendered scripts fail fast if those inputs are",
-            "missing, if the current-case runtime files are absent, or if the",
-            "scenario executables do not byte-match `paths.wrf_build/main`.",
+            "missing, if the current-case runtime files are absent or do not",
+            "byte-match `paths.wrf_build/run`, or if the scenario executables",
+            "do not byte-match `paths.wrf_build/main`.",
             "",
             "`APPROVAL_PACKET.md` carries the no-run approval rows and evidence",
             "fields for baseline, 16/28/56-style scaling rows, and optional memory",

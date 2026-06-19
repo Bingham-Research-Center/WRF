@@ -24,10 +24,12 @@ The checkpoint is intentionally small:
    ```
 
    Strict validation also checks the declared WRF/WPS executable roots. The WRF
-   root must contain `real.exe` and `wrf.exe`; the WPS root must contain
-   `geogrid.exe`, `ungrib.exe`, `metgrid.exe`, `link_grib.csh`, and
-   `ungrib/Variable_Tables/Vtable.NAM`. It also rejects repo-local staged
-   inputs, run directories, archive roots, logs, and generated data paths.
+   build root must expose `main/real.exe`, `main/wrf.exe`, and runtime source
+   files under `run/`; a scratch run directory with copied executables is not a
+   build root. The WPS root must expose top-level `geogrid.exe`, `ungrib.exe`,
+   `metgrid.exe`, `link_grib.csh`, and `ungrib/Variable_Tables/Vtable.NAM`. It
+   also rejects repo-local staged inputs, run directories, archive roots, logs,
+   and generated data paths.
 
 4. Render the Slurm script for review. This writes text only; it does not call
    `sbatch`.
@@ -73,10 +75,11 @@ The checkpoint is intentionally small:
    `practical_tests/<scenario>/`, fail fast if the scenario `wrf_run` directory
    is not prepared with `real.exe`, `wrf.exe`, `namelist.input`, and `met_em`
    files, or if the scenario executables do not byte-match
-   `paths.wrf_build/main/{real.exe,wrf.exe}`. The prepare checklist sources
-   executables and runtime physics files from John's compiled WRF tree, and
-   uses the approved proven run artifacts only for `namelist.input` and
-   `met_em` files. Current-case runtime preflight includes
+   `paths.wrf_build/main/{real.exe,wrf.exe}`. Runtime physics/table files must
+   also byte-match John's `paths.wrf_build/run/` source files before `real.exe`
+   starts. The prepare checklist sources executables and runtime physics files
+   from John's compiled WRF tree, and uses the approved proven run artifacts
+   only for `namelist.input` and `met_em` files. Current-case runtime preflight includes
    `CAMtr_volume_mixing_ratio`, `RRTMG_LW_DATA`, `RRTMG_SW_DATA`, ozone files,
    and core land-surface tables. Practical scripts set Slurm `--chdir`,
    stdout, and stderr to the shared

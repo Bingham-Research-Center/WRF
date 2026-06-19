@@ -467,7 +467,7 @@ Required pieces:
 | Maintained Slurm wrapper | `python brc-cases/wrf_case.py render-practical-harness <case.yaml> --output-dir <outside-repo-dir>` renders baseline/scaling/memory review scripts from the case manifest. |
 | Settings readback | Run logs show case window, forcing, WPS cadence, Vtable/prefix/`fg_name`, Slurm shape, launcher, scratch path, archive path. |
 | Executable provenance check | Rendered wrappers fail before `real.exe` unless scenario `real.exe` and `wrf.exe` byte-match `paths.wrf_build/main/{real.exe,wrf.exe}` from John's `~/gits/brc-wrf` build. |
-| Runtime physics files | Rendered wrappers fail before `real.exe` unless current-case WRF runtime files such as `CAMtr_volume_mixing_ratio`, `RRTMG_LW_DATA`, `RRTMG_SW_DATA`, ozone files, and core land-surface tables are present from John's `paths.wrf_build/run/`. |
+| Runtime physics files | Rendered wrappers fail before `real.exe` unless current-case WRF runtime files such as `CAMtr_volume_mixing_ratio`, `RRTMG_LW_DATA`, `RRTMG_SW_DATA`, ozone files, and core land-surface tables are present and byte-match John's `paths.wrf_build/run/` source files. |
 | Debug artifacts | Summary, phase timing, and file inventory are created for every run. |
 | Validation checklist | Cheap metadata checks are separate from strict off-login artifact checks. |
 | Scenario prepare/check plan | `PREPARE_CHECKLIST.md` names every per-scenario `WRF_RUN`, sources executables and runtime physics files from John's WRF build, sources `namelist.input`/`met_em` from the proven run artifacts, and keeps artifact reads/copies off login nodes. |
@@ -494,8 +494,8 @@ result tables blank until approved runs produce evidence. Generated run wrappers
 fail fast unless the scenario `wrf_run` directory is prepared with `real.exe`,
 `wrf.exe`, `namelist.input`, and `met_em` files, and unless the scenario
 executables byte-match John's `paths.wrf_build/main` binaries. They also
-preflight the current-case WRF runtime files needed by RRTMG and land-surface
-physics from John's `paths.wrf_build/run` directory.
+preflight and byte-match the current-case WRF runtime files needed by RRTMG and
+land-surface physics against John's `paths.wrf_build/run` directory.
 
 Ready-for-practical-testing means: John can approve a scaling or memory run by
 choosing a row in a table, not by reconstructing the entire WRF/WPS path from

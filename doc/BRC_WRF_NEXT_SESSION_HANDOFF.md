@@ -255,7 +255,9 @@ for runtime_file in \
   SOILPARM.TBL \
   VEGPARM.TBL
 do
+  test -f "$JOHN_WRF_BUILD/run/$runtime_file"
   test -f "$WRF_RUN/$runtime_file"
+  cmp -s "$JOHN_WRF_BUILD/run/$runtime_file" "$WRF_RUN/$runtime_file"
 done
 ```
 
