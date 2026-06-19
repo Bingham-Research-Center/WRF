@@ -184,13 +184,14 @@ archive:
                 scaling,
             )
             self.assertIn("practical_tests/scaling_t016/wrf_run", scaling)
-            self.assertIn('require_executable "$WRF_RUN/real.exe"', scaling)
+            self.assertIn('check_executable "$WRF_RUN/real.exe"', scaling)
             self.assertIn("WRF_BUILD=/tmp/brc_wrf_unit_missing_wrf_build", scaling)
             self.assertIn("EXPECTED_WRF=/tmp/brc_wrf_unit_missing_wrf_build/main/wrf.exe", scaling)
             self.assertIn('require_matching_executable "$EXPECTED_WRF" "$WRF_RUN/wrf.exe" "wrf.exe"', scaling)
             self.assertIn("does not match John-owned WRF build", scaling)
             self.assertIn("for runtime_file in CAMtr_volume_mixing_ratio", scaling)
-            self.assertIn('require_file "$WRF_RUN/$runtime_file"', scaling)
+            self.assertIn('check_file "$WRF_RUN/$runtime_file"', scaling)
+            self.assertIn("preflight failed; prepare WRF_RUN before resubmitting", scaling)
 
     def test_custom_tasks_and_memory_candidates_render(self) -> None:
         with tempfile.TemporaryDirectory() as raw:
@@ -241,7 +242,10 @@ archive:
             self.assertIn("## Current Practical Evidence", approval)
             self.assertIn("`scaling_t028` | Completed with John's WRF `V4.8.0`", approval)
             self.assertIn("`scaling_t016` | Job `13550555` failed before WRF runtime evidence", approval)
-            self.assertIn("Rerender with shared Slurm `--chdir` and stdout/stderr", approval)
+            self.assertIn("Rerendered scripts now use shared Slurm `--chdir` and stdout/stderr", approval)
+            self.assertIn("Job `13550909` used the shared log path and failed before `real.exe`", approval)
+            self.assertIn("wrf_jan2013_nam_t016_13550909.out", approval)
+            self.assertIn("Prepare that scenario `WRF_RUN` before any retry", approval)
             self.assertIn("Do not rerun `scaling_t028` by default", approval)
 
     def test_no_run_report_writes_report_packet_and_slurm_syntax_check(self) -> None:
@@ -276,7 +280,7 @@ archive:
             self.assertIn("| Rendered shell syntax | `PASS` |", text)
             self.assertIn("memory_450G.slurm", text)
             self.assertIn("Not run: `--strict-files`, manifest hashing", text)
-            self.assertIn("recommended next single row is `scaling_t016`", text)
+            self.assertIn("single row remains `scaling_t016`", text)
 
     def test_no_run_report_refuses_repo_local_output(self) -> None:
         with tempfile.TemporaryDirectory() as raw:

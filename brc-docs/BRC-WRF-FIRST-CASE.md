@@ -36,8 +36,11 @@ execution require explicit run approval.
   `/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/jan2013_basin_gefs/practical_tests/scaling_t028/run_20260618T230858Z/debug/`.
   Attempted `scaling_t016` job `13550555` failed before WRF runtime evidence
   because it was submitted from a node-local `/tmp` packet; no `rsl.*`, archive,
-  or debug evidence was produced. Other practical rows still need explicit
-  approval.
+  or debug evidence was produced. Rerendered shared-log job `13550909` also
+  failed before `real.exe` because the `scaling_t016` `WRF_RUN` lacked runtime
+  physics/table files from John's `~/gits/brc-wrf/run/`; it produced no
+  `rsl.*`, archive, or debug evidence. Other practical rows still need
+  explicit approval.
 - Not yet validated: GEFSv12 reforecast plus NAM two-stream forcing
   (`fg_name = 'GEFS','NAM'`, `interval_seconds = 10800`).
 
@@ -241,8 +244,9 @@ The non-fatal `real.exe` soil message observed for the proof was:
    The recommended next row is `scaling_t016`; `scaling_t028` has already
    passed after the wrapper sourced executables from John's build, byte-checked
    them, and staged runtime physics files from John's `~/gits/brc-wrf/run/`.
-   Rerender the practical packet first so generated scripts use a shared Slurm
-   working directory and stdout/stderr path under
+   Prepare the `scaling_t016` `WRF_RUN` first with John's executables and
+   runtime files, then rerender the practical packet so generated scripts use a
+   shared Slurm working directory and stdout/stderr path under
    `lawson-group6/.../wrf_build_logs/brc-wrf`.
 3. GEFS+NAM two-stream WPS/real path: build or select a GEFSv12 reforecast
    Vtable, ungrib GEFS and NAM separately, run metgrid with

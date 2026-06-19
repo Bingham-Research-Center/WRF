@@ -88,7 +88,12 @@ about CI, read `.ci/tests/build.sh` and `.github/workflows/ci.yml`.
   `13550110` passed with John's `~/gits/brc-wrf` at `34710497`, 28 tasks,
   `900G`, and archive/debug evidence under
   `/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/jan2013_basin_gefs/practical_tests/scaling_t028/run_20260618T230858Z/debug/`.
-  No other scaling or memory rows are approved by this evidence.
+  Two later `scaling_t016` submissions remain non-benchmark failures:
+  `13550555` used node-local `/tmp` for Slurm work/log paths, and `13550909`
+  used the shared log path but failed preflight because the target `WRF_RUN`
+  lacked runtime physics/table files from John's `run/` directory. Neither
+  produced `rsl.*`, archive, or debug evidence. No other scaling or memory rows
+  are approved by this evidence.
 - Michael Davies has a separate working end-to-end WRF/WPS reference path under
   `lawson-group6/u6060939/wrf_build/`, documented in `brc-knowledge`. Treat it
   as evidence and comparison context only; do not point John's run wrappers at

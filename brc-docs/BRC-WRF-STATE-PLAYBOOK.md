@@ -43,7 +43,7 @@ owner repo, and stop point.
 | WRF/WPS build proof | Gates 2-3 passed. John's `main/real.exe` and `main/wrf.exe` exist, and John-owned WPS v4.6.0 is built at `/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_build/WPS`. |
 | Visual QA | Usable off-login. `brc-cases/wrf_quicklook.py` checks/renders five PNGs from existing proof artifacts; path-only unit tests are login-safe. |
 | Practical-test harness | Usable. `wrf_case.py render-practical-harness` writes review packets outside the repo with scaling/memory scripts and blank result tables. |
-| Practical testing | One 28-task row passed. Job `13550110` ran John's `~/gits/brc-wrf` WRF `V4.8.0`, passed `real.exe`/`wrf.exe`, and archived debug evidence under `practical_tests/scaling_t028/run_20260618T230858Z/`. Attempted `scaling_t016` job `13550555` failed before WRF runtime evidence because it used a node-local `/tmp` packet; no `rsl.*`, archive, or debug evidence exists. Memory rows remain unrun. |
+| Practical testing | One 28-task row passed. Job `13550110` ran John's `~/gits/brc-wrf` WRF `V4.8.0`, passed `real.exe`/`wrf.exe`, and archived debug evidence under `practical_tests/scaling_t028/run_20260618T230858Z/`. Attempted `scaling_t016` jobs `13550555` and `13550909` failed before WRF runtime evidence: first from node-local `/tmp` Slurm paths, then from a `WRF_RUN` missing runtime files from John's `run/` directory. No `rsl.*`, archive, or debug evidence exists for `scaling_t016`. Memory rows remain unrun. |
 | Gate 10 visual review | Preliminary PNG-only visual sanity passed; see `brc-docs/BRC-WRF-GATE10-QUICKLOOK-REVIEW.md`. John/Michael science acceptance is still the decision point. |
 | Slurm profile | Aligned to max owned-node profile: `lawson-np`, `notch392`, 1 node, 56 tasks, `900G`, `srun --mpi=pmi2`. |
 | GEFS+NAM | Not proven. Treat as a design/proof task, not a working production method. |
@@ -53,7 +53,7 @@ owner repo, and stop point.
 | Order | Next move | Stop point |
 | --- | --- | --- |
 | 1 | Have John/Michael accept or reject the Gate 10 quicklook review. | Decide whether the NAM-only proof remains a physically useful baseline. |
-| 2 | Decide whether to reapprove exactly one practical benchmark row. | Recommended next row is still `scaling_t016`, after rerendering with shared Slurm `--chdir` and stdout/stderr; pick one row and stop on its result. |
+| 2 | Decide whether to reapprove exactly one practical benchmark row. | Recommended next row is still `scaling_t016`, after preparing its `WRF_RUN` with John's executables/runtime files and rerendering with shared Slurm `--chdir` and stdout/stderr; pick one row and stop on its result. |
 | 3 | Decide whether GEFS+NAM is still needed for the next science question. | If yes, draft the two-stream WPS proof; if no, keep improving NAM-only repeatability. |
 
 ## Reading Packet

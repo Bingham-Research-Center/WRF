@@ -181,7 +181,14 @@ runtime evidence because the fresh Gate 11 packet was submitted from node-local
 `/tmp`; Slurm recorded `/tmp/..._gate11_packet` as `WorkDir`, stdout, and
 stderr. Accounting: `FAILED`, exit `2:0`, elapsed `00:00:04` on `notch392`.
 No `rsl.*`, archive, or debug evidence was produced. Treat this as a
-submission/log-path issue, not a WRF benchmark result.
+submission/log-path issue, not a WRF benchmark result. Rerendered retry job
+`13550909` fixed the shared Slurm log path and failed in `00:00:04` before
+`real.exe`; stdout at
+`/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_build_logs/brc-wrf/wrf_jan2013_nam_t016_13550909.out`
+reported missing `CAMtr_volume_mixing_ratio`, and compact metadata showed all
+required runtime physics/table files from John's `run/` directory were absent
+from the `scaling_t016` `WRF_RUN`. It produced no `rsl.*`, archive, or debug
+evidence and is not a benchmark result.
 
 ## Recommended Next No-Run Batch
 
@@ -192,10 +199,13 @@ have John/Michael accept or reject
 `brc-docs/BRC-WRF-GATE10-QUICKLOOK-REVIEW.md`, approve exactly one additional
 benchmark row, or stay in no-run design work for GEFS+NAM and domain/geog
 review. If another benchmark is approved, the recommended next row is
-`scaling_t016` because `scaling_t028` has already passed. Rerender the Gate 11
-packet first so generated practical scripts set a shared Slurm `--chdir` and
-shared stdout/stderr under `lawson-group6/.../wrf_build_logs/brc-wrf`; do not
-reuse the `13550555` `/tmp` submission pattern.
+`scaling_t016` because `scaling_t028` has already passed. Prepare that
+row-specific `WRF_RUN` first with John's `main/{real.exe,wrf.exe}` and runtime
+files from John's `run/` directory, then rerender the Gate 11 packet so
+generated practical scripts capture all missing preflight inputs and set shared
+Slurm `--chdir` plus stdout/stderr under
+`lawson-group6/.../wrf_build_logs/brc-wrf`. Do not reuse the raw-submit
+patterns from jobs `13550555` or `13550909`.
 
 The current John/Michael no-run handout is
 `brc-docs/BRC-WRF-MICHAEL-PRACTICAL-PACKET.md`. It packages the first contract

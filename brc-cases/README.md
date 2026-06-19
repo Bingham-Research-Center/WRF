@@ -82,8 +82,10 @@ The checkpoint is intentionally small:
    stdout, and stderr to the shared
    `/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_build_logs/brc-wrf`
    root so early failures remain visible even when review packets are rendered
-   under `/tmp`. Any copy/check of scratch or archive WRF files remains
-   off-login and approval-gated, and `sbatch` still requires explicit approval.
+   under `/tmp`. They report the full missing preflight set before exiting, so
+   a failed setup is not mistaken for WRF runtime evidence. Any copy/check of
+   scratch or archive WRF files remains off-login and approval-gated, and
+   `sbatch` still requires explicit approval.
 
 6. Render a one-command no-run report when you want a compact login-safe
    checkpoint for handoff or approval review:

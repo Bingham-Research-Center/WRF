@@ -115,8 +115,9 @@ Compiled WRF proof only. No WPS, no real.exe, no wrf.exe, no sbatch run, no arch
 Have John/Michael accept or reject
 `brc-docs/BRC-WRF-GATE10-QUICKLOOK-REVIEW.md`, then approve exactly one next
 benchmark row if the NAM-only visual baseline is good enough. The recommended
-next row is still `scaling_t016`, but rerender the practical packet first so
-Slurm uses a shared working directory and stdout/stderr path; job `13550555`
-failed before runtime evidence after using a node-local `/tmp` packet. Future
-staging, manifest hashing, strict artifact reads, WPS execution, and new WRF
-submissions remain approval-gated.
+next row is still `scaling_t016`, but prepare that row's `WRF_RUN` with John's
+executables and runtime files before rerendering the practical packet. Job
+`13550555` failed before runtime evidence after using a node-local `/tmp`
+packet; job `13550909` fixed Slurm logging but failed before `real.exe` because
+runtime files were absent. Future staging, manifest hashing, strict artifact
+reads, WPS execution, and new WRF submissions remain approval-gated.

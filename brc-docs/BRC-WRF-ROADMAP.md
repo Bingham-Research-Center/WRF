@@ -26,10 +26,11 @@ John-owned WRF/WPS build proof, fresh NAM-only input contract, NAM-only
 WPS/`real.exe`/`wrf.exe` rerun, archive, quicklooks, and a maintained
 render-only practical-test harness. Practical testing has one approved
 28-task scaling row complete after fixing executable provenance and WRF runtime
-file staging. A later `scaling_t016` submission failed before WRF runtime
-evidence because the rendered packet was submitted from node-local `/tmp`.
-Memory sweeps, successful additional scaling rows, and the GEFS+NAM science
-branch remain separate follow-ons.
+file staging. Later `scaling_t016` submissions failed before WRF runtime
+evidence: first because the packet used node-local `/tmp` Slurm paths, then
+because the row-specific `WRF_RUN` lacked runtime files from John's `run/`
+directory. Memory sweeps, successful additional scaling rows, and the GEFS+NAM
+science branch remain separate follow-ons.
 
 Current practical evidence, submitted 2026-06-18:
 
@@ -42,6 +43,7 @@ Current practical evidence, submitted 2026-06-18:
 | 4 | `13550104` | runtime-file fixed `scaling_t028` prep | completed |
 | 5 | `13550110` | `scaling_t028`, 28 tasks, `900G` | passed `real.exe`, `wrf.exe`, archive, and debug summary; archive `run_20260618T230858Z` |
 | 6 | `13550555` | attempted `scaling_t016` from `/tmp` Gate 11 packet | failed before WRF runtime evidence; Slurm `WorkDir`/stdout/stderr pointed at node-local `/tmp`, no login-visible batch stdout, no `rsl.*`, no archive/debug |
+| 7 | `13550909` | attempted `scaling_t016` from shared-log Gate 11 packet | failed before `real.exe`; shared stdout showed missing `CAMtr_volume_mixing_ratio`; compact metadata showed all required runtime physics/table files absent, no `rsl.*`, no archive/debug |
 
 ## Standing Rules
 
@@ -536,8 +538,14 @@ and staging required runtime files from John's `run/` directory, prep job
 Attempted `scaling_t016` job `13550555` failed in `00:00:04` with Slurm state
 `FAILED` and exit `2:0` before `real.exe`: the submission used a `/tmp` Gate 11
 packet, so Slurm recorded node-local `/tmp` for `WorkDir`, stdout, and stderr.
-There are no `rsl.*` files and no `scaling_t016` archive/debug directory. Treat
-this as submission/log-path evidence only, not a benchmark result.
+Rerendered shared-log job `13550909` also failed in `00:00:04` before
+`real.exe`: the batch stdout was visible at
+`/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_build_logs/brc-wrf/wrf_jan2013_nam_t016_13550909.out`
+and reported missing `CAMtr_volume_mixing_ratio`; compact metadata showed the
+target `WRF_RUN` also lacked `RRTMG_*`, ozone, GENPARM/LANDUSE/SOIL/VEG runtime
+files from John's `run/` directory. There are no `rsl.*` files and no
+`scaling_t016` archive/debug directory. Treat both `scaling_t016` attempts as
+setup evidence only, not benchmark results.
 
 Approval boundary: Slurm and WRF execution. The failed chain was approved for
 that attempt only; job `13550110` was the single approved retry. Do not add or
@@ -547,7 +555,7 @@ Candidate table:
 
 | Tasks | Memory | Expected use | Evidence |
 | ---: | ---: | --- | --- |
-| 16 | `900G` | still the next lower-task benchmark after rerendering with shared Slurm `--chdir` and stdout/stderr | job `13550555` failed before WRF runtime evidence; retry needs fresh approval |
+| 16 | `900G` | still the next lower-task benchmark after preparing the row-specific `WRF_RUN` with John's runtime files | jobs `13550555` and `13550909` failed before WRF runtime evidence; retry needs fresh approval |
 | 28 | `900G` | passed first practical row | `wrf.exe` 2296 s, success marker, archive `run_20260618T230858Z` |
 | 56 | `900G` first | high-power default | wall time, sim hours, marker, archive |
 
