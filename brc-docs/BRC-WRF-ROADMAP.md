@@ -422,6 +422,7 @@ Current status: passed on 2026-06-18.
 | Quicklooks | `/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/jan2013_basin_gefs/run_gate8_20260618T062439Z_13540006/quicklooks/` |
 | Result | Quicklook check/render exited `0`; five PNGs written with shape `1275x975` |
 | Visual review | Basic visual sanity passed: plots were nonblank, framed, and showed coherent terrain, landmask, temperature/wind, and snow-depth structure |
+| Review note | `brc-docs/BRC-WRF-GATE10-QUICKLOOK-REVIEW.md` records the 2026-06-19 PNG-only visual pass and remaining John/Michael science decision |
 
 Expected commands after the case manifest points at the new archive:
 
@@ -596,9 +597,10 @@ Read, in order:
 Pick exactly one gate or follow-on from brc-docs/BRC-WRF-ROADMAP.md. Gates 0-11
 are complete as of 2026-06-18 if live docs still match this branch. Practical
 testing has one completed 28-task row, job 13550110, after fixing executable
-provenance and WRF runtime-file staging. The next single gate is science review
-of Gate 10 quicklooks or explicit approval of exactly one additional benchmark
-row.
+provenance and WRF runtime-file staging. A PNG-only Gate 10 visual pass is
+recorded in `brc-docs/BRC-WRF-GATE10-QUICKLOOK-REVIEW.md`; the next single gate
+is John/Michael science acceptance or explicit approval of exactly one
+additional benchmark row.
 
 Hard boundaries:
 - No compile, WPS, real.exe, wrf.exe, sbatch, large staging, strict artifact

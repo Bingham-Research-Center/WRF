@@ -182,9 +182,11 @@ runtime physics files from John's `paths.wrf_build/{main,run}`. Evidence:
 The `brc-tools` hygiene batch is merged upstream, Roadmap Gates 3-11 are
 complete for the NAM-only baseline and maintained harness, and `scaling_t028`
 has one successful 28-task row. Keep the next `brc-wrf` work on science review:
-inspect Gate 10 quicklooks with John/Michael, approve exactly one additional
+have John/Michael accept or reject
+`brc-docs/BRC-WRF-GATE10-QUICKLOOK-REVIEW.md`, approve exactly one additional
 benchmark row, or stay in no-run design work for GEFS+NAM and domain/geog
-review.
+review. If another benchmark is approved, the recommended next row is
+`scaling_t016` because `scaling_t028` has already passed.
 
 The current John/Michael no-run handout is
 `brc-docs/BRC-WRF-MICHAEL-PRACTICAL-PACKET.md`. It packages the first contract

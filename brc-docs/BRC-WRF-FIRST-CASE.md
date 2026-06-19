@@ -212,6 +212,7 @@ Fresh evidence checked on 2026-06-18:
 | Gate 7 `real.exe` | `/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_build_logs/brc-wrf/gate7_20260618T062118Z_13540001/`; `SUCCESS COMPLETE REAL_EM INIT`. |
 | Gate 8/9 `wrf.exe` and archive | `/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_build_logs/brc-wrf/gate8_20260618T062439Z_13540006/`; `SUCCESS COMPLETE WRF`; 74 `wrfout` files archived. |
 | Gate 10 quicklooks | `/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_build_logs/brc-wrf/gate10_20260618T065224Z_13540365/`; five PNGs under the Gate 8 archive `quicklooks/` directory. |
+| Gate 10 visual review | `brc-docs/BRC-WRF-GATE10-QUICKLOOK-REVIEW.md`; PNG-only sanity pass, pending John/Michael science acceptance. |
 
 Evidence checked on 2026-06-13 without submitting a new job:
 
@@ -231,11 +232,12 @@ The non-fatal `real.exe` soil message observed for the proof was:
 
 ## Next Tests
 
-1. Walk through the existing Gate 10 quicklooks with meteorological review.
-2. Choose whether to approve exactly one additional practical benchmark row;
-   `scaling_t028` has already passed after the wrapper sourced executables from
-   John's build, byte-checked them, and staged runtime physics files from
-   John's `~/gits/brc-wrf/run/`.
+1. Have John/Michael accept or reject the Gate 10 quicklook review in
+   `brc-docs/BRC-WRF-GATE10-QUICKLOOK-REVIEW.md`.
+2. Choose whether to approve exactly one additional practical benchmark row.
+   The recommended next row is `scaling_t016`; `scaling_t028` has already
+   passed after the wrapper sourced executables from John's build, byte-checked
+   them, and staged runtime physics files from John's `~/gits/brc-wrf/run/`.
 3. GEFS+NAM two-stream WPS/real path: build or select a GEFSv12 reforecast
    Vtable, ungrib GEFS and NAM separately, run metgrid with
    `fg_name = 'GEFS','NAM'`, then prove `real.exe`.

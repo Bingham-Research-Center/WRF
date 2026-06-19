@@ -44,6 +44,7 @@ owner repo, and stop point.
 | Visual QA | Usable off-login. `brc-cases/wrf_quicklook.py` checks/renders five PNGs from existing proof artifacts; path-only unit tests are login-safe. |
 | Practical-test harness | Usable. `wrf_case.py render-practical-harness` writes review packets outside the repo with scaling/memory scripts and blank result tables. |
 | Practical testing | One 28-task row passed. Job `13550110` ran John's `~/gits/brc-wrf` WRF `V4.8.0`, passed `real.exe`/`wrf.exe`, and archived debug evidence under `practical_tests/scaling_t028/run_20260618T230858Z/`. Other scaling and memory rows remain unrun. |
+| Gate 10 visual review | Preliminary PNG-only visual sanity passed; see `brc-docs/BRC-WRF-GATE10-QUICKLOOK-REVIEW.md`. John/Michael science acceptance is still the decision point. |
 | Slurm profile | Aligned to max owned-node profile: `lawson-np`, `notch392`, 1 node, 56 tasks, `900G`, `srun --mpi=pmi2`. |
 | GEFS+NAM | Not proven. Treat as a design/proof task, not a working production method. |
 
@@ -51,8 +52,8 @@ owner repo, and stop point.
 
 | Order | Next move | Stop point |
 | --- | --- | --- |
-| 1 | Walk through Gate 10 quicklook PNGs with meteorological eyes. | Decide whether the NAM-only proof remains a physically useful baseline. |
-| 2 | Decide whether to approve exactly one more practical benchmark row. | Pick one row and stop on its result; do not launch a sweep by default. |
+| 1 | Have John/Michael accept or reject the Gate 10 quicklook review. | Decide whether the NAM-only proof remains a physically useful baseline. |
+| 2 | Decide whether to approve exactly one more practical benchmark row. | Recommended next row is `scaling_t016`; pick one row and stop on its result. |
 | 3 | Decide whether GEFS+NAM is still needed for the next science question. | If yes, draft the two-stream WPS proof; if no, keep improving NAM-only repeatability. |
 
 ## Reading Packet
@@ -67,11 +68,12 @@ Read these in order for a milestone review:
 4. `brc-docs/BRC-WRF-FIRST-CASE.md`
 5. `brc-cases/README.md`
 6. `brc-docs/BRC-WRF-USAGE.md`
-7. `../brc-tools/docs/walkthroughs/wrf-staging.md`
-8. `../brc-tools/docs/WRF-STAGING-STATE-PLAYBOOK.md`
-9. `brc-docs/BRC-TOOLS-LINK-HANDOFF.md` if opening a `brc-tools` session
-10. `../brc-knowledge/scholarium/reference-base/resources/chpc-team-resource-inventory.md` sections 1-3 and Q1
-11. `../brc-knowledge/scholarium/reference-base/resources/wrf-on-chpc-quickstart.md` sections 2, 3, and 8
+7. `brc-docs/BRC-WRF-GATE10-QUICKLOOK-REVIEW.md`
+8. `../brc-tools/docs/walkthroughs/wrf-staging.md`
+9. `../brc-tools/docs/WRF-STAGING-STATE-PLAYBOOK.md`
+10. `brc-docs/BRC-TOOLS-LINK-HANDOFF.md` if opening a `brc-tools` session
+11. `../brc-knowledge/scholarium/reference-base/resources/chpc-team-resource-inventory.md` sections 1-3 and Q1
+12. `../brc-knowledge/scholarium/reference-base/resources/wrf-on-chpc-quickstart.md` sections 2, 3, and 8
 
 For Michael, start with items 1, 4, 5, 7, and 8 before the full CHPC resource
 inventory. For John, start with items 2, 3, 4, 7, 8, 10, and 11; add item 9 when
