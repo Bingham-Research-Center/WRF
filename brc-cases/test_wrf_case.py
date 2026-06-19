@@ -221,6 +221,10 @@ archive:
                 "README.md",
                 "PREPARE_CHECKLIST.md",
                 "APPROVAL_PACKET.md",
+                "prepare_baseline.sh",
+                "prepare_scaling_t016.sh",
+                "prepare_scaling_t028.sh",
+                "prepare_scaling_t056.sh",
                 "baseline.slurm",
                 "scaling_t016.slurm",
                 "scaling_t028.slurm",
@@ -244,6 +248,20 @@ archive:
             self.assertIn('test -f "$JOHN_WRF_BUILD/run/$runtime_file"', prepare)
             self.assertIn('cmp -s "$JOHN_WRF_BUILD/run/$runtime_file" "$WRF_RUN/$runtime_file"', prepare)
             self.assertIn("CAMtr_volume_mixing_ratio", prepare)
+
+            prepare_script = (output_dir / "prepare_scaling_t016.sh").read_text(encoding="utf-8")
+            self.assertIn('[[ "${BRC_PREP_APPROVED:-NO}" == "YES" ]]', prepare_script)
+            self.assertIn("SCENARIO=scaling_t016", prepare_script)
+            self.assertIn("practical_tests/scaling_t016/wrf_run", prepare_script)
+            self.assertIn("PROVEN_WRF_RUN=", prepare_script)
+            self.assertIn('case "$JOHN_WRF_BUILD" in *"/u6060939/"*)', prepare_script)
+            self.assertIn('rsync -av "$JOHN_WRF_BUILD"/main/wrf.exe "$WRF_RUN"/', prepare_script)
+            self.assertIn('rsync -av --exclude="*.exe" "$JOHN_WRF_BUILD"/run/ "$WRF_RUN"/', prepare_script)
+            self.assertIn('cmp -s "$JOHN_WRF_BUILD/run/$runtime_file" "$WRF_RUN/$runtime_file"', prepare_script)
+            self.assertIn("brc_prepare_summary.tsv", prepare_script)
+            self.assertNotIn("sbatch", prepare_script)
+            self.assertNotIn("./real.exe", prepare_script)
+            self.assertNotIn("./wrf.exe", prepare_script)
 
             approval = (output_dir / "APPROVAL_PACKET.md").read_text(encoding="utf-8")
             self.assertIn("Job ID | Slurm state | WRF marker", approval)
@@ -301,9 +319,14 @@ archive:
                 "scaling_t012.slurm",
                 "memory_450G.slurm",
                 "memory_600G.slurm",
+                "prepare_scaling_t004.sh",
+                "prepare_scaling_t012.sh",
+                "prepare_memory_450G.sh",
+                "prepare_memory_600G.sh",
             ):
                 self.assertTrue((output_dir / name).is_file(), name)
             self.assertFalse((output_dir / "scaling_t016.slurm").exists())
+            self.assertFalse((output_dir / "prepare_scaling_t016.sh").exists())
 
             approval = (output_dir / "APPROVAL_PACKET.md").read_text(encoding="utf-8")
             self.assertIn("| scaling_t004 | `scaling_t004.slurm` | 4 | `900G` |", approval)
@@ -357,13 +380,16 @@ archive:
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertTrue(report.is_file())
             self.assertTrue((packet / "APPROVAL_PACKET.md").is_file())
+            self.assertTrue((packet / "prepare_scaling_t016.sh").is_file())
             self.assertTrue((packet / "memory_450G.slurm").is_file())
+            self.assertTrue((packet / "prepare_memory_450G.sh").is_file())
             self.assertTrue(slurm.is_file())
 
             text = report.read_text(encoding="utf-8")
             self.assertIn("BRC WRF No-Run Report: unit_case", text)
             self.assertIn("| Case metadata validation | `PASS` |", text)
             self.assertIn("| Rendered shell syntax | `PASS` |", text)
+            self.assertIn("prepare_scaling_t016.sh", text)
             self.assertIn("memory_450G.slurm", text)
             self.assertIn("Not run: `--strict-files`, manifest hashing", text)
             self.assertIn("single row remains `scaling_t016`", text)

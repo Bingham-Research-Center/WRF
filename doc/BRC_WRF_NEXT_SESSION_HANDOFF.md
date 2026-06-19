@@ -291,8 +291,15 @@ Inspect the printed packet path. The `scaling_t016.slurm` file must include:
 Check shell syntax:
 
 ```bash
-bash -n /tmp/<fresh_packet>/scaling_t016.slurm
+bash -n /tmp/<fresh_packet>/prepare_scaling_t016.sh /tmp/<fresh_packet>/scaling_t016.slurm
 ```
+
+The packet also includes `prepare_scaling_t016.sh`. Treat it as the preferred
+approved-context copy/check helper after review. It requires
+`BRC_PREP_APPROVED=YES`, refuses Michael-owned comparison paths, stages John's
+`main/{real.exe,wrf.exe}` plus `run/` runtime files, copies only
+`namelist.input`/`met_em` from the proven run artifacts, and does not submit
+Slurm or execute WRF.
 
 Submit only this row:
 

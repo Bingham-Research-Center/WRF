@@ -68,10 +68,11 @@ The checkpoint is intentionally small:
    ```
 
    The packet contains a `README.md`, `PREPARE_CHECKLIST.md`,
-   `APPROVAL_PACKET.md`, a baseline Slurm wrapper, scaling wrappers for
-   16/28/56 tasks, optional memory-candidate wrappers, approval boundaries,
-   validation commands, blank result tables, and a closeout record template.
-   Generated wrappers keep per-scenario scratch and archive paths under
+   `APPROVAL_PACKET.md`, approval-gated `prepare_<scenario>.sh` copy/check
+   helpers, a baseline Slurm wrapper, scaling wrappers for 16/28/56 tasks,
+   optional memory-candidate wrappers, approval boundaries, validation
+   commands, blank result tables, and a closeout record template. Generated
+   wrappers keep per-scenario scratch and archive paths under
    `practical_tests/<scenario>/`, fail fast if the scenario `wrf_run` directory
    is not prepared with `real.exe`, `wrf.exe`, `namelist.input`, and `met_em`
    files, or if the scenario executables do not byte-match
@@ -86,9 +87,11 @@ The checkpoint is intentionally small:
    `/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_build_logs/brc-wrf`
    root so early failures remain visible even when review packets are rendered
    under `/tmp`. They report the full missing preflight set before exiting, so
-   a failed setup is not mistaken for WRF runtime evidence. Any copy/check of
-   scratch or archive WRF files remains off-login and approval-gated, and
-   `sbatch` still requires explicit approval.
+   a failed setup is not mistaken for WRF runtime evidence. The generated prep
+   helpers require `BRC_PREP_APPROVED=YES`, refuse Michael-owned comparison
+   paths, copy/check files only, and never submit Slurm or execute WRF. Any
+   copy/check of scratch or archive WRF files remains off-login and
+   approval-gated, and `sbatch` still requires explicit approval.
 
 6. Render a one-command no-run report when you want a compact login-safe
    checkpoint for handoff or approval review:

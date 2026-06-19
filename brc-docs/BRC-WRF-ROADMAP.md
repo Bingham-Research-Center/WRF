@@ -470,7 +470,7 @@ Required pieces:
 | Runtime physics files | Rendered wrappers fail before `real.exe` unless current-case WRF runtime files such as `CAMtr_volume_mixing_ratio`, `RRTMG_LW_DATA`, `RRTMG_SW_DATA`, ozone files, and core land-surface tables are present and byte-match John's `paths.wrf_build/run/` source files. |
 | Debug artifacts | Summary, phase timing, and file inventory are created for every run. |
 | Validation checklist | Cheap metadata checks are separate from strict off-login artifact checks. |
-| Scenario prepare/check plan | `PREPARE_CHECKLIST.md` names every per-scenario `WRF_RUN`, sources executables and runtime physics files from John's WRF build, sources `namelist.input`/`met_em` from the proven run artifacts, and keeps artifact reads/copies off login nodes. |
+| Scenario prepare/check plan | `PREPARE_CHECKLIST.md` and `prepare_<scenario>.sh` name every per-scenario `WRF_RUN`, source executables and runtime physics files from John's WRF build, source `namelist.input`/`met_em` from the proven run artifacts, and keep artifact reads/copies off login nodes. |
 | Approval packet | `APPROVAL_PACKET.md` carries no-run rows for baseline, scaling, and memory candidates with job ID, Slurm state, WRF marker, wall time, simulated hours, peak memory evidence, archive path, debug path, and recommendation fields. |
 | No-run report | `python brc-cases/wrf_case.py render-no-run-report <case.yaml>` writes a login-safe Markdown report with branch/SHA, dirty state, metadata validation, rendered packet paths, shell syntax, and explicit skipped compute/artifact reads. |
 | Result tables | Scaling and memory tables are ready but empty until approved runs happen. |
@@ -496,6 +496,8 @@ fail fast unless the scenario `wrf_run` directory is prepared with `real.exe`,
 executables byte-match John's `paths.wrf_build/main` binaries. They also
 preflight and byte-match the current-case WRF runtime files needed by RRTMG and
 land-surface physics against John's `paths.wrf_build/run` directory.
+Generated prep helpers require `BRC_PREP_APPROVED=YES`, refuse Michael-owned
+comparison paths, copy/check files only, and never submit Slurm or execute WRF.
 
 Ready-for-practical-testing means: John can approve a scaling or memory run by
 choosing a row in a table, not by reconstructing the entire WRF/WPS path from

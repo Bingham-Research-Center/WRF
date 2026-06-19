@@ -87,6 +87,7 @@ class PracticalHarnessResult:
     output_dir: Path
     scripts: list[Path]
     packet_files: list[Path]
+    prep_scripts: list[Path]
 
 
 def parse_value(raw: str) -> Any:
@@ -1076,6 +1077,83 @@ def render_prepare_checklist(
     return "\n".join(lines)
 
 
+def render_prepare_script(
+    data: dict[str, Any],
+    case_file: Path,
+    *,
+    record: dict[str, str],
+) -> str:
+    paths = data["paths"]
+    source_wrf_run = str(as_path(paths["wrf_run"]))
+    john_wrf_build = str(as_path(paths["wrf_build"]))
+    scenario = record["scenario"]
+    wrf_run = record["wrf_run"]
+
+    lines = [
+        "#!/bin/bash",
+        f"# Rendered by brc-cases/wrf_case.py from {case_file}",
+        "# Approved batch, DTN, or interactive compute context only.",
+        "# Copies/checks files only; does not submit Slurm or run real.exe/wrf.exe.",
+        "set -euo pipefail",
+        "",
+        'fail() { printf "ERROR: %s\\n" "$*" >&2; exit 2; }',
+        '[[ "${BRC_PREP_APPROVED:-NO}" == "YES" ]] || fail "set BRC_PREP_APPROVED=YES only inside an approved batch/DTN/interactive compute context"',
+        "",
+        f"CASE_FILE={shell_quote(case_file)}",
+        f"SCENARIO={shell_quote(scenario)}",
+        f"JOHN_WRF_BUILD={shell_quote(john_wrf_build)}",
+        f"WRF_RUN={shell_quote(wrf_run)}",
+        'if [[ -z "${PROVEN_WRF_RUN:-}" ]]; then',
+        f"  PROVEN_WRF_RUN={shell_quote(source_wrf_run)}",
+        "fi",
+        "",
+        'case "$JOHN_WRF_BUILD" in *"/u6060939/"*) fail "JOHN_WRF_BUILD points into Michael-owned comparison path: $JOHN_WRF_BUILD" ;; esac',
+        'case "$PROVEN_WRF_RUN" in *"/u6060939/"*) fail "PROVEN_WRF_RUN points into Michael-owned comparison path: $PROVEN_WRF_RUN" ;; esac',
+        '[[ "$WRF_RUN/" != "$JOHN_WRF_BUILD/"* ]] || fail "WRF_RUN must not live inside the WRF checkout: $WRF_RUN"',
+        "",
+        'test -x "$JOHN_WRF_BUILD/main/real.exe"',
+        'test -x "$JOHN_WRF_BUILD/main/wrf.exe"',
+        'test -d "$JOHN_WRF_BUILD/run"',
+        'test -f "$PROVEN_WRF_RUN/namelist.input"',
+        'compgen -G "$PROVEN_WRF_RUN/met_em.d0*.nc" >/dev/null',
+        f"for runtime_file in {' '.join(REQUIRED_WRF_RUNTIME_FILES)}; do",
+        '  test -f "$JOHN_WRF_BUILD/run/$runtime_file"',
+        "done",
+        "",
+        'mkdir -p "$WRF_RUN"',
+        'rsync -av "$JOHN_WRF_BUILD"/main/real.exe "$WRF_RUN"/',
+        'rsync -av "$JOHN_WRF_BUILD"/main/wrf.exe "$WRF_RUN"/',
+        'rsync -av --exclude="*.exe" "$JOHN_WRF_BUILD"/run/ "$WRF_RUN"/',
+        'rsync -av "$PROVEN_WRF_RUN"/namelist.input "$WRF_RUN"/',
+        'rsync -av "$PROVEN_WRF_RUN"/met_em.d0*.nc "$WRF_RUN"/',
+        "",
+        'test -x "$WRF_RUN/real.exe"',
+        'test -x "$WRF_RUN/wrf.exe"',
+        'test -f "$WRF_RUN/namelist.input"',
+        'compgen -G "$WRF_RUN/met_em.d0*.nc" >/dev/null',
+        'cmp -s "$JOHN_WRF_BUILD/main/real.exe" "$WRF_RUN/real.exe"',
+        'cmp -s "$JOHN_WRF_BUILD/main/wrf.exe" "$WRF_RUN/wrf.exe"',
+        f"for runtime_file in {' '.join(REQUIRED_WRF_RUNTIME_FILES)}; do",
+        '  test -f "$WRF_RUN/$runtime_file"',
+        '  cmp -s "$JOHN_WRF_BUILD/run/$runtime_file" "$WRF_RUN/$runtime_file"',
+        "done",
+        "",
+        'SUMMARY="${WRF_RUN}/brc_prepare_summary.tsv"',
+        "{",
+        '  printf "key\\tvalue\\n"',
+        '  printf "scenario\\t%s\\n" "$SCENARIO"',
+        '  printf "case_file\\t%s\\n" "$CASE_FILE"',
+        '  printf "john_wrf_build\\t%s\\n" "$JOHN_WRF_BUILD"',
+        '  printf "proven_wrf_run\\t%s\\n" "$PROVEN_WRF_RUN"',
+        '  printf "wrf_run\\t%s\\n" "$WRF_RUN"',
+        '  printf "prepared_utc\\t%s\\n" "$(date -u +%Y-%m-%dT%H:%M:%SZ)"',
+        "} > \"$SUMMARY\"",
+        'printf "prepared scenario=%s wrf_run=%s summary=%s\\n" "$SCENARIO" "$WRF_RUN" "$SUMMARY"',
+        "",
+    ]
+    return "\n".join(lines)
+
+
 def render_approval_packet(
     data: dict[str, Any],
     case_file: Path,
@@ -1191,6 +1269,7 @@ def render_practical_packet(
     *,
     output_dir: Path,
     scripts: list[tuple[str, str]],
+    prep_scripts: list[tuple[str, str]],
     scenarios: list[dict[str, str]],
 ) -> str:
     case = data["case"]
@@ -1233,6 +1312,7 @@ def render_practical_packet(
         "| `README.md` | Overview, render commands, result tables, and closeout record. |",
         "| `PREPARE_CHECKLIST.md` | Per-scenario `WRF_RUN` targets and approved-context preparation/check plan. |",
         "| `APPROVAL_PACKET.md` | No-run approval rows for baseline, scaling, and memory candidates. |",
+        "| `prepare_<scenario>.sh` | Approved-context copy/check helpers; require `BRC_PREP_APPROVED=YES`. |",
         "",
         "## Rendered Scripts",
         "",
@@ -1242,6 +1322,20 @@ def render_practical_packet(
     for script, scenario in scripts:
         lines.append(
             f"| `{script}` | {scenario} | Human approval before `sbatch`; run only in approved Slurm/compute context. |"
+        )
+
+    lines.extend(
+        [
+            "",
+            "## Rendered Prepare Scripts",
+            "",
+            "| Script | Scenario | Approval boundary |",
+            "| --- | --- | --- |",
+        ]
+    )
+    for script, scenario in prep_scripts:
+        lines.append(
+            f"| `{script}` | {scenario} | Human approval plus `BRC_PREP_APPROVED=YES`; copy/check only in approved compute/DTN context. |"
         )
 
     lines.extend(
@@ -1389,8 +1483,10 @@ def write_practical_harness(
     output_dir.mkdir(parents=True, exist_ok=True)
 
     scripts: list[tuple[str, str]] = []
+    prep_scripts: list[tuple[str, str]] = []
     scenarios: list[dict[str, str]] = []
     script_paths: list[Path] = []
+    prep_script_paths: list[Path] = []
     baseline = practical_variant(
         data,
         scenario="baseline",
@@ -1460,6 +1556,17 @@ def write_practical_harness(
             )
         )
 
+    for record in scenarios:
+        prep_name = f"prepare_{record['scenario']}.sh"
+        prep_path = output_dir / prep_name
+        prep_path.write_text(
+            render_prepare_script(data, case_file, record=record),
+            encoding="utf-8",
+        )
+        prep_path.chmod(0o755)
+        prep_script_paths.append(prep_path)
+        prep_scripts.append((prep_name, record["description"]))
+
     packet_name = "README.md"
     packet_path = output_dir / packet_name
     packet_path.write_text(
@@ -1468,6 +1575,7 @@ def write_practical_harness(
             case_file,
             output_dir=output_dir,
             scripts=scripts,
+            prep_scripts=prep_scripts,
             scenarios=scenarios,
         ),
         encoding="utf-8",
@@ -1488,6 +1596,7 @@ def write_practical_harness(
         output_dir=output_dir,
         scripts=script_paths,
         packet_files=[packet_path, prepare_path, approval_path],
+        prep_scripts=prep_script_paths,
     )
 
 
@@ -1592,7 +1701,12 @@ def render_no_run_report(
         "| Artifact | Path |",
         "| --- | --- |",
     ]
-    for path in harness_result.packet_files + harness_result.scripts + [standalone_slurm]:
+    for path in (
+        harness_result.packet_files
+        + harness_result.prep_scripts
+        + harness_result.scripts
+        + [standalone_slurm]
+    ):
         lines.append(f"| `{path.name}` | `{path}` |")
 
     lines.extend(
@@ -1674,6 +1788,8 @@ def cmd_render_practical_harness(args: argparse.Namespace) -> int:
         memory_candidates=memory_candidates,
     )
     print(f"Wrote Gate 11 practical-test harness packet: {output_dir}")
+    for path in result.prep_scripts:
+        print(f"  {path}")
     for path in result.scripts:
         print(f"  {path}")
     for path in result.packet_files:
@@ -1718,7 +1834,7 @@ def cmd_render_no_run_report(args: argparse.Namespace) -> int:
                 packet_dir=packet_dir,
                 standalone_slurm=standalone_slurm,
                 validation_findings=findings,
-                harness_result=PracticalHarnessResult(packet_dir, [], []),
+                harness_result=PracticalHarnessResult(packet_dir, [], [], []),
                 shell_check=subprocess.CompletedProcess(["bash", "-n"], 1, "", "not run"),
                 packet_status="SKIPPED (validation errors)",
                 repo_root=repo_root,
@@ -1740,7 +1856,13 @@ def cmd_render_no_run_report(args: argparse.Namespace) -> int:
     standalone_slurm.parent.mkdir(parents=True, exist_ok=True)
     standalone_slurm.write_text(render_slurm(data, case_file), encoding="utf-8")
     shell_check = run_capture(
-        ["bash", "-n", *[str(path) for path in harness_result.scripts], str(standalone_slurm)],
+        [
+            "bash",
+            "-n",
+            *[str(path) for path in harness_result.prep_scripts],
+            *[str(path) for path in harness_result.scripts],
+            str(standalone_slurm),
+        ],
         cwd=repo_root,
     )
     output_path.parent.mkdir(parents=True, exist_ok=True)
