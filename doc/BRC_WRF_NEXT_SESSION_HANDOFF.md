@@ -33,7 +33,7 @@ Read narrowly:
   brc-cases/jan2013_basin_nam.case.yaml
 
 Known current truth to verify from disk/docs:
-  HEAD/origin should be b68dab1efc7f760de28211503d4189bf1d08dabc or newer.
+  HEAD/origin should be 4d9c9a37da897168a5415ad0d816eb6067edb806 or newer.
   Gates 0-11 are complete.
   scaling_t028 job 13550110 passed with John's WRF V4.8.0.
   scaling_t016 job 13550555 failed before WRF runtime because Slurm used
@@ -78,9 +78,9 @@ Live state when this handoff was written:
 | Field | Value |
 | --- | --- |
 | Branch | `john/wrf` |
-| HEAD/origin | `b68dab1efc7f760de28211503d4189bf1d08dabc` |
-| Date | `UTC 2026-06-19 02:21:23` |
-| Worktree | Clean before this handoff edit |
+| HEAD/origin | `4d9c9a37da897168a5415ad0d816eb6067edb806` |
+| Date | `UTC 2026-06-19 02:55:55` |
+| Worktree | Clean after pushing Gate 11 provenance/prep-helper commits |
 | Host | `notchpeak1` |
 
 Proof state:

@@ -94,6 +94,12 @@ about CI, read `.ci/tests/build.sh` and `.github/workflows/ci.yml`.
   lacked runtime physics/table files from John's `run/` directory. Neither
   produced `rsl.*`, archive, or debug evidence. No other scaling or memory rows
   are approved by this evidence.
+- Current Gate 11 wrappers now byte-match scenario `real.exe`/`wrf.exe` against
+  John's `paths.wrf_build/main/` and required runtime physics/table files
+  against John's `paths.wrf_build/run/` before `real.exe`. Rendered packets also
+  include `prepare_<scenario>.sh` helpers; they require `BRC_PREP_APPROVED=YES`,
+  refuse Michael-owned comparison paths, copy/check files only, and must be run
+  only in an approved off-login context.
 - Michael Davies has a separate working end-to-end WRF/WPS reference path under
   `lawson-group6/u6060939/wrf_build/`, documented in `brc-knowledge`. Treat it
   as evidence and comparison context only; do not point John's run wrappers at

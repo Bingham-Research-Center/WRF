@@ -40,7 +40,9 @@ execution require explicit run approval.
   failed before `real.exe` because the `scaling_t016` `WRF_RUN` lacked runtime
   physics/table files from John's `~/gits/brc-wrf/run/`; it produced no
   `rsl.*`, archive, or debug evidence. Other practical rows still need
-  explicit approval.
+  explicit approval. Current Gate 11 packets include approval-gated
+  `prepare_<scenario>.sh` helpers that byte-check John's executables and
+  runtime files before any approved row submission.
 - Not yet validated: GEFSv12 reforecast plus NAM two-stream forcing
   (`fg_name = 'GEFS','NAM'`, `interval_seconds = 10800`).
 
@@ -244,9 +246,10 @@ The non-fatal `real.exe` soil message observed for the proof was:
    The recommended next row is `scaling_t016`; `scaling_t028` has already
    passed after the wrapper sourced executables from John's build, byte-checked
    them, and staged runtime physics files from John's `~/gits/brc-wrf/run/`.
-   Prepare the `scaling_t016` `WRF_RUN` first with John's executables and
-   runtime files, then rerender the practical packet so generated scripts use a
-   shared Slurm working directory and stdout/stderr path under
+   Prepare the `scaling_t016` `WRF_RUN` first with the generated
+   `prepare_scaling_t016.sh` helper in an approved off-login context, then
+   rerender the practical packet so generated scripts use a shared Slurm working
+   directory and stdout/stderr path under
    `lawson-group6/.../wrf_build_logs/brc-wrf`.
 3. GEFS+NAM two-stream WPS/real path: build or select a GEFSv12 reforecast
    Vtable, ungrib GEFS and NAM separately, run metgrid with
