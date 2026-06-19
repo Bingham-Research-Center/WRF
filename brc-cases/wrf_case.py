@@ -1520,8 +1520,8 @@ def render_no_run_report(
             "sweeps, memory benchmarks, or scratch/archive copy operations.",
             "",
             "Recommended next gate: use `APPROVAL_PACKET.md` to approve exactly one",
-            "benchmark row after visual review. Current default row is",
-            "`scaling_t028`.",
+            "benchmark row after visual review. Because `scaling_t028` already",
+            "passed, the recommended next single row is `scaling_t016`.",
             "",
         ]
     )

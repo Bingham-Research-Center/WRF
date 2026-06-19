@@ -11,14 +11,14 @@ Status update: Gates 2-11 have now passed. Keep this contract as the historical
 build/run baseline, but do not resume at Gate 5 unless live evidence contradicts
 the proof. The current lane is practical testing and post-run SOP/results docs.
 
-Current operating branch after the no-run-report merge:
+Current operating branch:
 
 | Field | Value |
 | --- | --- |
 | Branch | `john/wrf` |
-| SHA | `1244fb3a943b1af5ee45ee31c052741161ff5433` |
+| SHA | Check live with `git rev-parse HEAD`; do not trust this historical contract for current SHA. |
 | Remote | `origin https://github.com/Bingham-Research-Center/WRF.git` |
-| Practical chain | prep `13548706` completed; `scaling_t028` `13548709` failed in `wrf.exe`; downstream practical jobs canceled |
+| Practical chain | `scaling_t028` job `13550110` passed after executable-provenance and runtime-file staging fixes; other rows still need explicit approval |
 
 ## Historical Session Freeze
 
@@ -112,6 +112,8 @@ Compiled WRF proof only. No WPS, no real.exe, no wrf.exe, no sbatch run, no arch
 
 ## Next Gate
 
-Diagnose the failed practical `scaling_t028` row and write the practical-test
-SOP/results record in `brc-docs`. Future staging, manifest hashing, strict
-artifact reads, WPS execution, and new WRF submissions remain approval-gated.
+Have John/Michael accept or reject
+`brc-docs/BRC-WRF-GATE10-QUICKLOOK-REVIEW.md`, then approve exactly one next
+benchmark row if the NAM-only visual baseline is good enough. The recommended
+next row is `scaling_t016`; future staging, manifest hashing, strict artifact
+reads, WPS execution, and new WRF submissions remain approval-gated.

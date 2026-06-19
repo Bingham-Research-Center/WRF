@@ -248,7 +248,7 @@ archive:
             self.assertIn("| Rendered shell syntax | `PASS` |", text)
             self.assertIn("memory_450G.slurm", text)
             self.assertIn("Not run: `--strict-files`, manifest hashing", text)
-            self.assertIn("`scaling_t028`", text)
+            self.assertIn("recommended next single row is `scaling_t016`", text)
 
     def test_no_run_report_refuses_repo_local_output(self) -> None:
         with tempfile.TemporaryDirectory() as raw:
