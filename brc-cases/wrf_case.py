@@ -653,6 +653,10 @@ def render_slurm(data: dict[str, Any], case_file: Path) -> str:
     mpi_launcher = str(slurm["mpi_launcher"])
     slurm_chdir = slurm.get("chdir")
     slurm_output = slurm.get("output")
+    if not slurm_chdir:
+        slurm_chdir = PRACTICAL_SLURM_LOG_ROOT
+    if not slurm_output:
+        slurm_output = PRACTICAL_SLURM_LOG_ROOT / f"{safe_name(job_name)}_%j.out"
     if slurm.get("profile") == "gate11_practical_review":
         if not slurm_chdir:
             slurm_chdir = PRACTICAL_SLURM_LOG_ROOT

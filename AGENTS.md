@@ -124,6 +124,10 @@ about CI, read `.ci/tests/build.sh` and `.github/workflows/ci.yml`.
   `brc-docs/BRC-WRF-FIRST-CASE.md`, then `brc-docs/BRC-WRF-USAGE.md`
 - John/Michael no-run review packet:
   `brc-docs/BRC-WRF-MICHAEL-PRACTICAL-PACKET.md`
+- Geogrid-only domain preview SOP:
+  `brc-docs/BRC-WRF-DOMAIN-PREVIEW-SOP.md`
+- Staged WRF conveyor, CFL gate, shared control, and quicklook SOP:
+  `brc-docs/BRC-WRF-RUN-CONVEYOR-SOP.md`
 - `brc-tools` to `brc-wrf` handoff:
   `../brc-tools/docs/HANDOFF-TO-BRC-WRF.md`
 - `brc-wrf` to `brc-tools` staging-contract handoff:
@@ -194,6 +198,13 @@ Run these only inside approved Slurm batch or interactive compute context:
   work fails. Check WRF success markers, Slurm state, and archived artifacts
   separately.
 - Avoid `srun --jobid` probes inside a fully occupied WRF allocation.
+- Be conservative when polling long WRF jobs. Prefer coarse `squeue`/`sacct`
+  checks and wait intervals over frequent progress reads unless a decision point
+  is likely.
+- Do not load large `rsl.*`, stdout, or stderr tails into chat by default. First
+  inspect structured artifacts such as `debug/run_phase_times.tsv`,
+  `debug/run_debug_summary.txt`, inventories, `sacct`, and targeted `rg`
+  success/error patterns; keep any `tail -n` output tightly bounded.
 
 ## Change SOP
 

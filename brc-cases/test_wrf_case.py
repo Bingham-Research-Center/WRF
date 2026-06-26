@@ -140,6 +140,21 @@ archive:
             check=False,
         )
 
+    def run_render_slurm(self, case_file: Path, *args: str) -> subprocess.CompletedProcess[str]:
+        return subprocess.run(
+            [
+                sys.executable,
+                str(SCRIPT),
+                "render-slurm",
+                str(case_file),
+                *args,
+            ],
+            cwd=REPO_ROOT,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+
     def test_refuses_repo_local_output(self) -> None:
         with tempfile.TemporaryDirectory() as raw:
             case_file = self.write_case(Path(raw))
@@ -170,6 +185,26 @@ archive:
             self.assertIn("WARN: paths.wrf_build missing executable main/wrf.exe", result.stdout)
             self.assertIn(
                 "WARN: paths.wrf_build missing runtime file run/CAMtr_volume_mixing_ratio",
+                result.stdout,
+            )
+
+    def test_render_slurm_defaults_to_shared_slurm_logs(self) -> None:
+        with tempfile.TemporaryDirectory() as raw:
+            case_file = self.write_case(Path(raw))
+
+            result = self.run_render_slurm(case_file)
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn(
+                "#SBATCH --chdir=/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_build_logs/brc-wrf",
+                result.stdout,
+            )
+            self.assertIn(
+                "#SBATCH --output=/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_build_logs/brc-wrf/wrf_unit_case_%j.out",
+                result.stdout,
+            )
+            self.assertIn(
+                "#SBATCH --error=/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_build_logs/brc-wrf/wrf_unit_case_%j.out",
                 result.stdout,
             )
 

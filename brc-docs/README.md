@@ -14,6 +14,12 @@ files concise and route deeper operational records to `doc/`, `brc-cases/`,
 - `BRC-WRF-PLAN-MODE-RUN-HANDOFF.md`: comprehensive Plan Mode handoff and
   walkthrough for low-hanging no-run work, manual quicklook/data inspection,
   directory checks, and a gated from-scratch NAM-only run.
+- `BRC-WRF-DOMAIN-PREVIEW-SOP.md`: geogrid-only domain-preview workflow,
+  storage rules, and review-packet expectations.
+- `BRC-WRF-RUN-CONVEYOR-SOP.md`: staged WRF conveyor rules for shared control
+  files, Slurm logs, CFL gates, archives, and quicklooks.
+- `BRC-WRF-PELICAN-333M-HANDOFF.md`: paste-ready next-session prompt for the
+  Pelican 3/1/0.333 km replay.
 - `BRC-WRF-MICHAEL-PRACTICAL-PACKET.md`: short John/Michael pair-programming
   handout with no-run walkthrough commands, editable settings, approval gates,
   and blank result tables.
