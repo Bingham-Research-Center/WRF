@@ -27,12 +27,18 @@ class QuicklookPathTests(unittest.TestCase):
             data={},
             case_name="unit_case",
             case_start="2013-01-31_12:00:00",
+            domains=(1, 2),
             manifest_path=Path("/tmp/manifest.json"),
             wps_run=Path("/tmp/wps_run"),
             archive_run=archive_run,
-            met_d01=Path("/tmp/met_em.d01.nc"),
-            met_d02=Path("/tmp/met_em.d02.nc"),
-            wrf_d02=Path("/tmp/wrfout_d02"),
+            met_by_domain={
+                1: Path("/tmp/met_em.d01.nc"),
+                2: Path("/tmp/met_em.d02.nc"),
+            },
+            wrf_by_domain={
+                1: Path("/tmp/wrfout_d01"),
+                2: Path("/tmp/wrfout_d02"),
+            },
         )
 
         self.assertEqual(wrf_quicklook._default_output_dir(ctx), archive_run / "quicklooks")

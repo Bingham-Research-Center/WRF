@@ -17,13 +17,13 @@ Goal: run the next Pelican Lake WRF conveyor using the recommended
 3 km -> 1 km -> 0.333 km nested setup. Keep the run otherwise close to the
 completed Pelican 3/1 km 75-level NAM-only case so output can be compared.
 
-Requested replay window: six hours on 2013-02-02, initialized at 0900 UTC.
+Requested replay window: 2013-02-02_12:00:00 to 2013-02-02_18:00:00
+UTC, initialized at 1200 UTC.
 
-Before submitting anything, verify the forcing issue: the current brc-tools
-NAM-analysis path stages 00/06/12/18 UTC cycles. A 0900 UTC initialization is
-off-cycle for NAM analysis. Stop and explain the cleanest option if staging
-cannot produce a true 0900 UTC analysis. Do not silently substitute a different
-forcing interpretation.
+Before submitting anything, verify that the staged NAM-analysis inputs cover
+the 1200 UTC initialization and 1800 UTC boundary time. This window is on the
+normal 00/06/12/18 UTC NAM-analysis cadence; do not silently shift the window
+or use a different forcing interpretation.
 
 If the forcing decision is acceptable, build the staged conveyor:
 1. geogrid/domain preview for d01/d02/d03 and archive the PNG;
@@ -136,8 +136,8 @@ inner-domain grid-cell count.
 
 Stop and ask before WRF if:
 
-- 0900 UTC forcing cannot be represented cleanly with the current NAM-analysis
-  staging path;
+- NAM-analysis staging cannot provide the 1200 UTC initialization and 1800 UTC
+  boundary time for the requested window;
 - `geogrid` places Pelican Lake near a d03 edge;
 - `metgrid` lacks required land/soil/skin/snow fields;
 - `real.exe` fails;

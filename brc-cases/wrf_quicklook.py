@@ -20,6 +20,9 @@ import wrf_case
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
+BRC_TOOLS_ROOT = (REPO_ROOT / "../brc-tools").resolve()
+if str(BRC_TOOLS_ROOT) not in sys.path:
+    sys.path.insert(0, str(BRC_TOOLS_ROOT))
 
 
 def _path_under(path: Path, parent: Path) -> bool:
@@ -50,12 +53,12 @@ class QuicklookContext:
     data: dict[str, Any]
     case_name: str
     case_start: str
+    domains: tuple[int, ...]
     manifest_path: Path
     wps_run: Path
     archive_run: Path
-    met_d01: Path
-    met_d02: Path
-    wrf_d02: Path
+    met_by_domain: dict[int, Path]
+    wrf_by_domain: dict[int, Path]
 
 
 def _as_path(value: Any) -> Path:
@@ -80,6 +83,10 @@ def _find_first(paths: list[Path], label: str) -> Path:
         if path.exists():
             return path
     raise FileNotFoundError(f"could not find {label}; tried: {', '.join(str(p) for p in paths)}")
+
+
+def _domain_tag(domain: int) -> str:
+    return f"d{domain:02d}"
 
 
 def _latest_archive_run(archive_root: Path) -> Path:
@@ -109,44 +116,43 @@ def _load_context(args: argparse.Namespace) -> QuicklookContext:
     paths = data["paths"]
     case_name = str(case["name"])
     case_start = str(case["start"])
+    domain_count = int(case.get("domains", 1))
+    domains = tuple(range(1, domain_count + 1))
     manifest_path = _as_path(forcing["manifest_path"])
     wps_run = _as_path(paths["wps_run"])
     archive_root = _as_path(paths["archive_root"])
     archive_run = _resolve_archive_run(archive_root, args.archive_run)
 
-    met_d01 = _find_first(
-        [
-            wps_run / f"met_em.d01.{case_start}.nc",
-            *sorted(wps_run.glob("met_em.d01.*.nc")),
-        ],
-        "d01 met_em",
-    )
-    met_d02 = _find_first(
-        [
-            wps_run / f"met_em.d02.{case_start}.nc",
-            *sorted(wps_run.glob("met_em.d02.*.nc")),
-        ],
-        "d02 met_em",
-    )
-    wrf_d02 = _find_first(
-        [
-            archive_run / f"wrfout_d02_{case_start}",
-            *sorted(archive_run.glob("wrfout_d02_*")),
-        ],
-        "d02 wrfout",
-    )
+    met_by_domain: dict[int, Path] = {}
+    wrf_by_domain: dict[int, Path] = {}
+    for domain in domains:
+        tag = _domain_tag(domain)
+        met_by_domain[domain] = _find_first(
+            [
+                wps_run / f"met_em.{tag}.{case_start}.nc",
+                *sorted(wps_run.glob(f"met_em.{tag}.*.nc")),
+            ],
+            f"{tag} met_em",
+        )
+        wrf_by_domain[domain] = _find_first(
+            [
+                archive_run / f"wrfout_{tag}_{case_start}",
+                *sorted(archive_run.glob(f"wrfout_{tag}_*")),
+            ],
+            f"{tag} wrfout",
+        )
 
     return QuicklookContext(
         case_file=case_file,
         data=data,
         case_name=case_name,
         case_start=case_start,
+        domains=domains,
         manifest_path=manifest_path,
         wps_run=wps_run,
         archive_run=archive_run,
-        met_d01=met_d01,
-        met_d02=met_d02,
-        wrf_d02=wrf_d02,
+        met_by_domain=met_by_domain,
+        wrf_by_domain=wrf_by_domain,
     )
 
 
@@ -192,17 +198,17 @@ def _require_vars(path: Path, names: list[str]) -> None:
         raise RuntimeError(f"{path} is missing variables: {', '.join(missing)}")
 
 
-def _first_available(path: Path, names: list[str]) -> str:
-    with _open_dataset(path) as ds:
-        for name in names:
-            if name in ds.variables:
-                return name
-    raise RuntimeError(f"{path} has none of: {', '.join(names)}")
-
-
 def _as_2d(ds: Any, name: str) -> Any:
     arr = ds[name]
     selectors = {dim: 0 for dim in arr.dims[:-2]}
+    if selectors:
+        arr = arr.isel(selectors)
+    return arr.squeeze(drop=True)
+
+
+def _as_3d(ds: Any, name: str) -> Any:
+    arr = ds[name]
+    selectors = {dim: 0 for dim in arr.dims[:-3]}
     if selectors:
         arr = arr.isel(selectors)
     return arr.squeeze(drop=True)
@@ -221,196 +227,293 @@ def _coords(ds: Any, lon_name: str, lat_name: str, field: Any) -> tuple[Any, Any
     return np.meshgrid(x, y)
 
 
-def _converted_values(arr: Any, units: str | None) -> tuple[Any, str]:
-    values = arr.values
-    label = units or ""
-    if units == "K":
-        values = values - 273.15
-        label = "deg C"
-    if units == "Pa":
-        values = values / 100.0
-        label = "hPa"
-    return values, label
+def _distance_km(lon: Any, lat: Any) -> Any:
+    import numpy as np
+
+    lon_r = np.radians(lon.astype(float))
+    lat_r = np.radians(lat.astype(float))
+    dlon = np.diff(lon_r)
+    dlat = np.diff(lat_r)
+    a = np.sin(dlat / 2.0) ** 2 + np.cos(lat_r[:-1]) * np.cos(lat_r[1:]) * np.sin(dlon / 2.0) ** 2
+    segment = 2.0 * 6371.0 * np.arcsin(np.sqrt(a))
+    return np.concatenate(([0.0], np.cumsum(segment)))
 
 
-def _plot_field(
+def _annotation(path: Path) -> str:
+    return f"BRC WRF NAM-only proof | {path.name}"
+
+
+def _theta_from_t_p(t_k: Any, p_pa: Any) -> Any:
+    return t_k * (100000.0 / p_pa) ** 0.2854
+
+
+def _symmetrical_limit(values: Any) -> float | None:
+    import numpy as np
+
+    finite = values[np.isfinite(values)]
+    if finite.size == 0:
+        return None
+    limit = float(np.nanmax(np.abs(finite)))
+    return limit if limit > 0.0 else None
+
+
+def _plot_domain_cross_section(
     path: Path,
-    field_name: str,
     out_path: Path,
     *,
-    lon_name: str,
-    lat_name: str,
-    title: str,
-    cmap: str,
-    contour_name: str | None = None,
-    wind_names: tuple[str, str] | None = None,
+    domain_tag: str,
+    case_start: str,
+    orientation: str,
 ) -> Path:
-    _ensure_mpl_config()
-    import matplotlib
+    from brc_tools.visualize.grid import plot_vertical_section
 
-    matplotlib.use("Agg")
-    import matplotlib.pyplot as plt
     import numpy as np
 
     with _open_dataset(path) as ds:
-        field = _as_2d(ds, field_name)
-        lon, lat = _coords(ds, lon_name, lat_name, field)
-        values, units = _converted_values(field, field.attrs.get("units"))
-
-        fig, ax = plt.subplots(figsize=(8.5, 6.5), constrained_layout=True)
-        mesh = ax.pcolormesh(lon, lat, values, shading="auto", cmap=cmap)
-        fig.colorbar(mesh, ax=ax, shrink=0.8, label=f"{field_name} {units}".strip())
-
-        if contour_name:
-            contour = _as_2d(ds, contour_name)
-            contour_values, _ = _converted_values(contour, contour.attrs.get("units"))
-            finite = contour_values[np.isfinite(contour_values)]
-            if finite.size:
-                levels = np.linspace(float(np.nanmin(finite)), float(np.nanmax(finite)), 8)
-                ax.contour(lon, lat, contour_values, levels=levels, colors="black", linewidths=0.35, alpha=0.55)
-
-        if wind_names:
-            u = _as_2d(ds, wind_names[0]).values
-            v = _as_2d(ds, wind_names[1]).values
-            stride_y = max(1, u.shape[0] // 24)
-            stride_x = max(1, u.shape[1] // 24)
-            ax.quiver(
-                lon[::stride_y, ::stride_x],
-                lat[::stride_y, ::stride_x],
-                u[::stride_y, ::stride_x],
-                v[::stride_y, ::stride_x],
-                color="black",
-                scale=450,
-                width=0.0022,
-                alpha=0.75,
-            )
-
-        ax.set_title(title)
-        ax.set_xlabel("longitude")
-        ax.set_ylabel("latitude")
-        ax.text(
-            0.99,
-            0.01,
-            f"BRC WRF NAM-only proof | {path.name}",
-            transform=ax.transAxes,
-            ha="right",
-            va="bottom",
-            fontsize=6,
-            alpha=0.65,
-            bbox={"facecolor": "white", "edgecolor": "none", "alpha": 0.55, "pad": 1.5},
-        )
-        out_path.parent.mkdir(parents=True, exist_ok=True)
-        fig.savefig(out_path, dpi=150)
-        plt.close(fig)
-    return out_path
-
-
-def _plot_domain_terrain(ctx: QuicklookContext, out_path: Path) -> Path:
-    _ensure_mpl_config()
-    import matplotlib
-
-    matplotlib.use("Agg")
-    import matplotlib.pyplot as plt
-
-    with _open_dataset(ctx.met_d01) as d01, _open_dataset(ctx.met_d02) as d02:
-        terrain = _as_2d(d01, "HGT_M")
-        lon1, lat1 = _coords(d01, "XLONG_M", "XLAT_M", terrain)
+        theta = _as_3d(ds, "T").values + 300.0
+        z_w = (_as_3d(ds, "PH").values + _as_3d(ds, "PHB").values) / 9.80665
+        z_mass = 0.5 * (z_w[:-1, :, :] + z_w[1:, :, :])
+        terrain = _as_2d(ds, "HGT")
         hgt = terrain.values
-        lon2 = _as_2d(d02, "XLONG_M").values
-        lat2 = _as_2d(d02, "XLAT_M").values
+        z_agl = z_mass - hgt[np.newaxis, :, :]
+        lon, lat = _coords(ds, "XLONG", "XLAT", terrain)
 
-        fig, ax = plt.subplots(figsize=(8.5, 6.5), constrained_layout=True)
-        mesh = ax.pcolormesh(lon1, lat1, hgt, shading="auto", cmap="terrain")
-        fig.colorbar(mesh, ax=ax, shrink=0.8, label="HGT_M m")
-        ax.plot(
-            [lon2.min(), lon2.max(), lon2.max(), lon2.min(), lon2.min()],
-            [lat2.min(), lat2.min(), lat2.max(), lat2.max(), lat2.min()],
-            color="red",
-            linewidth=1.8,
-            label="d02 extent",
+        if orientation == "we":
+            index = hgt.shape[0] // 2
+            theta_sec = theta[:, index, :]
+            z_sec = z_agl[:, index, :]
+            lon_line = lon[index, :]
+            lat_line = lat[index, :]
+            xlabel = "west-east distance (km)"
+            section_label = f"row {index}"
+            pblh = _as_2d(ds, "PBLH").values[index, :] if "PBLH" in ds.variables else None
+        elif orientation == "sn":
+            index = hgt.shape[1] // 2
+            theta_sec = theta[:, :, index]
+            z_sec = z_agl[:, :, index]
+            lon_line = lon[:, index]
+            lat_line = lat[:, index]
+            xlabel = "south-north distance (km)"
+            section_label = f"column {index}"
+            pblh = _as_2d(ds, "PBLH").values[:, index] if "PBLH" in ds.variables else None
+        else:
+            raise ValueError(f"unknown cross-section orientation: {orientation}")
+
+        distance = _distance_km(lon_line, lat_line)
+
+        return plot_vertical_section(
+            distance,
+            z_sec,
+            theta_sec,
+            out_path,
+            title=f"WRF {domain_tag} potential-temperature cross-section, {case_start} | {section_label}",
+            colorbar_label="potential temperature K",
+            xlabel=xlabel,
+            line_y=pblh,
+            line_label="PBLH" if pblh is not None else None,
+            annotation=_annotation(path),
         )
-        ax.set_title("WPS terrain and nested-domain footprint")
-        ax.set_xlabel("longitude")
-        ax.set_ylabel("latitude")
-        ax.legend(loc="upper right")
-        ax.text(
-            0.99,
-            0.01,
-            f"BRC WRF NAM-only proof | {ctx.met_d01.name} + {ctx.met_d02.name}",
-            transform=ax.transAxes,
-            ha="right",
-            va="bottom",
-            fontsize=6,
-            alpha=0.65,
-            bbox={"facecolor": "white", "edgecolor": "none", "alpha": 0.55, "pad": 1.5},
-        )
-        out_path.parent.mkdir(parents=True, exist_ok=True)
-        fig.savefig(out_path, dpi=150)
-        plt.close(fig)
-    return out_path
+
+
+def _plot_domain_products(ctx: QuicklookContext, domain: int, output_dir: Path) -> list[Path]:
+    from brc_tools.visualize.grid import plot_grid_field, terrain_contour_levels
+
+    import numpy as np
+
+    tag = _domain_tag(domain)
+    path = ctx.wrf_by_domain[domain]
+    domain_dir = output_dir / tag
+
+    with _open_dataset(path) as ds:
+        terrain = _as_2d(ds, "HGT")
+        hgt = terrain.values
+        lon, lat = _coords(ds, "XLONG", "XLAT", terrain)
+        terrain_levels = terrain_contour_levels(hgt)
+        annotation = _annotation(path)
+
+        t2_k = _as_2d(ds, "T2").values
+        t2_c = t2_k - 273.15
+        u10 = _as_2d(ds, "U10").values
+        v10 = _as_2d(ds, "V10").values
+        wspd10 = np.hypot(u10, v10)
+        psfc_pa = _as_2d(ds, "PSFC").values
+        psfc_hpa = psfc_pa / 100.0
+        theta2 = _theta_from_t_p(t2_k, psfc_pa)
+        t2_anomaly = t2_c - float(np.nanmedian(t2_c))
+        anomaly_limit = _symmetrical_limit(t2_anomaly)
+        tsk_c = _as_2d(ds, "TSK").values - 273.15
+        pblh = _as_2d(ds, "PBLH").values
+        snowh = _as_2d(ds, "SNOWH").values
+
+        outputs = [
+            plot_grid_field(
+                lon,
+                lat,
+                t2_c,
+                domain_dir / "01_t2_10m_wind.png",
+                title=f"WRF {tag} 2 m temperature and 10 m wind, {ctx.case_start}",
+                colorbar_label="T2 deg C",
+                cmap="RdYlBu_r",
+                contour=hgt,
+                contour_levels=terrain_levels,
+                contour_label=True,
+                wind_u=u10,
+                wind_v=v10,
+                annotation=annotation,
+            ),
+            plot_grid_field(
+                lon,
+                lat,
+                t2_anomaly,
+                domain_dir / "02_t2_anomaly.png",
+                title=f"WRF {tag} 2 m temperature anomaly from domain median, {ctx.case_start}",
+                colorbar_label="T2 anomaly deg C",
+                cmap="RdBu_r",
+                vmin=-anomaly_limit if anomaly_limit is not None else None,
+                vmax=anomaly_limit,
+                contour=hgt,
+                contour_levels=terrain_levels,
+                contour_label=True,
+                annotation=annotation,
+            ),
+            plot_grid_field(
+                lon,
+                lat,
+                theta2,
+                domain_dir / "03_theta2_10m_wind.png",
+                title=f"WRF {tag} 2 m potential temperature and 10 m wind, {ctx.case_start}",
+                colorbar_label="theta2 K",
+                cmap="RdYlBu_r",
+                contour=hgt,
+                contour_levels=terrain_levels,
+                contour_label=True,
+                wind_u=u10,
+                wind_v=v10,
+                annotation=annotation,
+            ),
+            plot_grid_field(
+                lon,
+                lat,
+                wspd10,
+                domain_dir / "04_10m_wind_speed.png",
+                title=f"WRF {tag} 10 m wind speed and vectors, {ctx.case_start}",
+                colorbar_label="10 m wind speed m s-1",
+                cmap="viridis",
+                contour=hgt,
+                contour_levels=terrain_levels,
+                contour_label=True,
+                wind_u=u10,
+                wind_v=v10,
+                annotation=annotation,
+            ),
+            plot_grid_field(
+                lon,
+                lat,
+                pblh,
+                domain_dir / "05_pbl_height.png",
+                title=f"WRF {tag} PBL height, {ctx.case_start}",
+                colorbar_label="PBLH m",
+                cmap="YlOrRd",
+                contour=hgt,
+                contour_levels=terrain_levels,
+                contour_label=True,
+                annotation=annotation,
+            ),
+            plot_grid_field(
+                lon,
+                lat,
+                snowh,
+                domain_dir / "06_snow_depth.png",
+                title=f"WRF {tag} snow depth, {ctx.case_start}",
+                colorbar_label="SNOWH m",
+                cmap="Blues",
+                contour=hgt,
+                contour_levels=terrain_levels,
+                contour_label=True,
+                annotation=annotation,
+            ),
+            plot_grid_field(
+                lon,
+                lat,
+                tsk_c,
+                domain_dir / "07_skin_temperature.png",
+                title=f"WRF {tag} skin temperature, {ctx.case_start}",
+                colorbar_label="TSK deg C",
+                cmap="RdYlBu_r",
+                contour=hgt,
+                contour_levels=terrain_levels,
+                contour_label=True,
+                annotation=annotation,
+            ),
+            plot_grid_field(
+                lon,
+                lat,
+                psfc_hpa,
+                domain_dir / "08_surface_pressure.png",
+                title=f"WRF {tag} surface pressure, {ctx.case_start}",
+                colorbar_label="PSFC hPa",
+                cmap="viridis",
+                contour=hgt,
+                contour_levels=terrain_levels,
+                contour_label=True,
+                annotation=annotation,
+            ),
+        ]
+
+    outputs.extend(
+        [
+            _plot_domain_cross_section(
+                path,
+                domain_dir / "09_theta_xsection_we.png",
+                domain_tag=tag,
+                case_start=ctx.case_start,
+                orientation="we",
+            ),
+            _plot_domain_cross_section(
+                path,
+                domain_dir / "10_theta_xsection_sn.png",
+                domain_tag=tag,
+                case_start=ctx.case_start,
+                orientation="sn",
+            ),
+        ]
+    )
+    return outputs
 
 
 def _render(ctx: QuicklookContext, output_dir: Path) -> list[Path]:
-    snow_var = _first_available(ctx.met_d02, ["SNOWH", "SNOW"])
-    land_var = _first_available(ctx.met_d02, ["LANDSEA", "LANDMASK"])
-
-    outputs = [
-        _plot_domain_terrain(ctx, output_dir / "wps_domain_terrain.png"),
-        _plot_field(
-            ctx.met_d02,
-            land_var,
-            output_dir / "wps_d02_landmask.png",
-            lon_name="XLONG_M",
-            lat_name="XLAT_M",
-            title=f"WPS d02 {land_var} at {ctx.case_start}",
-            cmap="Greys",
-            contour_name="HGT_M",
-        ),
-        _plot_field(
-            ctx.met_d02,
-            "SKINTEMP",
-            output_dir / "wps_d02_skintemp_snow.png",
-            lon_name="XLONG_M",
-            lat_name="XLAT_M",
-            title=f"WPS d02 skin temperature, snow-contoured, {ctx.case_start}",
-            cmap="RdYlBu_r",
-            contour_name=snow_var,
-        ),
-        _plot_field(
-            ctx.wrf_d02,
-            "T2",
-            output_dir / "wrf_d02_t2_10m_wind.png",
-            lon_name="XLONG",
-            lat_name="XLAT",
-            title=f"WRF d02 2 m temperature and 10 m wind, {ctx.case_start}",
-            cmap="RdYlBu_r",
-            contour_name="HGT",
-            wind_names=("U10", "V10"),
-        ),
-        _plot_field(
-            ctx.wrf_d02,
-            "SNOWH",
-            output_dir / "wrf_d02_snow_depth.png",
-            lon_name="XLONG",
-            lat_name="XLAT",
-            title=f"WRF d02 snow depth, terrain-contoured, {ctx.case_start}",
-            cmap="Blues",
-            contour_name="HGT",
-        ),
-    ]
+    outputs: list[Path] = []
+    for domain in ctx.domains:
+        outputs.extend(_plot_domain_products(ctx, domain, output_dir))
     return outputs
 
 
 def _check_inputs(ctx: QuicklookContext, *, verbose_manifest: bool) -> None:
     _verify_brc_tools_manifest(ctx.manifest_path, verbose=verbose_manifest)
-    _require_vars(ctx.met_d01, ["HGT_M", "XLONG_M", "XLAT_M"])
-    _require_vars(ctx.met_d02, ["HGT_M", "XLONG_M", "XLAT_M", "SKINTEMP"])
-    _first_available(ctx.met_d02, ["LANDSEA", "LANDMASK"])
-    _first_available(ctx.met_d02, ["SNOWH", "SNOW"])
-    _require_vars(ctx.wrf_d02, ["XLONG", "XLAT", "T2", "U10", "V10", "SNOWH", "HGT"])
-    print(f"WPS d01: {ctx.met_d01}")
-    print(f"WPS d02: {ctx.met_d02}")
-    print(f"WRF d02: {ctx.wrf_d02}")
+    required_wrf_vars = [
+        "XLONG",
+        "XLAT",
+        "HGT",
+        "T2",
+        "U10",
+        "V10",
+        "PBLH",
+        "SNOWH",
+        "TSK",
+        "PSFC",
+        "T",
+        "PH",
+        "PHB",
+    ]
+    for domain in ctx.domains:
+        _require_vars(ctx.met_by_domain[domain], ["HGT_M", "XLONG_M", "XLAT_M"])
+        _require_vars(ctx.wrf_by_domain[domain], required_wrf_vars)
+    for domain in ctx.domains:
+        print(f"WPS {_domain_tag(domain)}: {ctx.met_by_domain[domain]}")
+    for domain in ctx.domains:
+        print(f"WRF {_domain_tag(domain)}: {ctx.wrf_by_domain[domain]}")
+    for domain in ctx.domains:
+        print(f"quicklook {_domain_tag(domain)} products: 10")
     print(f"archive run: {ctx.archive_run}")
 
 
