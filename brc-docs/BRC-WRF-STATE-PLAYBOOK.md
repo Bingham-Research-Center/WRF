@@ -41,7 +41,7 @@ owner repo, and stop point.
 | First case | Proven NAM-only path for Jan 31-Feb 2 2013, d01/d02 Basin nest. |
 | Case review | Usable. `brc-cases/wrf_case.py` validates metadata, renders Slurm text, and renders the Gate 11 practical-test packet only. |
 | WRF/WPS build proof | Gates 2-3 passed. John's `main/real.exe` and `main/wrf.exe` exist, and John-owned WPS v4.6.0 is built at `/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_build/WPS`. |
-| Visual QA | Usable off-login. `brc-cases/wrf_quicklook.py` checks/renders five PNGs from existing proof artifacts; path-only unit tests are login-safe. |
+| Visual QA | Usable off-login. `brc-cases/wrf_quicklook.py` checks existing artifacts and renders a standardized 10-PNG set per WRF domain; path-only unit tests are login-safe. |
 | Practical-test harness | Usable. `wrf_case.py render-practical-harness` writes review packets outside the repo with approval-gated `prepare_<scenario>.sh` helpers, scaling/memory scripts, and blank result tables. |
 | Practical testing | One 28-task row passed. Job `13550110` ran John's `~/gits/brc-wrf` WRF `V4.8.0`, passed `real.exe`/`wrf.exe`, and archived debug evidence under `practical_tests/scaling_t028/run_20260618T230858Z/`. Attempted `scaling_t016` jobs `13550555` and `13550909` failed before WRF runtime evidence: first from node-local `/tmp` Slurm paths, then from a `WRF_RUN` missing runtime files from John's `run/` directory. No `rsl.*`, archive, or debug evidence exists for `scaling_t016`. Memory rows remain unrun. |
 | Gate 10 visual review | Preliminary PNG-only visual sanity passed; see `brc-docs/BRC-WRF-GATE10-QUICKLOOK-REVIEW.md`. John/Michael science acceptance is still the decision point. |

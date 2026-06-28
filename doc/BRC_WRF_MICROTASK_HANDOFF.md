@@ -1,8 +1,8 @@
 # BRC WRF Microtask Handoff
 
-This is the WRF-run-side control board for a Codex session picking up the
-remaining input-staging handshake, WPS/WRF proof, run-tuning, and documentation
-refresh work.
+This is the WRF-run-side control board for a Codex session picking up current
+proof state, run-tuning, science-review, and documentation-refresh work.
+`AGENTS.md` is only the router; keep the live queue and evidence here.
 
 For the AI-optimized route to the overarching end-to-end goal, including
 compiling John's fork for CHPC, pairing it with a John-owned WPS root, and using
@@ -13,11 +13,34 @@ It is intentionally a planning and routing artifact. It is not approval to run
 DTN staging, WPS, `real.exe`, `wrf.exe`, Slurm submissions, scaling sweeps, or
 large downloads.
 
-Current gate state as of 2026-06-18: Roadmap Gates 0-11 have passed for the
-John-owned WRF/WPS proof, fresh NAM-only `brc-tools` contract, NAM-only
-WPS/`real.exe`/`wrf.exe` rerun, archive, quicklooks, and a maintained
-render-only practical-test harness. Scaling and memory sweeps remain separate
-approval-gated runs.
+## Rot Guard And Single-Truth Rules
+
+- `AGENTS.md` stays short: ownership, cold-start order, approval boundaries, and
+  durable gotchas only.
+- This file owns current queue state, task counts, remaining approvals, and
+  operational evidence pointers.
+- Workflow SOPs own procedures: use `brc-docs/BRC-WRF-RUN-CONVEYOR-SOP.md` for
+  staged WRF runs and quicklook placement, and `brc-cases/README.md` for case
+  helpers.
+- `brc-tools` owns reusable staging and visualization primitives. `brc-wrf`
+  adapts WRF files to those helpers.
+- Do not create a new handoff, priority menu, or roadmap when an existing slot
+  above can be updated.
+- Prefer one short pointer in secondary docs over copied tables that will drift.
+
+## Current Gate State
+
+As of 2026-06-18, Roadmap Gates 0-11 have passed for the John-owned WRF/WPS
+proof, fresh NAM-only `brc-tools` contract, NAM-only WPS/`real.exe`/`wrf.exe`
+rerun, archive, quicklooks, and a maintained render-only practical-test
+harness. Scaling and memory sweeps remain separate approval-gated runs.
+
+As of 2026-06-27, Pelican comparison quicklooks are standardized through
+`brc-cases/wrf_quicklook.py`: it discovers the case domains, consumes raw WRF
+outputs, and renders 10 PNGs per domain under per-domain subdirectories below
+`<archive-run>/quicklooks/<stamp>/`. Generic pcolormesh/vector/cross-section
+plotting lives in `../brc-tools/brc_tools/visualize/grid.py`; do not duplicate
+those plotting primitives in this repo.
 
 The file includes `brc-tools` tasks because WRF cannot safely consume staged
 forcing until the manifest/contract side is trustworthy. Keep implementation
@@ -25,15 +48,15 @@ batches repo-clean:
 
 | Repo | Owns | Do not do there |
 | --- | --- | --- |
-| `brc-wrf` | WRF source, WPS/WRF consumption docs, case manifests, validators, run templates, benchmark plans, WRF-output quicklooks. | NWP downloader or GRIB staging logic. |
-| `brc-tools` | GRIB download/staging, manifests, contracts, token checks, input quicklooks. | WPS, `real.exe`, `wrf.exe`, or WRF run Slurm profiles. |
+| `brc-wrf` | WRF source, WPS/WRF consumption docs, case manifests, validators, run templates, benchmark plans, and WRF-output quicklook adapters. | NWP downloader, GRIB staging logic, or reusable plotting primitives. |
+| `brc-tools` | GRIB download/staging, manifests, contracts, token checks, input quicklooks, and reusable visualization helpers. | WPS, `real.exe`, `wrf.exe`, or WRF run Slurm profiles. |
 | `brc-knowledge` | Canonical CHPC node, storage, scheduler, proxy, and validated script facts. | Repo-local code or case manifests. |
 
 ## Codex Cold Start
 
 Start in `~/gits/brc-wrf` and keep the first pass small:
 
-1. `git status --short --branch --untracked-files=all`
+1. `git status --short --branch --untracked-files=no`
 2. `sed -n '1,180p' AGENTS.md`
 3. `sed -n '1,180p' doc/BRC_WRF_MICROTASK_HANDOFF.md`
 4. `sed -n '1,140p' brc-docs/BRC-WRF-STATE-PLAYBOOK.md`
@@ -376,6 +399,7 @@ Do not lose sight of these. They are not good login-node free-running tasks.
 | #31 | `brc-tools` added the `WISHLIST-TASKS.md` pointer. |
 | #32 | `brc-wrf` docs point to current `../brc-tools/docs/WRF-INPUT-STAGING.md`, scratch layout, and handoff files; link-check passes with binary files ignored. |
 | Gate 11 | `brc-cases/wrf_case.py render-practical-harness` renders the maintained practical-test packet and benchmark Slurm review scripts outside the repo. |
+| Pelican quicklooks | `brc-cases/wrf_quicklook.py` now renders a standardized 10-product per-domain set using `brc-tools` plotting helpers; 333 m output has d01/d02/d03 and the earlier 3/1 km output has d01/d02. |
 
 ## Documentation Refresh Map
 
@@ -386,6 +410,8 @@ Update docs where the evidence belongs, not all in one place.
 | Remaining microtask counts or routing changes | `doc/BRC_WRF_MICROTASK_HANDOFF.md` | `AGENTS.md` only as a short router |
 | NAM-only run proof facts | `brc-docs/BRC-WRF-FIRST-CASE.md` | `brc-docs/BRC-WRF-STATE-PLAYBOOK.md` |
 | Case manifest or render-only Slurm review | `brc-cases/README.md` | `doc/BRC_WRF_HANDOFF.md` |
+| WRF quicklook product list or adapter behavior | `brc-cases/README.md` and `brc-cases/wrf_quicklook.py` | `brc-docs/BRC-WRF-RUN-CONVEYOR-SOP.md` |
+| Reusable plotting primitives | `../brc-tools/brc_tools/visualize/` | `brc-wrf` should only point to the helper |
 | brc-tools staging behavior, manifests, contracts | `../brc-tools/docs/WRF-INPUT-STAGING.md` | `brc-docs/BRC-WRF-FIRST-CASE.md` |
 | GEFS+NAM field split and Vtable design | `../brc-tools/docs/WRF-GEFS-NAM-FIELD-MAP.md` until WPS proof exists | This microtask board and `brc-docs/BRC-WRF-FIRST-CASE.md` |
 | CHPC node, storage, proxy, Slurm truth | `../brc-knowledge/scholarium/reference-base/resources/` | BRC-WRF docs should point, not duplicate |

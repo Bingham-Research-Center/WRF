@@ -75,12 +75,12 @@ Tags:
 
 - [ ] 041 `science` Review domain bounds against the Uinta Basin question.
 - [ ] 042 `knowledge` Confirm the intended `WPS_GEOG` path.
-- [ ] 043 `off-login` `science` Inspect terrain quicklook.
-- [ ] 044 `off-login` `science` Inspect d02 landmask quicklook.
-- [ ] 045 `off-login` `science` Inspect skin temperature and snow quicklook.
-- [ ] 046 `off-login` `science` Inspect d02 2 m temperature quicklook.
-- [ ] 047 `off-login` `science` Inspect d02 10 m wind quicklook.
-- [ ] 048 `off-login` `science` Inspect snow-depth quicklook.
+- [ ] 043 `off-login` `science` Inspect terrain-contoured domain quicklooks.
+- [ ] 044 `off-login` `science` Inspect per-domain 2 m temperature and 10 m wind.
+- [ ] 045 `off-login` `science` Inspect per-domain temperature anomaly.
+- [ ] 046 `off-login` `science` Inspect per-domain PBL height.
+- [ ] 047 `off-login` `science` Inspect W-E/S-N potential-temperature sections.
+- [ ] 048 `off-login` `science` Inspect snow-depth and skin-temperature quicklooks.
 - [ ] 049 `science` Record whether the NAM-only baseline is plausible.
 - [ ] 050 `science` Record whether the soil warning changes trust in the proof.
 

@@ -184,15 +184,18 @@ python brc-cases/wrf_quicklook.py render \
   --archive-run /uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/jan2013_basin_gefs/run_gate8_20260618T062439Z_13540006
 ```
 
-Expected quicklook files:
+Expected quicklook layout:
 
-| File | Inspect for |
-| --- | --- |
-| `wps_domain_terrain.png` | Nonblank terrain, d02 footprint inside d01, Basin domain in the intended place. |
-| `wps_d02_landmask.png` | Plausible land/water mask and terrain contours; no shifted grid. |
-| `wps_d02_skintemp_snow.png` | Physically plausible skin temperature and snow contour pattern for late January Basin conditions. |
-| `wrf_d02_t2_10m_wind.png` | Plausible 2 m temperature, coherent 10 m wind vectors, no huge vector or unit artifact. |
-| `wrf_d02_snow_depth.png` | Snow-depth field nonblank and terrain-related; no all-zero or all-missing pattern unless scientifically expected. |
+```text
+<archive-run>/quicklooks/<stamp>/dXX/*.png
+```
+
+Current WRF-output quicklooks render 10 PNGs per available domain. Inspect the
+domain subdirectories for temperature/wind, temperature anomaly, 2 m potential
+temperature, wind speed, PBL height, snow depth, skin temperature, surface
+pressure, and W-E/S-N potential-temperature cross-sections. Historical Gate 10
+records may still name the older five-PNG d02-only set; treat those as old
+artifact records, not the current product contract.
 
 ## Manual Inspection Walkthrough
 
@@ -205,14 +208,14 @@ Use this as the human review checklist after an approved quicklook/check batch.
 | `real.exe` | `real.rsl.out.0000`, `real.rsl.error.0000`, `wrfinput_d0*`, `wrfbdy_d01`. | `SUCCESS COMPLETE REAL_EM INIT`. | Missing boundary/input files, fatal soil/vertical-level errors. |
 | `wrf.exe` | `rsl.out.0000`, `rsl.error.0000`, Slurm state. | `SUCCESS COMPLETE WRF`; 74 `wrfout_d0*` for the current proof. | WRF success missing, or Slurm failure confused with archive failure. |
 | Archive | `<archive-run>/` plus `<archive-run>/debug/`. | `wrfout`, namelists, logs, debug summary, phase table, and inventory are present. | WRF succeeded but archive phases failed; record both separately. |
-| Quicklooks | Five PNGs under `<archive-run>/quicklooks/`. | Nonblank, framed, coherent terrain/landmask/temperature/wind/snow. | Blank panels, extreme units, shifted domains, all-missing variables. |
+| Quicklooks | Per-domain PNGs under `<archive-run>/quicklooks/<stamp>/dXX/`. | Nonblank, framed, coherent terrain/temperature/wind/PBL/snow/section structure. | Blank panels, extreme units, shifted domains, all-missing variables. |
 
 Questions for John/Michael during visual review:
 
 | Question | Why it matters |
 | --- | --- |
 | Does the nest cover the intended Uinta Basin area and surroundings? | Domain geometry is a human/science decision. |
-| Are snow, landmask, terrain, and skin temperature plausible for Jan 31-Feb 2 2013? | Confirms WPS fields are meteorologically credible. |
+| Are snow, terrain, skin temperature, and PBL/cross-section structure plausible for Jan 31-Feb 2 2013? | Confirms WRF fields are meteorologically credible. |
 | Are near-surface winds and temperatures plausible enough to use as a tuning baseline? | Determines whether practical tests should proceed. |
 | Is NAM-only sufficient for the next science question, or is GEFS+NAM needed now? | Avoids spending WPS/WRF time on the wrong forcing path. |
 | Should scratch staged inputs or run artifacts be promoted to durable group storage? | Prevents silent loss to scratch purge. |
@@ -479,7 +482,8 @@ Expected output directory:
 <new-archive-run>/quicklooks/
 ```
 
-Then John should inspect the five PNGs using the visual checklist above.
+Then John should inspect the per-domain PNG subdirectories using the visual
+checklist above.
 
 ## Decision Points For John
 

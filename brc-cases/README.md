@@ -121,6 +121,12 @@ The checkpoint is intentionally small:
    from an approved compute or interactive context, not a login node.
    Generated PNGs default to `<archive-run>/quicklooks/` under the durable
    `lawson-group6` archive; repo-local PNG output is refused.
+   Current WRF-output quicklooks render 10 standardized PNGs per case domain
+   under `<archive-run>/quicklooks/<stamp>/dXX/`: temperature/wind, temperature
+   anomaly, 2 m potential temperature, wind speed, PBL height, snow depth, skin
+   temperature, surface pressure, and W-E/S-N potential-temperature
+   cross-sections. The helper is a WRF-file adapter; reusable plotting
+   primitives live in `../brc-tools/brc_tools/visualize/grid.py`.
    Path-only quicklook unit tests are login-node safe because they do not
    verify manifests, open NetCDF files, read archives, or render PNGs.
    The workflow source is tracked in `jan2013_nam_workflow.mmd`.

@@ -31,8 +31,8 @@ on top of upstream WRF 4.8.0.
 | Validated forcing | NAM-only, `Vtable.NAM`, 6-hour cadence, Jan 31-Feb 2 2013 Basin case. |
 | WPS output | 14 `met_em` files, d01/d02, with land, skin temp, snow, and soil fields. |
 | WRF run | `real.exe` and `wrf.exe` reached success markers on CHPC. |
-| Visual QA | Five PNG quicklooks render from existing WPS/WRF artifacts. |
-| Practical testing | Started but blocked: job `13548709` failed in `wrf.exe` after `real.exe` passed; downstream rows were canceled. |
+| Visual QA | Standardized WRF-output quicklooks render 10 PNGs per domain from existing WRF artifacts. |
+| Practical testing | One 28-task row passed; remaining scaling/memory work is approval-gated. See `doc/BRC_WRF_MICROTASK_HANDOFF.md`. |
 | Not proven yet | GEFSv12 reforecast plus NAM two-stream forcing. |
 
 ## Current Review Commands
