@@ -6,6 +6,10 @@ This file is intentionally slim; the active WRF-run-side control board is
 For any cold-start session, read `AGENTS.md` first, then
 `doc/BRC_WRF_MICROTASK_HANDOFF.md`. That pair is the current AI routing stack.
 
+The current stated next goal is Pelican alternate-forcing work: start with RAP
+analysis as a no-run feasibility and approval-prep task. After the control
+board, read `brc-docs/BRC-WRF-PELICAN-ALTERNATE-FORCING.md`.
+
 For a session specifically focused on the older `scaling_t016` practical
 benchmark recovery, read `doc/BRC_WRF_NEXT_SESSION_HANDOFF.md` after the control
 board. Do not treat that recovery doc as the universal next task.
@@ -24,7 +28,7 @@ For current proof state and the human-facing overview, read
 
 For Pelican conveyor, comparison quicklooks, or domain-review work, read
 `brc-docs/BRC-WRF-RUN-CONVEYOR-SOP.md` and
-`brc-docs/BRC-WRF-PELICAN-333M-HANDOFF.md`.
+`brc-docs/BRC-WRF-PELICAN-ALTERNATE-FORCING.md`.
 
 For `brc-tools` staging context, read
 `../brc-tools/docs/HANDOFF-TO-BRC-WRF.md` and

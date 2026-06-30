@@ -117,3 +117,63 @@ Quicklooks:
 ```text
 /uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/pelican2013_nam_3_1km_75lev/full24h/run_20260625T212123Z/quicklooks/
 ```
+
+## 2026-06-26 Pelican 333 m Baseline Evidence
+
+Case: `pelican2013_nam_3_1_333m_75lev`
+
+Run shape:
+
+```text
+d01: 3 km
+d02: 1 km
+d03: 0.333 km
+e_vert: 75
+window: 2013-02-02_12:00:00 to 2013-02-02_18:00:00
+forcing: NAM analysis, Vtable.NAM, prefix NAM, fg_name NAM
+```
+
+Key jobs:
+
+```text
+stage:     13695257
+WPS/prep:  13695258
+smoke6h:   13695259
+CFL gate:  13695260
+full6h:    13695261, wrf.exe elapsed 6342 s
+```
+
+Full archive:
+
+```text
+/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/pelican2013_nam_3_1_333m_75lev/full6h/run_20260626T163737Z/
+```
+
+Control files:
+
+```text
+/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/pelican2013_nam_3_1_333m_75lev/control/run_20260626T144836Z/
+```
+
+Quicklooks:
+
+```text
+/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/pelican2013_nam_3_1_333m_75lev/full6h/run_20260626T163737Z/quicklooks/
+```
+
+Standardized quicklooks should be regenerated with `brc-cases/wrf_quicklook.py`
+from approved compute/batch context and should land under:
+
+```text
+<archive-run>/quicklooks/standardized_<UTC>/dXX/
+```
+
+Latest standardized render:
+
+```text
+job: 13729327, completed 0:0 in 00:00:55 on notch392
+manifest check: 2/2 OK
+products: 30 PNGs, 10 per d01/d02/d03
+path: /uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/pelican2013_nam_3_1_333m_75lev/full6h/run_20260626T163737Z/quicklooks/standardized_20260629T020921Z/
+log: /uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_build_logs/brc-wrf/quicklook_pelican333_13729327.out
+```

@@ -1,6 +1,6 @@
 # Handoff To brc-tools: Tighten The WRF Link
 
-Use this when opening a `brc-tools` session to close the remaining seams between
+Use this when opening a `brc-tools` session to close the remaining links between
 input staging and this `brc-wrf` fork. It supersedes older untracked scratch
 handoffs for current work.
 
@@ -38,8 +38,9 @@ Then address the open link issues below in small commits.
 | Old scratch manifest | Verifies `28/28 OK`, but was written before fresh contract sidecars and includes partial GEFS files not consumed by WPS. |
 | Current brc-wrf case | Points to a tracked reconstructed NAM-only contract so strict validation is clean. |
 | Fresh brc-tools contract | Gate 5 fresh NAM-only sidecars passed; the scratch `contract_<case>.json` remains canonical for new staging. |
+| RAP source support | Branch `feat/wrf-rap-source` adds `rap_analysis` whole-file hourly planning/contract support and confirmed the 2013-02-02 12-18Z NCEI URLs. WRF-side Vtable and field proof remain open. |
 | Practical testing | Now in `brc-wrf`; first row failed from WRF/run provenance, not input staging. No `brc-tools` code change is needed unless new staging is requested. |
-| GEFS+NAM two-stream | Still unproven through WPS/`real.exe`; do not mark it production-ready. |
+| GEFS+NAM two-stream | Parked optional path. Still unproven through WPS/`real.exe`; do not mark it production-ready or treat it as the default alternate-forcing route. |
 
 ## Issues To Tighten In brc-tools
 
@@ -49,12 +50,13 @@ Then address the open link issues below in small commits.
 | 2 | The proof manifest includes both `nam_analysis` and partial `gefs_reforecast`, but WPS consumed NAM-only. | Avoid deriving NAM-only WPS truth from mixed-source proof manifest fields; use the contract/source intent instead. |
 | 3 | brc-wrf now validates `owned_notch392_max` against `brc-knowledge`. | brc-tools docs should not suggest Slurm settings; they should point to `brc-wrf`/`brc-knowledge` for run profiles. |
 | 4 | Fresh-stage acceptance has one Gate 5 pass. | Keep the reconstructed fallback until John explicitly accepts the retirement policy and compatibility story. |
-| 5 | GEFS+NAM needs a field-map handoff before WPS work. | If two-stream remains desired, produce a compact list of GEFS variable-level tokens, Vtable implications, and missing fields NAM must fill. |
-| 6 | Several root handoff notes are stale/untracked in both repos. | Promote only current state into `docs/`; leave or delete scratch notes by explicit human decision. |
+| 5 | RAP source support exists, but WRF adequacy does not. | Keep RAP field/Vtable/run proof in `brc-wrf`; `brc-tools` should provide only source metadata, plans, manifests, contracts, and staging behavior. |
+| 6 | GEFS+NAM needs a field-map handoff before WPS work if revived. | If two-stream becomes desired again, produce a compact list of GEFS variable-level tokens, Vtable implications, and missing fields NAM must fill. |
 
 ## Acceptance Criteria
 
-- `brc-tools` docs clearly say: NAM-only is proven; GEFS+NAM is not.
+- `brc-tools` docs clearly say: NAM-only is proven; RAP source support is a
+  staging/contract proof only; GEFS+NAM is parked and not production-ready.
 - `docs/WRF-INPUT-STAGING.md` points to the matching `brc-wrf` state playbook
   and first-case runbook.
 - Fresh staging continues to emit `manifest_<case>.json` and

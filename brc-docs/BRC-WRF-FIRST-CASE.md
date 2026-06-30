@@ -43,8 +43,9 @@ execution require explicit run approval.
   explicit approval. Current Gate 11 packets include approval-gated
   `prepare_<scenario>.sh` helpers that byte-check John's executables and
   runtime files before any approved row submission.
-- Not yet validated: GEFSv12 reforecast plus NAM two-stream forcing
-  (`fg_name = 'GEFS','NAM'`, `interval_seconds = 10800`).
+- Parked optional path: GEFSv12 reforecast plus NAM two-stream forcing
+  (`fg_name = 'GEFS','NAM'`, `interval_seconds = 10800`) is not validated and
+  is not the current alternate-forcing workflow.
 
 Do not describe this proof as a fresh standalone 4 km case or as a completed
 GEFS+NAM two-stream run.
@@ -251,9 +252,10 @@ The non-fatal `real.exe` soil message observed for the proof was:
    rerender the practical packet so generated scripts use a shared Slurm working
    directory and stdout/stderr path under
    `lawson-group6/.../wrf_build_logs/brc-wrf`.
-3. GEFS+NAM two-stream WPS/real path: build or select a GEFSv12 reforecast
-   Vtable, ungrib GEFS and NAM separately, run metgrid with
-   `fg_name = 'GEFS','NAM'`, then prove `real.exe`.
+3. For alternate forcing, add one source at a time through `brc-tools`
+   staging/contracts, then return here for WPS/WRF review. Start with RAP if
+   that remains the stated experiment; do not revive the GEFS+NAM two-stream
+   path unless John explicitly asks for it.
 4. Use `brc-cases/` to review the case manifest, validate cheap metadata, and
    render Slurm text before any submitted run.
 5. Keep generated run packets, logs, NetCDF, PNGs, and one-off Slurm files out

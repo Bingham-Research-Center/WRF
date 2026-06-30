@@ -24,11 +24,23 @@ cheap facts before expensive runs. It is also another layer to audit, so every
 AI-assisted step should leave a small, readable breadcrumb: command, evidence,
 owner repo, and stop point.
 
+## Collaboration Boundary
+
+| Need | John-owned path | Michael/private path |
+| --- | --- | --- |
+| Production proof | `brc-wrf` consumes `brc-tools` contracts and runs John-owned WRF 4.8.0/WPS. | Comparison evidence and workflow review only. |
+| Forcing experiments | One source at a time through `brc-tools`, then WRF-side Vtable/field review. | Review WPS/Vtable assumptions, field completeness, and gotchas. |
+| Run safety | Approval-gated Slurm, archive, debug summaries, path refusal, byte-match checks. | Teaching examples and gotcha patterns that may be ported after review. |
+| Scientific review | Baseline quicklooks, standardized comparison products, case manifests. | Pair review of domain, fields, physics plausibility, and failure modes. |
+
+Do not use Michael-owned WRF/WPS roots for John production wrappers, WRF 4.8.0
+proof, production archives, or `brc-tools` staging truth.
+
 ## Who Can Understand This Today?
 
 | Audience | Current readiness | What still feels hard |
 | --- | --- | --- |
-| John/JRL | High enough to audit and steer science decisions. | The GEFS+NAM two-stream path still needs WPS/`real.exe` proof before it is science-ready. |
+| John/JRL | High enough to audit and steer science decisions. | Source hot-swapping should stay one forcing source at a time through `brc-tools` contracts; the old GEFS+NAM two-stream idea is parked. |
 | Michael/new developer | Medium if starting from the reading packet below. | WRF requires both software-install knowledge and meteorological forcing knowledge; the repo split must be read first. |
 | Future AI agent | High for no-run review tasks. | It must not confuse the maintained render harness with approval to run WPS/WRF/Slurm. |
 
@@ -46,7 +58,7 @@ owner repo, and stop point.
 | Practical testing | One 28-task row passed. Job `13550110` ran John's `~/gits/brc-wrf` WRF `V4.8.0`, passed `real.exe`/`wrf.exe`, and archived debug evidence under `practical_tests/scaling_t028/run_20260618T230858Z/`. Attempted `scaling_t016` jobs `13550555` and `13550909` failed before WRF runtime evidence: first from node-local `/tmp` Slurm paths, then from a `WRF_RUN` missing runtime files from John's `run/` directory. No `rsl.*`, archive, or debug evidence exists for `scaling_t016`. Memory rows remain unrun. |
 | Gate 10 visual review | Preliminary PNG-only visual sanity passed; see `brc-docs/BRC-WRF-GATE10-QUICKLOOK-REVIEW.md`. John/Michael science acceptance is still the decision point. |
 | Slurm profile | Aligned to max owned-node profile: `lawson-np`, `notch392`, 1 node, 56 tasks, `900G`, `srun --mpi=pmi2`. |
-| GEFS+NAM | Not proven. Treat as a design/proof task, not a working production method. |
+| Alternate forcing | Active direction is one-source-at-a-time hot-swapping through `brc-tools` staging contracts, starting with RAP feasibility. The older GEFS+NAM two-stream idea is parked, not a working production method. |
 
 ## Where We Should Go Next
 
@@ -54,7 +66,7 @@ owner repo, and stop point.
 | --- | --- | --- |
 | 1 | Have John/Michael accept or reject the Gate 10 quicklook review. | Decide whether the NAM-only proof remains a physically useful baseline. |
 | 2 | Decide whether to reapprove exactly one practical benchmark row. | Recommended next row is still `scaling_t016`; use the generated `prepare_scaling_t016.sh` in an approved off-login context, then submit exactly one row and stop on its result. |
-| 3 | Decide whether GEFS+NAM is still needed for the next science question. | If yes, draft the two-stream WPS proof; if no, keep improving NAM-only repeatability. |
+| 3 | Continue alternate-forcing hot-swap work only through a concrete source contract. | `brc-tools` now has RAP source planning/contract support on `feat/wrf-rap-source`; keep the next step in `brc-wrf` to RAP Vtable, field-adequacy, case-manifest, and render review. Do not revive GEFS+NAM unless John explicitly asks for that experiment. |
 
 ## Reading Packet
 

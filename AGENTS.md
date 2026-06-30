@@ -18,8 +18,8 @@ Keep this file as the AI router and safety contract, not a backlog.
 | --- | --- |
 | Current queue, active evidence, and remaining approvals | `doc/BRC_WRF_MICROTASK_HANDOFF.md` |
 | End-to-end WRF/WPS route | `doc/BRC_WRF_END_TO_END_AI_HANDOFF.md` |
-| Pelican conveyor and quicklook rules | `brc-docs/BRC-WRF-RUN-CONVEYOR-SOP.md` |
-| Pelican 3/1/0.333 km replay handoff | `brc-docs/BRC-WRF-PELICAN-333M-HANDOFF.md` |
+| Pelican conveyor, 333 m baseline, and quicklook rules | `brc-docs/BRC-WRF-RUN-CONVEYOR-SOP.md` |
+| Pelican alternate-forcing prompt, RAP feasibility, and approval boundary | `brc-docs/BRC-WRF-PELICAN-ALTERNATE-FORCING.md` |
 | First-case proof and run explanation | `brc-docs/BRC-WRF-FIRST-CASE.md` |
 | Printable state summary | `brc-docs/BRC-WRF-STATE-PLAYBOOK.md` |
 | Case manifests, validators, Slurm renderers, WRF-output quicklook adapter | `brc-cases/README.md` |
@@ -58,7 +58,7 @@ Task-specific adds:
 - Local automation: `.sane/wrf/README.md`
 - Build/WPS/WRF progression: `doc/BRC_WRF_END_TO_END_AI_HANDOFF.md`
 - Pelican replay or comparison plots: `brc-docs/BRC-WRF-RUN-CONVEYOR-SOP.md`
-  and `brc-docs/BRC-WRF-PELICAN-333M-HANDOFF.md`
+  and `brc-docs/BRC-WRF-PELICAN-ALTERNATE-FORCING.md`
 - CI: `.ci/tests/build.sh` and `.github/workflows/ci.yml`
 
 ## Current Durable Truth
@@ -78,10 +78,21 @@ Task-specific adds:
 - Practical testing has one approved passing row: `scaling_t028` job
   `13550110`. Later `scaling_t016` attempts failed before WRF runtime evidence
   and are not benchmark results; see `doc/BRC_WRF_MICROTASK_HANDOFF.md`.
-- GEFSv12 plus NAM two-stream forcing is not validated.
-- Pelican comparison runs exist outside the repo. Standardized quicklooks now
-  render 10 PNGs per domain under `<archive-run>/quicklooks/<stamp>/dXX/` using
-  reusable `brc-tools` plotting helpers and a `brc-wrf` WRF-file adapter.
+- GEFSv12 plus NAM two-stream forcing is a parked optional path, not the
+  current hot-swap route. Do not foreground it unless John explicitly revives
+  that experiment.
+- Pelican NAM 3/1/0.333 km 75-level six-hour baseline completed on 2026-06-26:
+  `pelican2013_nam_3_1_333m_75lev`, full job `13695261`, archive
+  `/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/pelican2013_nam_3_1_333m_75lev/full6h/run_20260626T163737Z/`.
+- Adjacent `brc-tools` branch `feat/wrf-rap-source` has `rap_analysis`
+  planning/contract support and live NCEI availability evidence for the
+  2013-02-02 12-18Z Pelican RAP window. `brc-wrf` still owns the WPS Vtable,
+  field-adequacy, case-manifest, render, and run-approval review before any
+  RAP staging or WPS/WRF execution.
+- Standardized WRF-output quicklooks render 10 PNGs per available domain under
+  `<archive-run>/quicklooks/<stamp>/dXX/` using reusable `brc-tools` plotting
+  helpers and a `brc-wrf` WRF-file adapter. Pelican forcing comparisons should
+  reuse the NAM 333 m baseline products.
 - Michael Davies' working WRF/WPS path under `lawson-group6/u6060939/` is
   comparison evidence only. Do not point John's wrappers at Michael-owned WRF
   or WPS roots.
