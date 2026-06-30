@@ -119,8 +119,8 @@ The checkpoint is intentionally small:
    reads existing WPS `met_em` files and archived `wrfout` files. It does not
    run WPS, `real.exe`, `wrf.exe`, Slurm, or new input staging. It must run
    from an approved compute or interactive context, not a login node.
-   Generated PNGs default to `<archive-run>/quicklooks/` under the durable
-   `lawson-group6` archive; repo-local PNG output is refused.
+   Generated PNGs default to `<archive-run>/quicklooks/standardized_<UTC>/`
+   under the durable `lawson-group6` archive; repo-local PNG output is refused.
    Current WRF-output quicklooks render 10 standardized PNGs per case domain
    under `<archive-run>/quicklooks/<stamp>/dXX/`: temperature/wind, temperature
    anomaly, 2 m potential temperature, wind speed, PBL height, snow depth, skin

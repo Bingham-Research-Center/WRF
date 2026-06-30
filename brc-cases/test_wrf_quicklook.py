@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import os
 import tempfile
 import unittest
 from pathlib import Path
@@ -20,7 +21,7 @@ class QuicklookPathTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "inside the brc-wrf checkout"):
             wrf_quicklook._validate_output_dir(output_dir)
 
-    def test_default_output_dir_is_archive_quicklooks(self) -> None:
+    def test_default_output_dir_is_stamped_archive_quicklooks(self) -> None:
         archive_run = Path("/tmp/brc_wrf_quicklook_unit/run_20260618T000000Z")
         ctx = wrf_quicklook.QuicklookContext(
             case_file=Path("unit.case.yaml"),
@@ -41,7 +42,18 @@ class QuicklookPathTests(unittest.TestCase):
             },
         )
 
-        self.assertEqual(wrf_quicklook._default_output_dir(ctx), archive_run / "quicklooks")
+        previous = os.environ.get("BRC_WRF_QUICKLOOK_STAMP")
+        os.environ["BRC_WRF_QUICKLOOK_STAMP"] = "standardized_UNIT"
+        try:
+            self.assertEqual(
+                wrf_quicklook._default_output_dir(ctx),
+                archive_run / "quicklooks" / "standardized_UNIT",
+            )
+        finally:
+            if previous is None:
+                os.environ.pop("BRC_WRF_QUICKLOOK_STAMP", None)
+            else:
+                os.environ["BRC_WRF_QUICKLOOK_STAMP"] = previous
 
     def test_latest_archive_run_uses_newest_run_directory(self) -> None:
         with tempfile.TemporaryDirectory() as raw:

@@ -13,6 +13,7 @@ import os
 import subprocess
 import sys
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -34,8 +35,8 @@ def _path_under(path: Path, parent: Path) -> bool:
 
 
 def _default_output_dir(ctx: "QuicklookContext") -> Path:
-    """Put review PNGs beside the durable archive run, never inside the repo."""
-    return ctx.archive_run / "quicklooks"
+    """Put review PNGs in a stamped archive subdirectory, never inside the repo."""
+    return ctx.archive_run / "quicklooks" / _quicklook_stamp()
 
 
 def _validate_output_dir(path: Path) -> Path:
@@ -45,6 +46,15 @@ def _validate_output_dir(path: Path) -> Path:
             "write to a durable lawson-group archive path instead"
         )
     return path
+
+
+def _quicklook_stamp() -> str:
+    stamp = os.environ.get("BRC_WRF_QUICKLOOK_STAMP")
+    if stamp:
+        if "/" in stamp or stamp in {".", ".."}:
+            raise ValueError(f"invalid BRC_WRF_QUICKLOOK_STAMP: {stamp!r}")
+        return stamp
+    return datetime.now(timezone.utc).strftime("standardized_%Y%m%dT%H%M%SZ")
 
 
 @dataclass
@@ -565,7 +575,10 @@ def build_parser() -> argparse.ArgumentParser:
         if name == "render":
             cmd.add_argument(
                 "--output-dir",
-                help="directory for PNG output; default is <archive-run>/quicklooks; repo-local paths are refused",
+                help=(
+                    "directory for PNG output; default is "
+                    "<archive-run>/quicklooks/standardized_<UTC>; repo-local paths are refused"
+                ),
             )
 
     return parser
