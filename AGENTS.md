@@ -30,6 +30,11 @@ If a fact changes, update the canonical file above and only leave short pointers
 elsewhere. Do not revive deleted priority files or copy task matrices into this
 router.
 
+For to-dos and wishlists, start with `doc/BRC_WRF_MICROTASK_HANDOFF.md`.
+Use `brc-docs/BRC-WRF-ROADMAP.md` only as a compact gate/follow-on index and
+`brc-docs/BRC-WRF-STATE-PLAYBOOK.md` for human-readable next moves. Sibling
+staging wishlists belong in `../brc-tools/docs/`, not this repo.
+
 ## Ownership
 
 - `brc-wrf`: WRF source, WPS/WRF-side docs, case manifests, validators, run

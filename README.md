@@ -48,6 +48,20 @@ one source at a time through `brc-tools` staging contracts, starting with RAP
 analysis. The older GEFS+NAM two-stream idea is parked unless explicitly
 revived.
 
+## To-Dos And Wishlists
+
+Current work is intentionally split by ownership:
+
+- Active queue, next default task, remaining approvals, and parked work:
+  `doc/BRC_WRF_MICROTASK_HANDOFF.md`.
+- Compact gate/follow-on index: `brc-docs/BRC-WRF-ROADMAP.md`.
+- Human-readable next moves: `brc-docs/BRC-WRF-STATE-PLAYBOOK.md`.
+- Case-helper and practical-harness work: `brc-cases/README.md`.
+- Input-staging wishlists and source support: `../brc-tools/docs/`.
+
+Do not revive deleted June to-do, handoff, or chat-style files. Update the
+canonical owner above and leave only short pointers elsewhere.
+
 ## Boundaries
 
 - `brc-wrf`: WRF source, WPS/WRF-side docs, case manifests, validators, run
