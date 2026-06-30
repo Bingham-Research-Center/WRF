@@ -100,11 +100,11 @@ Login-safe planning plus off-login verification:
 
 ```bash
 cd ~/gits/brc-tools
-python scripts/stage_wrf_inputs.py --plan --case jan2013_basin_gefs \
+conda run -n brc-tools-2026 python -m brc_tools.nwp.wrf_staging --plan --case jan2013_basin_gefs \
   --init-time "2013-01-31 12Z" --source nam_analysis
 
 # Off-login only: this hashes existing staged GRIB files.
-python scripts/stage_wrf_inputs.py --verify-manifest \
+conda run -n brc-tools-2026 python -m brc_tools.nwp.wrf_staging --verify-manifest \
   /scratch/general/vast/$USER/wrf_inputs/jan2013_basin_gefs/manifest_jan2013_basin_gefs.json
 ```
 

@@ -29,6 +29,22 @@ DEFAULT_PRACTICAL_TASKS = (16, 28, 56)
 PRACTICAL_SLURM_LOG_ROOT = Path(
     "/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_build_logs/brc-wrf"
 )
+WPS_FIELD_CHECKS = (
+    ("3d_height", "^(GHT|HGT)$"),
+    ("3d_pressure", "^(PRES|PRESSURE)$"),
+    ("3d_temperature", "^TT$"),
+    ("3d_humidity", "^(RH|QVAPOR|SPECHUMD)$"),
+    ("3d_u_wind", "^UU$"),
+    ("3d_v_wind", "^VV$"),
+    ("surface_pressure", "^PSFC$"),
+    ("sea_level_pressure", "^PMSL$"),
+    ("land_mask", "^(LANDSEA|LANDMASK)$"),
+    ("terrain", "^(SOILHGT|HGT_M)$"),
+    ("soil_temperature_layers", "^(ST|ST[0-9].*|SOILT[0-9].*)$"),
+    ("soil_moisture_layers", "^(SM|SM[0-9].*|SOILM[0-9].*)$"),
+    ("snow", "^(SNOW|SNOWH)$"),
+    ("skin_temperature", "^SKINTEMP$"),
+)
 REQUIRED_WRF_RUNTIME_FILES = (
     "CAMtr_volume_mixing_ratio",
     "RRTMG_LW_DATA",
@@ -41,6 +57,13 @@ REQUIRED_WRF_RUNTIME_FILES = (
     "SOILPARM.TBL",
     "VEGPARM.TBL",
 )
+PENDING_NUMERIC_TOKENS = {
+    "pending",
+    "field_adequacy_pending",
+    "metgrid_pending",
+    "unknown",
+    "tbd",
+}
 
 REQUIRED_SECTIONS = {
     "case": ("name", "start", "end", "domains"),
@@ -155,6 +178,38 @@ def as_path(value: Any) -> Path:
     return Path(os.path.expandvars(os.path.expanduser(str(value))))
 
 
+def parse_positive_int_setting(
+    value: Any,
+    label: str,
+    findings: list[Finding],
+    *,
+    allow_pending: bool = False,
+    strict_pending: bool = False,
+) -> int | None:
+    pending = value is None or str(value).strip().lower() in PENDING_NUMERIC_TOKENS
+    if pending:
+        if allow_pending:
+            severity = "ERROR" if strict_pending else "WARN"
+        else:
+            severity = "ERROR"
+        findings.append(
+            Finding(
+                severity,
+                f"{label} is pending; set it from metgrid field proof before real.exe",
+            )
+        )
+        return None
+    try:
+        parsed = int(value)
+    except (TypeError, ValueError):
+        findings.append(Finding("ERROR", f"{label} must be a positive integer: {value!r}"))
+        return None
+    if parsed <= 0:
+        findings.append(Finding("ERROR", f"{label} must be positive"))
+        return None
+    return parsed
+
+
 def path_under(path: Path, parent: Path) -> bool:
     try:
         path.resolve(strict=False).relative_to(parent.resolve(strict=False))
@@ -229,6 +284,7 @@ def add_wps_root_findings(
     root: Path,
     *,
     strict_files: bool,
+    vtable: str,
 ) -> None:
     add_path_finding(
         findings,
@@ -256,7 +312,13 @@ def add_wps_root_findings(
         if not path.is_dir():
             findings.append(Finding(severity, f"paths.wps_root missing directory {subdir}: {path}"))
 
-    for file_name in ("link_grib.csh", "ungrib/Variable_Tables/Vtable.NAM"):
+    required_files = ["link_grib.csh"]
+    if "/" in vtable or not vtable:
+        findings.append(Finding("ERROR", f"wps.vtable is not a simple table name: {vtable!r}"))
+    else:
+        required_files.append(f"ungrib/Variable_Tables/{vtable}")
+
+    for file_name in required_files:
         path = root / file_name
         if not path.is_file():
             findings.append(
@@ -469,7 +531,14 @@ def validate_namelists(
                 findings.append(Finding("WARN", f"{key} end_date does not match {end}"))
         if key == "namelist_input":
             levels = values.get("num_metgrid_levels", [None])[0]
-            if levels is not None and int(levels) != int(forcing["num_metgrid_levels"]):
+            expected_levels = parse_positive_int_setting(
+                forcing["num_metgrid_levels"],
+                "forcing.num_metgrid_levels",
+                findings,
+                allow_pending=True,
+                strict_pending=strict_files,
+            )
+            if levels is not None and expected_levels is not None and int(levels) != expected_levels:
                 findings.append(
                     Finding("ERROR", f"{key} num_metgrid_levels {levels} != case value")
                 )
@@ -492,6 +561,7 @@ def validate_case(data: dict[str, Any], *, strict_files: bool) -> list[Finding]:
     forcing = data["forcing"]
     paths = data["paths"]
     slurm = data["slurm"]
+    wps = data.get("wps", {})
 
     case_name = str(case["name"])
     if not CASE_NAME_RE.match(case_name):
@@ -509,18 +579,31 @@ def validate_case(data: dict[str, Any], *, strict_files: bool) -> list[Finding]:
     sources = [str(v) for v in as_list(forcing["sources"])]
     wps_fg_name = [str(v) for v in as_list(forcing["wps_fg_name"])]
     interval_seconds = int(forcing["interval_seconds"])
-    num_metgrid_levels = int(forcing["num_metgrid_levels"])
+    parse_positive_int_setting(
+        forcing["num_metgrid_levels"],
+        "forcing.num_metgrid_levels",
+        findings,
+        allow_pending=True,
+        strict_pending=strict_files,
+    )
 
     if sources == ["nam_analysis"] and wps_fg_name != ["NAM"]:
         findings.append(Finding("ERROR", "NAM-only source should use wps_fg_name ['NAM']"))
     if sources == ["nam_analysis"] and interval_seconds != 21600:
         findings.append(Finding("ERROR", "NAM-only source should use interval_seconds 21600"))
+    if sources == ["rap_analysis"] and wps_fg_name != ["RAP"]:
+        findings.append(Finding("ERROR", "RAP source should use wps_fg_name ['RAP']"))
+    if sources == ["rap_analysis"] and interval_seconds != 3600:
+        findings.append(Finding("ERROR", "RAP source should use interval_seconds 3600"))
+    if sources == ["rap_analysis"]:
+        if str(wps.get("ungrib_prefix", "")) != "RAP":
+            findings.append(Finding("ERROR", "RAP source should use wps.ungrib_prefix RAP"))
+        if [str(v) for v in as_list(wps.get("namelist_fg_name", wps_fg_name))] != ["RAP"]:
+            findings.append(Finding("ERROR", "RAP source should use wps.namelist_fg_name ['RAP']"))
     if "gefs_reforecast" in sources and interval_seconds != 10800:
         findings.append(Finding("WARN", "GEFS reforecast stream normally uses 10800 seconds"))
     if "gefs_reforecast" in sources and wps_fg_name != ["GEFS", "NAM"]:
         findings.append(Finding("WARN", "two-stream GEFS+NAM should use fg_name ['GEFS', 'NAM']"))
-    if num_metgrid_levels <= 0:
-        findings.append(Finding("ERROR", "num_metgrid_levels must be positive"))
 
     add_path_finding(
         findings, as_path(paths["wrf_src"]), "paths.wrf_src",
@@ -535,6 +618,7 @@ def validate_case(data: dict[str, Any], *, strict_files: bool) -> list[Finding]:
         findings,
         as_path(paths["wps_root"]),
         strict_files=strict_files,
+        vtable=str(data.get("wps", {}).get("vtable", "Vtable.NAM")),
     )
     add_path_finding(
         findings, as_path(paths["geog_data_path"]), "paths.geog_data_path",
@@ -588,8 +672,17 @@ def validate_case(data: dict[str, Any], *, strict_files: bool) -> list[Finding]:
 
     wps_run = as_path(paths["wps_run"])
     met_em = sorted(glob.glob(str(wps_run / "met_em.d0*.nc")))
-    expected_met_em = forcing.get("expected_met_em_count")
-    if met_em and expected_met_em is not None and len(met_em) != int(expected_met_em):
+    expected_met_em_raw = forcing.get("expected_met_em_count")
+    expected_met_em = None
+    if expected_met_em_raw is not None:
+        expected_met_em = parse_positive_int_setting(
+            expected_met_em_raw,
+            "forcing.expected_met_em_count",
+            findings,
+            allow_pending=True,
+            strict_pending=False,
+        )
+    if met_em and expected_met_em is not None and len(met_em) != expected_met_em:
         findings.append(
             Finding(
                 "WARN",
@@ -634,6 +727,68 @@ def text_value(value: Any) -> str:
     if not values:
         return ""
     return ", ".join(str(v) for v in values)
+
+
+def expected_met_em_count_from_case(data: dict[str, Any]) -> int | None:
+    findings: list[Finding] = []
+    start = parse_case_datetime(data["case"]["start"], "start", findings)
+    end = parse_case_datetime(data["case"]["end"], "end", findings)
+    if findings or start is None or end is None:
+        return None
+    interval = int(data["forcing"]["interval_seconds"])
+    domains = int(data["case"]["domains"])
+    elapsed = int((end - start).total_seconds())
+    if interval <= 0 or elapsed < 0 or elapsed % interval != 0:
+        return None
+    return domains * (elapsed // interval + 1)
+
+
+def run_readiness_findings(data: dict[str, Any]) -> list[Finding]:
+    findings: list[Finding] = []
+    forcing = data["forcing"]
+    parse_positive_int_setting(
+        forcing["num_metgrid_levels"],
+        "forcing.num_metgrid_levels",
+        findings,
+        allow_pending=False,
+    )
+    if forcing.get("expected_met_em_count") is not None:
+        parse_positive_int_setting(
+            forcing["expected_met_em_count"],
+            "forcing.expected_met_em_count",
+            findings,
+            allow_pending=False,
+        )
+    return findings
+
+
+def add_wps_field_proof_findings(findings: list[Finding], data: dict[str, Any]) -> None:
+    wps = data.get("wps", {})
+    required = ("vtable", "ungrib_prefix", "namelist_fg_name", "namelist_template", "geogrid_source")
+    for key in required:
+        if key not in wps:
+            findings.append(Finding("ERROR", f"wps.{key} is required for WPS field proof rendering"))
+
+    if findings and any(f.severity == "ERROR" for f in findings):
+        return
+
+    if "/" in str(wps["vtable"]):
+        findings.append(Finding("ERROR", f"wps.vtable must be a simple table name: {wps['vtable']!r}"))
+    if str(wps["ungrib_prefix"]) != text_value(wps["namelist_fg_name"]):
+        findings.append(
+            Finding(
+                "ERROR",
+                "wps.ungrib_prefix and wps.namelist_fg_name should match for a single-source proof",
+            )
+        )
+    for key in ("namelist_template", "geogrid_source"):
+        add_path_finding(
+            findings,
+            as_path(wps[key]),
+            f"wps.{key}",
+            strict_files=False,
+            must_be_dir=(key == "geogrid_source"),
+        )
 
 
 def render_slurm(data: dict[str, Any], case_file: Path) -> str:
@@ -821,7 +976,7 @@ def render_slurm(data: dict[str, Any], case_file: Path) -> str:
             "    printf \"\\nGotchas\\n\"",
             "    printf \"1. Do not run practical checks from login nodes; this script belongs in approved Slurm/compute context.\\n\"",
             "    printf \"2. Keep ungrib prefix and metgrid fg_name paired.\\n\"",
-            "    printf \"3. NAM-only cadence is 21600 seconds; GEFS+NAM would be a separate 10800-second proof.\\n\"",
+            "    printf \"3. Use the case contract cadence; NAM proof is 21600 seconds, RAP is 3600 seconds, and GEFS+NAM would be separate.\\n\"",
             "    printf \"4. Use srun --mpi=pmi2 for wrf.exe on this Intel MPI stack.\\n\"",
             "    printf \"5. Check real.exe, wrf.exe, archive completeness, and Slurm state as separate facts.\\n\"",
             "    printf \"\\nModules\\n\"",
@@ -898,6 +1053,378 @@ def render_slurm(data: dict[str, Any], case_file: Path) -> str:
 
 def safe_name(value: Any) -> str:
     return re.sub(r"[^A-Za-z0-9_.-]+", "_", str(value)).strip("_") or "item"
+
+
+def render_wps_field_proof_slurm(data: dict[str, Any], case_file: Path) -> str:
+    case = data["case"]
+    forcing = data["forcing"]
+    paths = data["paths"]
+    wps = data.get("wps", {})
+    slurm = data["slurm"]
+
+    case_name = str(case["name"])
+    job_name = f"wps_{safe_name(case_name)}"
+    run_root = as_path(paths["run_root"])
+    archive_root = as_path(paths["archive_root"])
+    wps_root = as_path(paths["wps_root"])
+    input_root = as_path(paths["input_root"])
+    manifest_path = as_path(forcing["manifest_path"])
+    contract_path = as_path(forcing["contract_path"])
+    namelist_template = as_path(wps["namelist_template"])
+    geogrid_source = as_path(wps["geogrid_source"])
+    source_name = str(as_list(forcing["sources"])[0])
+    grib_source = input_root / source_name
+    expected_met_em = expected_met_em_count_from_case(data)
+    expected_met_em_text = str(expected_met_em) if expected_met_em is not None else "unknown"
+    fg_name = text_value(wps.get("namelist_fg_name", forcing["wps_fg_name"]))
+    field_patterns = "\n".join(f"{name}\t{pattern}" for name, pattern in WPS_FIELD_CHECKS)
+
+    lines = [
+        "#!/bin/bash",
+        f"# Rendered by brc-cases/wrf_case.py from {case_file}",
+        "# WPS-only RAP field proof. Do not run real.exe, wrf.exe, quicklooks, or the full conveyor.",
+        "# Submit only after explicit human approval for this WPS field-adequacy proof.",
+        f"#SBATCH --job-name={job_name}",
+        f"#SBATCH --account={slurm['account']}",
+        f"#SBATCH --partition={slurm['partition']}",
+        "#SBATCH --nodes=1",
+        "#SBATCH --ntasks=8",
+        "#SBATCH --mem=120G",
+        "#SBATCH --time=01:30:00",
+    ]
+    if slurm.get("nodelist"):
+        lines.append(f"#SBATCH --nodelist={slurm['nodelist']}")
+    lines.extend(
+        [
+            f"#SBATCH --chdir={PRACTICAL_SLURM_LOG_ROOT}",
+            f"#SBATCH --output={PRACTICAL_SLURM_LOG_ROOT}/{job_name}_%j.out",
+            f"#SBATCH --error={PRACTICAL_SLURM_LOG_ROOT}/{job_name}_%j.out",
+            "",
+            "set -euo pipefail",
+            "",
+            'fail() { printf "ERROR: %s\\n" "$*" >&2; exit 2; }',
+            '[[ "${BRC_WPS_FIELD_PROOF_APPROVED:-NO}" == "YES" ]] || fail "set BRC_WPS_FIELD_PROOF_APPROVED=YES only after explicit approval for this WPS-only proof"',
+            "",
+            f"CASE_NAME={shell_quote(case_name)}",
+            f"CASE_FILE={shell_quote(case_file)}",
+            f"CASE_START={shell_quote(case['start'])}",
+            f"CASE_END={shell_quote(case['end'])}",
+            f"DOMAINS={shell_quote(case['domains'])}",
+            f"INTERVAL_SECONDS={shell_quote(forcing['interval_seconds'])}",
+            f"EXPECTED_MET_EM_COUNT={shell_quote(expected_met_em_text)}",
+            f"WPS_ROOT={shell_quote(wps_root)}",
+            f"RUN_ROOT={shell_quote(run_root)}",
+            f"ARCHIVE_ROOT={shell_quote(archive_root)}",
+            f"INPUT_ROOT={shell_quote(input_root)}",
+            f"GRIB_SOURCE={shell_quote(grib_source)}",
+            f"MANIFEST={shell_quote(manifest_path)}",
+            f"CONTRACT={shell_quote(contract_path)}",
+            f"NAMELIST_TEMPLATE={shell_quote(namelist_template)}",
+            f"GEOGRID_SOURCE={shell_quote(geogrid_source)}",
+            f"VTABLE_NAME={shell_quote(wps['vtable'])}",
+            f"UNGRIB_PREFIX={shell_quote(wps['ungrib_prefix'])}",
+            f"METGRID_FG_NAME={shell_quote(fg_name)}",
+            f"GEOG_DATA_PATH={shell_quote(paths['geog_data_path'])}",
+            f"WRF_SRC={shell_quote(paths['wrf_src'])}",
+            "export CASE_START CASE_END DOMAINS INTERVAL_SECONDS UNGRIB_PREFIX METGRID_FG_NAME GEOG_DATA_PATH",
+            'RUN_ID="wps_field_proof_${SLURM_JOB_ID:-manual}_$(date -u +%Y%m%dT%H%M%SZ)"',
+            'WPS_WORK="${RUN_ROOT}/${RUN_ID}/wps_run"',
+            'GRIB_DATA="${RUN_ROOT}/${RUN_ID}/grib_data"',
+            'ARCHIVE_DIR="${ARCHIVE_ROOT}/wps_field_proof/${RUN_ID}"',
+            'DEBUG_DIR="${ARCHIVE_DIR}/debug"',
+            "",
+            'utc_now() { date -u +%Y-%m-%dT%H:%M:%SZ; }',
+            "run_phase() {",
+            "  local phase=\"$1\"",
+            "  shift",
+            "  local start end rc",
+            "  start=$(date -u +%s)",
+            "  set +e",
+            "  \"$@\"",
+            "  rc=$?",
+            "  set -e",
+            "  end=$(date -u +%s)",
+            "  printf \"%s\\t%s\\t%s\\n\" \"$phase\" \"$((end - start))\" \"$rc\" >> \"$DEBUG_DIR/wps_phase_times.tsv\"",
+            "  return \"$rc\"",
+            "}",
+            "",
+            'case "$WPS_ROOT" in *"/u6060939/"*) fail "WPS_ROOT points into Michael-owned comparison path: $WPS_ROOT" ;; esac',
+            '[[ "$WPS_WORK/" == "$RUN_ROOT/"* ]] || fail "WPS_WORK is outside RUN_ROOT: $WPS_WORK"',
+            '[[ "$ARCHIVE_DIR/" == "$ARCHIVE_ROOT/"* ]] || fail "ARCHIVE_DIR is outside ARCHIVE_ROOT: $ARCHIVE_DIR"',
+            'test -x "$WPS_ROOT/ungrib.exe"',
+            'test -x "$WPS_ROOT/metgrid.exe"',
+            'test -f "$WPS_ROOT/link_grib.csh"',
+            'test -f "$WPS_ROOT/ungrib/Variable_Tables/$VTABLE_NAME"',
+            'test -f "$NAMELIST_TEMPLATE"',
+            'test -d "$GEOGRID_SOURCE"',
+            'compgen -G "$GEOGRID_SOURCE/geo_em.d0*.nc" >/dev/null || fail "missing geo_em.d0*.nc in GEOGRID_SOURCE=$GEOGRID_SOURCE"',
+            'test -d "$GRIB_SOURCE"',
+            'test -f "$MANIFEST"',
+            'test -f "$CONTRACT"',
+            "",
+            'mkdir -p "$WPS_WORK" "$GRIB_DATA" "$DEBUG_DIR"',
+            'printf "phase\\telapsed_seconds\\texit_code\\n" > "$DEBUG_DIR/wps_phase_times.tsv"',
+            'find "$GRIB_SOURCE" -maxdepth 1 -type f \\( -name "*.grb" -o -name "*.grb2" -o -name "*.grib" -o -name "*.grib2" \\) | sort > "$DEBUG_DIR/grib_files.txt"',
+            'grib_count=$(wc -l < "$DEBUG_DIR/grib_files.txt")',
+            '[[ "$grib_count" -gt 0 ]] || fail "no GRIB files found under $GRIB_SOURCE"',
+            'mapfile -t GRIB_FILES < "$DEBUG_DIR/grib_files.txt"',
+            "",
+            "module purge",
+            "module load intel-oneapi-compilers/2021.4.0",
+            "module load intel-oneapi-mpi/2021.1.1",
+            "module load hdf5/1.14.3",
+            "module load netcdf-c/4.9.2",
+            "module load netcdf-fortran/4.6.1",
+            "export NETCDF=$(nf-config --prefix)",
+            "export NETCDF_C=$(nc-config --prefix)",
+            "export JASPERLIB=/usr/lib64",
+            "export JASPERINC=/usr/include/jasper",
+            "",
+            'cd "$WPS_WORK"',
+            'ln -sfn "$WPS_ROOT/ungrib" ungrib',
+            'ln -sfn "$WPS_ROOT/metgrid" metgrid',
+            'ln -sf "$WPS_ROOT/ungrib.exe" ungrib.exe',
+            'ln -sf "$WPS_ROOT/metgrid.exe" metgrid.exe',
+            'ln -sf "$WPS_ROOT/link_grib.csh" link_grib.csh',
+            'ln -sf "$WPS_ROOT/ungrib/Variable_Tables/$VTABLE_NAME" Vtable',
+            'rsync -av "$GEOGRID_SOURCE"/geo_em.d0*.nc "$WPS_WORK"/',
+            "",
+            'python3 - "$NAMELIST_TEMPLATE" "$WPS_WORK/namelist.wps" <<\'PY\'',
+            "import os",
+            "import re",
+            "import sys",
+            "",
+            "template, output = sys.argv[1:]",
+            "domains = int(os.environ['DOMAINS'])",
+            "start = os.environ['CASE_START']",
+            "end = os.environ['CASE_END']",
+            "interval = os.environ['INTERVAL_SECONDS']",
+            "prefix = os.environ['UNGRIB_PREFIX']",
+            "fg_name = os.environ['METGRID_FG_NAME']",
+            "geog = os.environ['GEOG_DATA_PATH'].rstrip('/') + '/'",
+            "",
+            "def repeated(value: str) -> str:",
+            "    return ','.join(f\"'{value}'\" for _ in range(domains))",
+            "",
+            "text = open(template, encoding='utf-8').read()",
+            "replacements = {",
+            "    r'(?m)^\\s*start_date\\s*=.*$': f\" start_date = {repeated(start)},\",",
+            "    r'(?m)^\\s*end_date\\s*=.*$': f\" end_date   = {repeated(end)},\",",
+            "    r'(?m)^\\s*interval_seconds\\s*=.*$': f\" interval_seconds = {interval}\",",
+            "    r'(?m)^\\s*geog_data_path\\s*=.*$': f\" geog_data_path = '{geog}'\",",
+            "    r'(?m)^\\s*prefix\\s*=.*$': f\" prefix = '{prefix}',\",",
+            "    r'(?m)^\\s*fg_name\\s*=.*$': f\" fg_name = '{fg_name}'\",",
+            "}",
+            "for pattern, replacement in replacements.items():",
+            "    text, count = re.subn(pattern, replacement, text)",
+            "    if count != 1:",
+            "        raise SystemExit(f'expected one namelist replacement for {pattern}, got {count}')",
+            "open(output, 'w', encoding='utf-8').write(text)",
+            "PY",
+            "",
+            '"$WPS_ROOT/link_grib.csh" "${GRIB_FILES[@]}"',
+            "run_phase ungrib ./ungrib.exe",
+            "run_phase metgrid ./metgrid.exe",
+            "",
+            'find "$WPS_WORK" -maxdepth 1 -type f -name "met_em.d0*.nc" | sort > "$DEBUG_DIR/met_em_files.txt"',
+            'met_count=$(wc -l < "$DEBUG_DIR/met_em_files.txt")',
+            'if [[ "$EXPECTED_MET_EM_COUNT" != "unknown" && "$met_count" -ne "$EXPECTED_MET_EM_COUNT" ]]; then',
+            '  fail "expected $EXPECTED_MET_EM_COUNT met_em files, found $met_count"',
+            "fi",
+            'sample_met=$(head -n 1 "$DEBUG_DIR/met_em_files.txt")',
+            '[[ -n "$sample_met" ]] || fail "metgrid produced no met_em files"',
+            'command -v ncdump >/dev/null || fail "ncdump is unavailable after NetCDF modules load"',
+            'ncdump -h "$sample_met" > "$DEBUG_DIR/sample_met_em_header.txt"',
+            "awk '",
+            "  /^[[:space:]]*(byte|char|short|int|float|double)[[:space:]]+[A-Za-z_][A-Za-z0-9_]*\\(/ {",
+            "    line=$0",
+            "    sub(/^[[:space:]]*(byte|char|short|int|float|double)[[:space:]]+/, \"\", line)",
+            "    sub(/\\(.*/, \"\", line)",
+            "    print line",
+            "  }",
+            "' \"$DEBUG_DIR/sample_met_em_header.txt\" | sort -u > \"$DEBUG_DIR/met_em_fields.txt\"",
+            'num_metgrid_levels=$(awk \'/num_metgrid_levels =/ {gsub(/[^0-9]/, "", $3); print $3; exit}\' "$DEBUG_DIR/sample_met_em_header.txt")',
+            '[[ -n "$num_metgrid_levels" ]] || fail "could not extract num_metgrid_levels from $sample_met"',
+            "",
+            "cat > \"$DEBUG_DIR/field_check_patterns.tsv\" <<'FIELD_CHECKS'",
+            field_patterns,
+            "FIELD_CHECKS",
+            "awk -F '\\t' '",
+            "  NR == FNR { fields[$1] = 1; next }",
+            "  {",
+            "    status = \"FAIL\"",
+            "    for (field in fields) {",
+            "      if (field ~ $2) { status = \"PASS\"; break }",
+            "    }",
+            "    print $1 \"\\t\" status \"\\t\" $2",
+            "  }",
+            "' \"$DEBUG_DIR/met_em_fields.txt\" \"$DEBUG_DIR/field_check_patterns.tsv\" > \"$DEBUG_DIR/field_check.tsv\"",
+            'grep -Eai "warn|error|fatal|missing|not found" ungrib.log metgrid.log > "$DEBUG_DIR/wps_warning_lines.txt" || true',
+            'find "$WPS_WORK" -maxdepth 1 -type f -printf "%f\\t%s\\t%TY-%Tm-%TdT%TH:%TM:%TS\\n" | sort > "$DEBUG_DIR/wps_file_inventory.tsv"',
+            'cp namelist.wps ungrib.log metgrid.log "$DEBUG_DIR"/',
+            "",
+            'missing_count=$(awk -F "\\t" \'$2 == "FAIL" { n++ } END { print n + 0 }\' "$DEBUG_DIR/field_check.tsv")',
+            "{",
+            '  printf "case\\t%s\\n" "$CASE_NAME"',
+            '  printf "case_file\\t%s\\n" "$CASE_FILE"',
+            '  printf "job_id\\t%s\\n" "${SLURM_JOB_ID:-none}"',
+            '  printf "host\\t%s\\n" "$(hostname)"',
+            '  printf "generated_utc\\t%s\\n" "$(utc_now)"',
+            '  printf "wrf_commit\\t%s\\n" "$(git -C "$WRF_SRC" rev-parse --short HEAD 2>/dev/null || printf unknown)"',
+            '  printf "input_root\\t%s\\n" "$INPUT_ROOT"',
+            '  printf "grib_source\\t%s\\n" "$GRIB_SOURCE"',
+            '  printf "grib_count\\t%s\\n" "$grib_count"',
+            '  printf "wps_root\\t%s\\n" "$WPS_ROOT"',
+            '  printf "vtable\\t%s\\n" "$VTABLE_NAME"',
+            '  printf "prefix\\t%s\\n" "$UNGRIB_PREFIX"',
+            '  printf "fg_name\\t%s\\n" "$METGRID_FG_NAME"',
+            '  printf "wps_work\\t%s\\n" "$WPS_WORK"',
+            '  printf "archive_dir\\t%s\\n" "$ARCHIVE_DIR"',
+            '  printf "met_em_count\\t%s\\n" "$met_count"',
+            '  printf "expected_met_em_count\\t%s\\n" "$EXPECTED_MET_EM_COUNT"',
+            '  printf "num_metgrid_levels\\t%s\\n" "$num_metgrid_levels"',
+            '  printf "field_check_failures\\t%s\\n" "$missing_count"',
+            '  printf "stop_point\\tWPS-only field proof; no real.exe, wrf.exe, quicklooks, or full conveyor\\n"',
+            "} > \"$DEBUG_DIR/wps_field_proof_summary.tsv\"",
+            "",
+            'if [[ "$missing_count" -gt 0 ]]; then',
+            '  printf "RAP field proof failed: %s checklist groups missing. See %s/field_check.tsv\\n" "$missing_count" "$DEBUG_DIR" >&2',
+            "  exit 3",
+            "fi",
+            'printf "RAP field proof passed: met_em_count=%s num_metgrid_levels=%s debug=%s\\n" "$met_count" "$num_metgrid_levels" "$DEBUG_DIR"',
+            "",
+        ]
+    )
+    return "\n".join(lines)
+
+
+def render_wps_field_proof_readme(
+    data: dict[str, Any],
+    case_file: Path,
+    *,
+    output_dir: Path,
+) -> str:
+    case = data["case"]
+    forcing = data["forcing"]
+    wps = data.get("wps", {})
+    paths = data["paths"]
+    expected_met_em = expected_met_em_count_from_case(data)
+    return "\n".join(
+        [
+            f"# WPS Field-Proof Packet: {case['name']}",
+            "",
+            "This packet is review-only until explicitly approved. It renders one",
+            "WPS-only RAP field-adequacy job and does not submit Slurm, run",
+            "`real.exe`, run `wrf.exe`, render quicklooks, or start the full run",
+            "conveyor.",
+            "",
+            "## Files",
+            "",
+            "| File | Purpose |",
+            "| --- | --- |",
+            "| `wps_field_proof.slurm` | Approval-gated WPS-only proof script. |",
+            "| `APPROVAL_PACKET.md` | Exact boundary, command, and evidence fields. |",
+            "",
+            "## Case",
+            "",
+            "| Field | Value |",
+            "| --- | --- |",
+            f"| Case file | `{case_file}` |",
+            f"| Output dir | `{output_dir}` |",
+            f"| Window | `{case['start']}` to `{case['end']}` |",
+            f"| Domains | `{case['domains']}` |",
+            f"| Forcing | `{text_value(forcing['sources'])}` |",
+            f"| Interval | `{forcing['interval_seconds']}` seconds |",
+            f"| Expected `met_em` count | `{expected_met_em if expected_met_em is not None else 'unknown'}` |",
+            f"| WPS root | `{paths['wps_root']}` |",
+            f"| Vtable | `{wps.get('vtable', 'unset')}` |",
+            f"| Prefix / fg_name | `{wps.get('ungrib_prefix', 'unset')}` / `{text_value(wps.get('namelist_fg_name', forcing['wps_fg_name']))}` |",
+            f"| RAP input root | `{paths['input_root']}` |",
+            f"| Namelist template | `{wps.get('namelist_template', 'unset')}` |",
+            f"| Geo source | `{wps.get('geogrid_source', 'unset')}` |",
+            "",
+            "Submit only from the shared control/output directory, not from `/tmp`,",
+            "and only after the approval packet row is filled.",
+            "",
+        ]
+    )
+
+
+def render_wps_field_approval_packet(data: dict[str, Any], case_file: Path) -> str:
+    case = data["case"]
+    forcing = data["forcing"]
+    wps = data.get("wps", {})
+    paths = data["paths"]
+    expected_met_em = expected_met_em_count_from_case(data)
+    return "\n".join(
+        [
+            f"# WPS Field-Proof Approval Packet: {case['name']}",
+            "",
+            "## Approval Boundary",
+            "",
+            "| Field | Value |",
+            "| --- | --- |",
+            f"| Case file | `{case_file}` |",
+            f"| Work | WPS-only RAP field-adequacy proof. |",
+            f"| Source | `{text_value(forcing['sources'])}` |",
+            f"| Vtable | `{wps.get('vtable', 'unset')}` |",
+            f"| Prefix / fg_name | `{wps.get('ungrib_prefix', 'unset')}` / `{text_value(wps.get('namelist_fg_name', forcing['wps_fg_name']))}` |",
+            f"| Expected files | `{expected_met_em if expected_met_em is not None else 'unknown'}` `met_em` files. |",
+            "| Stop point | Report `met_em` field list, `num_metgrid_levels`, warnings, file count, and checklist result. |",
+            "| Explicit no | No `real.exe`, `wrf.exe`, quicklooks, full conveyor, source staging, or downloads. |",
+            "",
+            "## Submit Command",
+            "",
+            "```bash",
+            "BRC_WPS_FIELD_PROOF_APPROVED=YES sbatch wps_field_proof.slurm",
+            "```",
+            "",
+            "## Required Inputs",
+            "",
+            "| Input | Path |",
+            "| --- | --- |",
+            f"| RAP input root | `{paths['input_root']}` |",
+            f"| Manifest | `{forcing['manifest_path']}` |",
+            f"| Contract | `{forcing['contract_path']}` |",
+            f"| Namelist template | `{wps.get('namelist_template', 'unset')}` |",
+            f"| Geo source | `{wps.get('geogrid_source', 'unset')}` |",
+            "",
+            "## Evidence To Fill After Completion",
+            "",
+            "| Item | Value |",
+            "| --- | --- |",
+            "| Job ID | TBD |",
+            "| Slurm state / exit | TBD |",
+            "| WPS archive/debug path | TBD |",
+            "| `met_em` count | TBD |",
+            "| `num_metgrid_levels` | TBD |",
+            "| Missing checklist groups | TBD |",
+            "| Warning summary | TBD |",
+            "| RAP-alone disposition | TBD: viable / missing fields / rerun with different Vtable / needs filler. |",
+            "",
+        ]
+    )
+
+
+def write_wps_field_proof_packet(
+    data: dict[str, Any],
+    case_file: Path,
+    *,
+    output_dir: Path,
+) -> list[Path]:
+    output_dir.mkdir(parents=True, exist_ok=True)
+    paths = {
+        output_dir / "README.md": render_wps_field_proof_readme(
+            data,
+            case_file,
+            output_dir=output_dir,
+        ),
+        output_dir / "APPROVAL_PACKET.md": render_wps_field_approval_packet(data, case_file),
+        output_dir / "wps_field_proof.slurm": render_wps_field_proof_slurm(data, case_file),
+    }
+    for path, text in paths.items():
+        path.write_text(text + ("\n" if not text.endswith("\n") else ""), encoding="utf-8")
+    return list(paths)
 
 
 def parse_csv_ints(raw: str) -> list[int]:
@@ -1392,7 +1919,9 @@ def render_practical_packet(
             "NetCDF, archives, or quicklook outputs.",
             "",
             "```bash",
-            f"python ../brc-tools/scripts/stage_wrf_inputs.py --verify-manifest {forcing['manifest_path']}",
+            "cd ../brc-tools",
+            f"conda run -n brc-tools-2026 python -m brc_tools.nwp.wrf_staging --verify-manifest {forcing['manifest_path']}",
+            "cd ../brc-wrf",
             f"python brc-cases/wrf_case.py validate {case_file} --strict-files",
             f"python brc-cases/wrf_quicklook.py check {case_file}",
             f"python brc-cases/wrf_quicklook.py render {case_file}",
@@ -1757,6 +2286,7 @@ def cmd_render_slurm(args: argparse.Namespace) -> int:
     case_file = Path(args.case_file)
     data = load_case(case_file)
     findings = validate_case(data, strict_files=False)
+    findings.extend(run_readiness_findings(data))
     errors = [f for f in findings if f.severity == "ERROR"]
     if errors:
         print_findings(errors)
@@ -1774,6 +2304,7 @@ def cmd_render_practical_harness(args: argparse.Namespace) -> int:
     output_dir = Path(args.output_dir)
     data = load_case(case_file)
     findings = validate_case(data, strict_files=False)
+    findings.extend(run_readiness_findings(data))
     errors = [f for f in findings if f.severity == "ERROR"]
     if errors:
         print_findings(errors)
@@ -1827,6 +2358,7 @@ def cmd_render_no_run_report(args: argparse.Namespace) -> int:
     require_outside_repo(standalone_slurm, repo_root, "standalone Slurm output")
 
     findings = validate_case(data, strict_files=False)
+    findings.extend(run_readiness_findings(data))
     errors = [finding for finding in findings if finding.severity == "ERROR"]
     if errors:
         output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -1891,6 +2423,30 @@ def cmd_render_no_run_report(args: argparse.Namespace) -> int:
     return shell_check.returncode
 
 
+def cmd_render_wps_field_proof(args: argparse.Namespace) -> int:
+    case_file = Path(args.case_file)
+    output_dir = Path(args.output_dir)
+    data = load_case(case_file)
+    repo_root = as_path(data["paths"]["wrf_src"])
+    require_outside_repo(output_dir, repo_root, "WPS field-proof packet output")
+
+    findings = validate_case(data, strict_files=False)
+    add_wps_field_proof_findings(findings, data)
+    errors = [finding for finding in findings if finding.severity == "ERROR"]
+    if errors:
+        print_findings(errors)
+        return 1
+
+    paths = write_wps_field_proof_packet(data, case_file, output_dir=output_dir)
+    shell_check = run_capture(["bash", "-n", str(output_dir / "wps_field_proof.slurm")], cwd=repo_root)
+    print(f"Wrote WPS field-proof packet: {output_dir}")
+    for path in paths:
+        print(f"  {path}")
+    if shell_check.returncode != 0:
+        sys.stderr.write(shell_check.stderr)
+    return shell_check.returncode
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description="Validate and render BRC WRF case manifests without running WRF."
@@ -1934,6 +2490,18 @@ def build_parser() -> argparse.ArgumentParser:
         help="optional comma-separated memory requests to render as candidate scripts",
     )
     practical.set_defaults(func=cmd_render_practical_harness)
+
+    wps_proof = subparsers.add_parser(
+        "render-wps-field-proof",
+        help="render an approval-gated WPS-only field proof packet; never submits",
+    )
+    wps_proof.add_argument("case_file")
+    wps_proof.add_argument(
+        "--output-dir",
+        required=True,
+        help="write the packet outside the brc-wrf checkout, preferably under the archive control root",
+    )
+    wps_proof.set_defaults(func=cmd_render_wps_field_proof)
 
     report = subparsers.add_parser(
         "render-no-run-report",

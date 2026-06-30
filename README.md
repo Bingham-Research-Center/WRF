@@ -19,11 +19,13 @@ Read in this order for a cold start:
 5. `doc/BRC_WRF_END_TO_END_AI_HANDOFF.md` - build/WPS/WRF progression route.
 6. `brc-docs/BRC-WRF-RUN-CONVEYOR-SOP.md` - staged WRF conveyor, archive, and
    quicklook placement rules.
-7. `brc-docs/BRC-WRF-PELICAN-ALTERNATE-FORCING.md` - Pelican alternate
-   forcing prompt, RAP feasibility, and approval boundary.
-8. `../brc-tools/docs/HANDOFF-TO-BRC-WRF.md` - input-staging handoff when the
+7. `brc-docs/BRC-WRF-PELICAN-NWP-HOTSWAP-HANDOFF.md` - active Pelican
+   NWP-source hot-swap prompt, source verdicts, and approval boundary.
+8. `brc-docs/BRC-WRF-PELICAN-ALTERNATE-FORCING.md` - historical Pelican
+   alternate-forcing background, RAP feasibility, and WPS proof evidence.
+9. `../brc-tools/docs/HANDOFF-TO-BRC-WRF.md` - input-staging handoff when the
    task touches manifests, contracts, or forcing.
-9. `../brc-knowledge/scholarium/reference-base/resources/` - CHPC node,
+10. `../brc-knowledge/scholarium/reference-base/resources/` - CHPC node,
    storage, scheduler, proxy, and validated Slurm truth.
 
 For a print-sized milestone overview, use
@@ -43,10 +45,16 @@ before WRF runtime evidence and are not benchmark results.
 
 Current Pelican baseline: NAM 3/1/0.333 km, 75 levels, six-hour run
 `pelican2013_nam_3_1_333m_75lev`, full job `13695261`, archived under
-`lawson-group6/jrlawson/wrf_archive/`. New forcing experiments should hot-swap
-one source at a time through `brc-tools` staging contracts, starting with RAP
-analysis. The older GEFS+NAM two-stream idea is parked unless explicitly
-revived.
+`lawson-group6/jrlawson/wrf_archive/`. A second forcing now exists: GFS
+analysis `pelican2013_gfs_3_1_333m_75lev`, job `13753673`, completed
+WPS/`real.exe`/`wrf.exe` on 2026-06-30 with `NUM_METGRID_SOIL_LEVELS = 4`.
+Paired NAM/GFS standardized quicklooks are rendered by job `13755401` under
+each archive's `quicklooks/standardized_compare_20260630T214000Z/`.
+New forcing experiments should hot-swap one source at a time through
+`brc-tools` staging contracts. RAP-only is blocked before `real.exe`, ERA5 is
+locally blocked by CDS tooling/credentials, and FNL is optional third-source
+work rather than the current default. The older GEFS+NAM two-stream idea is
+parked unless explicitly revived.
 
 ## To-Dos And Wishlists
 

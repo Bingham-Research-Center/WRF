@@ -1,86 +1,115 @@
-# Handoff To brc-tools: Tighten The WRF Link
+# brc-tools → brc-wrf handoff — GFS analysis as the second Pelican forcing
 
-Use this when opening a `brc-tools` session to close the remaining links between
-input staging and this `brc-wrf` fork. It supersedes older untracked scratch
-handoffs for current work.
+**From:** brc-tools (`nwp/gfs-analysis-source` branch) · **2026-06-30**
+**Re:** Prompt B of `BRC-WRF-PELICAN-NWP-HOTSWAP-HANDOFF.md` (GFS/FNL pass)
+**Scope note:** John authorized going past Prompt B's "stop before staging" line,
+so this is not just a feasibility verdict — **the inputs are staged and verified**.
+brc-tools owns source/staging only; **WPS/`real`/`wrf`/Slurm are yours.**
 
-## Paste Prompt
+**WRF-side closeout:** consumed on 2026-06-30 by job `13753673` for
+`pelican2013_gfs_3_1_333m_75lev`. WPS used `Vtable.GFS`, metgrid produced
+`num_metgrid_levels = 27` and `NUM_METGRID_SOIL_LEVELS = 4`, `real.exe` and
+`wrf.exe` completed, and the archive is
+`/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/pelican2013_gfs_3_1_333m_75lev/full6h/run_20260630T181555Z/`.
+Paired NAM/GFS WRF-output quicklooks were then rendered by job `13755401` under
+each archive's `quicklooks/standardized_compare_20260630T214000Z/`.
 
-```text
-You are in ~/gits/brc-tools, working on the WRF input staging side.
+## 1. Feasibility verdict — CONFIRMED (not inferred)
 
-Read:
-- docs/WRF-INPUT-STAGING.md
-- docs/WRF-STAGING-STATE-PLAYBOOK.md
-- ../brc-wrf/brc-docs/BRC-WRF-STATE-PLAYBOOK.md
-- ../brc-wrf/brc-docs/BRC-WRF-FIRST-CASE.md
-- ../brc-wrf/brc-cases/jan2013_basin_nam.case.yaml
-- ../brc-wrf/brc-cases/jan2013_basin_nam.contract.json
+Target source: **NCEI GFS grid-004 (0.5°, GRIB2)** historical analysis — auth-free,
+same NCEI archive tree as NAM/RAP. Chosen over NCAR-RDA FNL `ds083.2` because the
+NCEI path needs no RDA account/`cdsapi`, and 0.5° is *finer* than 2013 FNL's 1°.
 
-Goal: tighten the brc-tools <-> brc-wrf handoff without running WPS, WRF, Slurm,
-or heavy downloads unless explicitly approved.
+Field adequacy was read directly from the live `.inv` for
+`gfsanl_4_20130202_1200_000` (metadata only, no GRIB body), and it carries exactly
+what `real.exe` needs — including the two fields that blocked RAP:
 
-Start with login-safe planning checks. Do not run manifest verification from a
-login node; it hashes staged scratch artifacts and belongs in an approved
-compute/batch context or on the appropriate transfer node.
-
-python scripts/stage_wrf_inputs.py --plan --case jan2013_basin_gefs \
-  --init-time "2013-01-31 00Z" --source nam_analysis --fxx-window 12,48
-
-Then address the open link issues below in small commits.
-```
-
-## Current Truth
-
-| Topic | Status |
+| Field (RAP failure mode) | GFS grid-4 `.inv` |
 | --- | --- |
-| Proven run | NAM-only Jan-2013 Basin proof reached WPS, `real.exe`, `wrf.exe`, archive, and quicklooks. |
-| Old scratch manifest | Verifies `28/28 OK`, but was written before fresh contract sidecars and includes partial GEFS files not consumed by WPS. |
-| Current brc-wrf case | Points to a tracked reconstructed NAM-only contract so strict validation is clean. |
-| Fresh brc-tools contract | Gate 5 fresh NAM-only sidecars passed; the scratch `contract_<case>.json` remains canonical for new staging. |
-| RAP source support | Branch `feat/wrf-rap-source` adds `rap_analysis` whole-file hourly planning/contract support and confirmed the 2013-02-02 12-18Z NCEI URLs. WRF-side Vtable and field proof remain open. |
-| Practical testing | Now in `brc-wrf`; first row failed from WRF/run provenance, not input staging. No `brc-tools` code change is needed unless new staging is requested. |
-| GEFS+NAM two-stream | Parked optional path. Still unproven through WPS/`real.exe`; do not mark it production-ready or treat it as the default alternate-forcing route. |
+| **Layered soil temp** (killed pressure-RAP) | ✅ `TMP:{0-0.1, 0.1-0.4, 0.4-1, 1-2} m below ground` (4 layers) |
+| **Layered soil moisture** | ✅ `SOILW:` same 4 layers |
+| **Real-ready 3D atmosphere** (killed hybrid-RAP) | ✅ 26 pressure levels: `HGT/TMP/RH/UGRD/VGRD` |
+| Land mask / skin / ice / snow | ✅ `LAND:surface`, `TMP:surface`, `ICEC:surface`, `WEASD:surface` |
+| MSLP / 2 m / 10 m | ✅ `PRMSL`+`MSLET`, `TMP/RH:2 m`, `UGRD/VGRD:10 m` |
 
-## Issues To Tighten In brc-tools
+**Caveat (minor):** humidity is **RH** (which `Vtable.GFS` expects); snow is
+**`WEASD`** (water-equiv) only — no `snod` (snow depth). metgrid will produce
+`SNOW`; `SNOWH` may be absent and Noah can derive it. Not a `real.exe` blocker.
 
-| Priority | Issue | Desired result |
-| --- | --- | --- |
-| 1 | Old proof scratch predates `contract_<case>.json`. | Docs explain that `brc-wrf` carries a reconstructed legacy NAM-only contract, while fresh staging emits the real sidecar. |
-| 2 | The proof manifest includes both `nam_analysis` and partial `gefs_reforecast`, but WPS consumed NAM-only. | Avoid deriving NAM-only WPS truth from mixed-source proof manifest fields; use the contract/source intent instead. |
-| 3 | brc-wrf now validates `owned_notch392_max` against `brc-knowledge`. | brc-tools docs should not suggest Slurm settings; they should point to `brc-wrf`/`brc-knowledge` for run profiles. |
-| 4 | Fresh-stage acceptance has one Gate 5 pass. | Keep the reconstructed fallback until John explicitly accepts the retirement policy and compatibility story. |
-| 5 | RAP source support exists, but WRF adequacy does not. | Keep RAP field/Vtable/run proof in `brc-wrf`; `brc-tools` should provide only source metadata, plans, manifests, contracts, and staging behavior. |
-| 6 | GEFS+NAM needs a field-map handoff before WPS work if revived. | If two-stream becomes desired again, produce a compact list of GEFS variable-level tokens, Vtable implications, and missing fields NAM must fill. |
+## 2. Case name
 
-## Acceptance Criteria
+`pelican2013_gfs_3_1_333m_75lev` — the GFS analog of `pelican2013_nam_3_1_333m_75lev`.
 
-- `brc-tools` docs clearly say: NAM-only is proven; RAP source support is a
-  staging/contract proof only; GEFS+NAM is parked and not production-ready.
-- `docs/WRF-INPUT-STAGING.md` points to the matching `brc-wrf` state playbook
-  and first-case runbook.
-- Fresh staging continues to emit `manifest_<case>.json` and
-  `contract_<case>.json`.
-- `brc-tools` does not grow WPS, WRF, or Slurm run-wrapper ownership.
-- Practical scaling/memory results stay in `brc-wrf`; `brc-tools` only needs a
-  doc sync if those results change the input-staging contract.
-- No heavy download, DTN job, WPS run, WRF run, or Slurm submission happens
-  without explicit approval.
+## 3. Staged inputs + contract (READY on scratch)
 
-## Useful Commands
-
-```bash
-cd ~/gits/brc-tools
-
-python scripts/stage_wrf_inputs.py --plan --case jan2013_basin_gefs \
-  --init-time "2013-01-31 00Z" --source nam_analysis --fxx-window 12,48
-
-python scripts/stage_wrf_inputs.py --verify-manifest \
-  /scratch/general/vast/$USER/wrf_inputs/jan2013_basin_gefs/manifest_jan2013_basin_gefs.json
-
-pytest -q tests/test_wrf_staging.py
+```
+/scratch/general/vast/$USER/wrf_inputs/pelican2013_gfs_3_1_333m_75lev/
+├── gfs_analysis/
+│   ├── gfsanl_4_20130202_1200_000.grb2   (51,685,546 B)
+│   └── gfsanl_4_20130202_1800_000.grb2   (51,165,651 B)
+├── manifest_pelican2013_gfs_3_1_333m_75lev.json
+└── contract_pelican2013_gfs_3_1_333m_75lev.json
 ```
 
-The `--verify-manifest` command is off-login because it hashes staged files.
-The `--plan` command is login-safe metadata planning. The test suite can take
-normal Python-test time. Do not submit DTN or WRF jobs from this handoff.
+`verify_manifest` → **2/2 OK** (SHA-256 re-hashed). The contract is a structural
+**mirror of the NAM baseline** (same window, same 2 cycles, same interval):
+
+```json
+{
+  "case": "pelican2013_gfs_3_1_333m_75lev",
+  "valid_window": { "start": "2013-02-02T12:00:00Z", "end": "2013-02-02T18:00:00Z" },
+  "sources": ["gfs_analysis"],
+  "source_file_counts": { "gfs_analysis": 2 },
+  "cadence_hours": { "gfs_analysis": 6 },
+  "interval_hours": 6,
+  "interval_seconds": 21600,
+  "wps_fg_name": ["GFS"]
+}
+```
+
+## 4. WPS Vtable
+
+**`Vtable.GFS`** (ships with WPS; GRIB2 grid-004; humidity = RH). The contract's
+`wps_fg_name=["GFS"]` is the metgrid `fg_name` token. Single stream — no filler.
+
+## 5. brc-wrf next steps
+
+1. `link_grib.csh` the two `gfs_analysis/*.grb2`, `ln -sf Vtable.GFS Vtable`,
+   `ungrib.exe` → metgrid → `real.exe` → `wrf.exe`. Reuse the
+   `pelican2013_nam_3_1_333m_75lev` namelists; only the forcing differs.
+2. `&time_control interval_seconds = 21600` (from the contract). Window is the
+   same 2013-02-02_12:00:00 → 18:00:00 as NAM.
+3. **Acceptance check — the whole point:** confirm metgrid writes
+   `NUM_METGRID_SOIL_LEVELS > 0` (expect 4) and a full `num_metgrid_levels`
+   stack. That is the exact failure mode that stopped RAP; GFS should clear it.
+4. If `real.exe` complains about `SNOWH`, it is the `snod` gap above — safe to
+   proceed (Noah derives depth from `SNOW`/`WEASD`).
+
+## 6. Approval text (brc-wrf side)
+
+```
+Approve a WPS → real.exe → wrf.exe run in brc-wrf for
+pelican2013_gfs_3_1_333m_75lev using the staged GFS contract
+(/scratch/general/vast/$USER/wrf_inputs/pelican2013_gfs_3_1_333m_75lev/),
+Vtable.GFS, interval_seconds=21600, reusing the pelican2013_nam namelists.
+Acceptance: SUCCESS COMPLETE WRF + NUM_METGRID_SOIL_LEVELS > 0.
+```
+
+## 7. Optional fast-follow (brc-tools, only if you want finer LBCs)
+
+grid-4 ships `_003`/`_006` forecast offsets, so 3-hourly boundaries
+(`interval_seconds=10800`, 12/15/18Z from the 12Z+18Z cycles) are available with a
+small brc-tools stager change (the analysis filename template currently hardcodes
+`_000`). Ask and I'll wire it; the 6-hourly set above matches the NAM baseline for
+a clean apples-to-apples ensemble pair.
+
+## 8. What changed in brc-tools (branch `nwp/gfs-analysis-source`)
+
+- `brc_tools/nwp/lookups.toml` — `[models.gfs_analysis]` (NCEI grid-004 templates,
+  `cadence_hours=6`, `wps_fg_name="GFS"`).
+- `brc_tools/nwp/wrf_staging.py` — `stage_gfs_analysis()` wrapper; `gfs_analysis`
+  in the `fg_name` fallback + CLI help. (Routing/contract were already source-generic.)
+- `docs/nwp/NWP-SOURCE-MATRIX.md` — new `gfs_analysis` row.
+- `tests/test_wrf_staging.py` — staging + contract tests (full suite 110 passed).
+- Reproduce the stage:
+  `conda run -n brc-tools-2026 python -m brc_tools.nwp.wrf_staging --case pelican2013_gfs_3_1_333m_75lev --init-time "2013-02-02 12Z" --source gfs_analysis --fxx-window 0,6 --http-ipv4-only --no-quicklook`

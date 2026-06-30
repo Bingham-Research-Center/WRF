@@ -39,7 +39,7 @@ to a specific file or failure mode.
 | Current WRF queue | `doc/BRC_WRF_MICROTASK_HANDOFF.md` | Remaining gates, stopped work, and no-run templates. |
 | Proven NAM path | `brc-docs/BRC-WRF-FIRST-CASE.md` | Current start-to-finish proof and source identity. |
 | Case wrapper | `brc-cases/README.md` and `brc-cases/jan2013_basin_nam.case.yaml` | Manifest, executable roots, Slurm render, and validation behavior. |
-| Input handshake | `../brc-tools/docs/HANDOFF-TO-BRC-WRF.md` and `../brc-tools/docs/WRF-INPUT-STAGING.md` | Fresh `manifest_<case>.json` and `contract_<case>.json` expectations. |
+| Input handshake | `../brc-tools/docs/WRF-STAGING-STATE-PLAYBOOK.md` and `../brc-tools/docs/WRF-INPUT-STAGING.md` | Fresh `manifest_<case>.json` and `contract_<case>.json` expectations. |
 
 Optional only after the above:
 
@@ -61,6 +61,7 @@ Optional only after the above:
 | Source and run data split. | Source stays in git; active WPS/WRF I/O goes to scratch; durable logs and archives go to `lawson-group6`. |
 | Michael is comparison evidence. | Match artifact categories and checks, not ownership paths. |
 | AI can orchestrate, not improvise science. | LLM CLI sessions can draft scripts, compare docs, and summarize logs; meteorology and run approval stay human-gated. |
+| brc-tools env is explicit. | Any sibling `brc-tools` Python/Herbie/source-planning command uses `conda run -n brc-tools-2026 ...` or the absolute env interpreter, never bare `python` from an inherited shell. |
 
 ## Current Truth To Preserve
 
@@ -132,7 +133,7 @@ manifest without submitting jobs.
 | Step | Action | Evidence | Stop point |
 | ---: | --- | --- | --- |
 | 1 | Validate the case manifest cheaply. | `python brc-cases/wrf_case.py validate ...`. | Login-safe metadata only. |
-| 2 | Validate fresh input contract if available. | Off-login `stage_wrf_inputs.py --verify-manifest`; strict case validation. | Stop once fresh `contract_<case>.json` passes. |
+| 2 | Validate fresh input contract if available. | Off-login `conda run -n brc-tools-2026 python -m brc_tools.nwp.wrf_staging --verify-manifest`; strict case validation. | Stop once fresh `contract_<case>.json` passes. |
 | 3 | Set up WPS run directory on scratch. | Symlinks/files listed; `Vtable.NAM`; paired prefix/`fg_name`. | Stop before WPS unless approved. |
 | 4 | Run WPS when approved. | `geogrid`, `ungrib`, `metgrid` logs; `met_em` count and fields. | Stop before `real.exe` unless approval includes it. |
 | 5 | Run `real.exe` when approved. | `SUCCESS COMPLETE REAL_EM INIT`; saved `real.rsl.*`. | Stop before `wrf.exe` unless approval includes it. |

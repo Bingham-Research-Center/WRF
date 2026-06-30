@@ -15,25 +15,103 @@ large downloads.
 
 ## Active Goal For Next Session
 
-Current default goal, unless John says otherwise: continue the Pelican
-alternate-forcing path, starting with RAP analysis as a no-run feasibility and
-approval-prep task.
+Current default goal, unless John says otherwise: inspect the rendered Pelican
+NAM/GFS 3/1/0.333 km, 75-level standardized quicklook pair and write a small
+science review packet. RAP-only is blocked before `real.exe`; ERA5 is locally
+blocked by source support, CDS tooling, and credentials. FNL is an optional
+third-source pass in `../brc-tools`, not the current default.
 
 Read in this order after `AGENTS.md`:
 
-1. `brc-docs/BRC-WRF-PELICAN-ALTERNATE-FORCING.md`
-2. `brc-docs/BRC-WRF-RUN-CONVEYOR-SOP.md`
-3. `../brc-tools/docs/WRF-INPUT-STAGING.md`
-4. `../brc-tools/docs/HANDOFF-TO-BRC-WRF.md`
+1. `brc-docs/BRC-WRF-PELICAN-NWP-HOTSWAP-HANDOFF.md`
+2. `brc-docs/BRC-WRF-PELICAN-ALTERNATE-FORCING.md`
+3. `brc-docs/BRC-WRF-PELICAN-RAP-FEASIBILITY.md`
+4. `brc-docs/BRC-WRF-RUN-CONVEYOR-SOP.md`
+5. `../brc-tools/docs/WRF-STAGING-STATE-PLAYBOOK.md`
+6. `../brc-tools/docs/WRF-INPUT-STAGING.md`
+7. `../brc-tools/docs/nwp/NWP-SOURCE-MATRIX.md`
 
-Do not start RAP staging, WPS, `real.exe`, `wrf.exe`, `sbatch`, RAP quicklooks,
-NetCDF-heavy checks, or archive inventories without explicit approval. The
-adjacent `brc-tools` branch `feat/wrf-rap-source` now has `rap_analysis`
-planning/contract support and live NCEI availability evidence for this exact
-window. The next useful `brc-wrf` work is no-run consumer review: choose the
-RAP WPS Vtable candidate, define field-adequacy checks, draft the
-`pelican2013_rap_3_1_333m_75lev` case manifest, and render/review scripts
-before asking for any staging or WPS approval.
+For any sibling `brc-tools` Python/Herbie/source-planning command, force the
+maintained environment with `conda run -n brc-tools-2026 ...` or the absolute
+`/uufs/chpc.utah.edu/common/home/u0737349/software/pkg/miniforge3/envs/brc-tools-2026/bin/python`.
+Do not trust the inherited shell environment; recent Codex sessions inherited
+`clyfar-nov2025`, which carries older Herbie and is not the WRF-staging env.
+
+John approved the GFS end-to-end WRF-side hot-swap on 2026-06-30. It consumed
+the staged `brc-tools` contract for `pelican2013_gfs_3_1_333m_75lev` and reused
+the Pelican NAM namelists with `interval_seconds = 21600`.
+
+| Run | Job | Result | Evidence |
+| --- | --- | --- | --- |
+| GFS analysis full6h | `13753673` | `COMPLETED`, `0:0`, elapsed `01:42:51`; `wrf.exe` step elapsed `01:41:14`; WPS, `real.exe`, `wrf.exe`, and archive phases all exited `0`. | Archive: `/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/pelican2013_gfs_3_1_333m_75lev/full6h/run_20260630T181555Z/`; debug: `.../debug/`; control: `/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/pelican2013_gfs_3_1_333m_75lev/control/run_20260630T181555Z/`. |
+| NAM/GFS standardized quicklooks | `13755401` | `COMPLETED`, `0:0`, elapsed `00:01:38`; both quicklook checks returned `OK: no findings` and `brc-tools manifest: verify: 2/2 OK`. | Summary: `/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/pelican2013_nam_gfs_compare/control/quicklooks_20260630T214000Z/quicklook_summary_13755401.tsv`; outputs: NAM and GFS each have 30 PNGs under `quicklooks/standardized_compare_20260630T214000Z/`, 10 per d01/d02/d03. |
+
+GFS acceptance facts:
+
+```text
+Vtable.GFS, fg_name GFS, interval_seconds 21600
+num_metgrid_levels = 27
+NUM_METGRID_SOIL_LEVELS = 4
+SUCCESS COMPLETE REAL_EM INIT
+SUCCESS COMPLETE WRF
+21 archived wrfout files: d01/d02/d03 hourly 12Z through 18Z
+```
+
+John approved the end-to-end RAP sensitivity attempt on 2026-06-30, with the
+condition that the run stop before unsafe WRF startup. Two approved WPS-only
+Slurm proofs were run on `notch392`; both stopped before `real.exe`, `wrf.exe`,
+quicklooks, or the full conveyor.
+
+| Proof | Job | Vtable | Result | Disposition |
+| --- | --- | --- | --- | --- |
+| Hybrid RAP | `13744756` | `Vtable.RAP.hybrid.ncep` | `ungrib.exe` and `metgrid.exe` completed and wrote 21 `met_em` files, but the sample header had no `num_metgrid_levels` dimension and no real-ready 3D atmospheric stack. | Not safe for `real.exe`. |
+| Pressure RAP | `13745030` | `Vtable.RAP.pressure.ncep` | `ungrib.exe` and `metgrid.exe` completed and wrote 21 `met_em` files with `num_metgrid_levels = 38`; 3D `PRES`, `GHT`, `RH`, `UU`, `VV`, and `TT` are present. | Still not safe for `real.exe`: no layered soil temperature/moisture fields and `NUM_METGRID_SOIL_LEVELS = 0`. |
+
+Key evidence:
+
+```text
+/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_build_logs/brc-wrf/wps_pelican2013_rap_3_1_333m_75lev_13744756.out
+/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_build_logs/brc-wrf/wps_pelican2013_rap_3_1_333m_75lev_13745030.out
+/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/pelican2013_rap_3_1_333m_75lev/wps_field_proof/wps_field_proof_13744756_20260630T054317Z/debug/
+/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/pelican2013_rap_3_1_333m_75lev/wps_field_proof/wps_field_proof_13745030_20260630T054748Z/debug/
+```
+
+The adjacent `brc-tools` repo staged and verified only this single source bundle:
+`/scratch/general/vast/$USER/wrf_inputs/pelican2013_rap_3_1_333m_75lev/` with
+7 hourly NCEI `rap_130` files, `rap_analysis`, `wps_fg_name = ["RAP"]`, and
+`interval_seconds = 3600`. That contract is useful but incomplete for WRF
+startup as currently staged.
+
+If RAP is explicitly revived, the next useful RAP work is one of:
+
+1. Fix source/product staging in `brc-tools` so RAP supplies both the pressure
+   atmospheric stack and usable land-state/soil layers.
+2. Design an explicit RAP atmosphere plus NAM (or other) filler stream, clearly
+   labeling it as not RAP-only.
+
+For the current poor man's ensemble goal, do not spend the next session on
+unchanged RAP or repeat GFS source-support. NAM and GFS now exist, and the
+paired standardized quicklooks are rendered; the next default is side-by-side
+science review.
+
+Do not run `real.exe` against either RAP-only WPS output above. The
+pre-existing packet renderer remains available for reproducing WPS-only proofs
+with adjusted source products:
+
+```bash
+python brc-cases/wrf_case.py render-wps-field-proof \
+  brc-cases/pelican2013_rap_3_1_333m_75lev.case.yaml \
+  --output-dir /uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/pelican2013_rap_3_1_333m_75lev/control/wps_field_proof_<UTC>
+```
+
+The generated packet already exists at
+`/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/pelican2013_rap_3_1_333m_75lev/control/wps_field_proof_20260630T052737Z/`.
+It has already been submitted and failed field adequacy, so do not rerun it
+unchanged. The next useful WPS-only proof should use either a corrected RAP
+source product that contains land-state/soil layers or an explicitly approved
+filler-stream design. The proof currently reuses the NAM 333 m baseline
+`geo_em` files from scratch; if they have expired, restore them or explicitly
+approve a geogrid rerun before continuing.
 
 ## Rot Guard And Single-Truth Rules
 
@@ -64,6 +142,30 @@ outputs, and renders 10 PNGs per domain under per-domain subdirectories below
 plotting lives in `../brc-tools/brc_tools/visualize/grid.py`; do not duplicate
 those plotting primitives in this repo.
 
+As of 2026-06-30, RAP-only field adequacy is blocked before `real.exe`.
+Hybrid-Vtable RAP did not produce a real-ready vertical atmosphere, and
+pressure-Vtable RAP produced a 38-level atmosphere but no layered soil
+temperature/moisture fields. Treat this as a source-product or filler-design
+problem outside the WRF run conveyor.
+
+As of 2026-06-30, GFS analysis completed the WRF-side hot-swap that RAP could
+not: WPS produced `num_metgrid_levels = 27` and `NUM_METGRID_SOIL_LEVELS = 4`,
+`real.exe` and `wrf.exe` completed, and the archive contains 21 hourly WRF
+outputs for d01/d02/d03 from 12Z through 18Z.
+
+As of 2026-06-30, NAM/GFS comparison quicklooks are rendered under the same
+stamp, `standardized_compare_20260630T214000Z`. Slurm job `13755401` completed
+with `0:0`; each forcing has 30 PNGs, 10 per d01/d02/d03, using matching
+product names for like-for-like review.
+
+As of 2026-06-30, ERA5 is not ready for immediate staging in local evidence:
+`brc-tools` has no `era5` source, `cdsapi`/`ecmwfapi` are absent even in
+`brc-tools-2026`, and no CDS credentials are configured. WPS-side support is
+plausible via John's `Vtable.ECMWF`, but ERA5 needs a CDS-backed pressure-level
+plus single-level/land request path before any WPS proof. FNL remains an
+optional third-source path if John wants another independent NWP run before
+solving ERA5 access.
+
 The file includes `brc-tools` tasks because WRF cannot safely consume staged
 forcing until the manifest/contract side is trustworthy. Keep implementation
 batches repo-clean:
@@ -75,9 +177,9 @@ batches repo-clean:
 | `brc-knowledge` | Canonical CHPC node, storage, scheduler, proxy, and validated script facts. | Repo-local code or case manifests. |
 
 Hot-swap rule for the current Pelican work: add and test one forcing source at
-a time in `brc-tools`, then consume its contract in `brc-wrf`. The older
-GEFS+NAM two-stream idea is parked and should not be treated as the default next
-proof.
+a time in `brc-tools`, then consume its contract in `brc-wrf`. NAM and GFS now
+form the first comparison pair. The older GEFS+NAM two-stream idea is parked
+and should not be treated as the default next proof.
 
 ## Codex Cold Start
 
@@ -86,9 +188,10 @@ Start in `~/gits/brc-wrf` and keep the first pass small:
 1. `git status --short --branch --untracked-files=no`
 2. `sed -n '1,180p' AGENTS.md`
 3. `sed -n '1,180p' doc/BRC_WRF_MICROTASK_HANDOFF.md`
-4. `sed -n '1,140p' brc-docs/BRC-WRF-STATE-PLAYBOOK.md`
-5. `sed -n '1,180p' brc-docs/BRC-WRF-FIRST-CASE.md`
-6. `sed -n '1,130p' ../brc-tools/docs/HANDOFF-TO-BRC-WRF.md`
+4. `sed -n '1,220p' brc-docs/BRC-WRF-PELICAN-NWP-HOTSWAP-HANDOFF.md`
+5. `sed -n '1,140p' brc-docs/BRC-WRF-STATE-PLAYBOOK.md`
+6. `sed -n '1,180p' brc-docs/BRC-WRF-FIRST-CASE.md`
+7. `sed -n '1,130p' ../brc-tools/docs/WRF-STAGING-STATE-PLAYBOOK.md`
 
 Then read only the task-owned files named below. Do not broad-scan WRF source
 or load high-token scripts until `rg` points to a specific function, test, or
@@ -328,8 +431,10 @@ Use this only after fresh `brc-tools` staging has produced a real sidecar:
 
 ```bash
 # Off-login only: this hashes staged files and reads scratch artifacts.
-python ../brc-tools/scripts/stage_wrf_inputs.py --verify-manifest \
+cd ../brc-tools
+conda run -n brc-tools-2026 python -m brc_tools.nwp.wrf_staging --verify-manifest \
   /scratch/general/vast/$USER/wrf_inputs/<case>/manifest_<case>.json
+cd ../brc-wrf
 
 # Then point a review copy of the case yaml at:
 # /scratch/general/vast/$USER/wrf_inputs/<case>/contract_<case>.json
@@ -390,7 +495,8 @@ Keep these checks attached to any future maintained run wrapper:
   `squeue`, exact logs, success markers, and on-disk artifacts instead.
 - Keep downloads and staging in `brc-tools`: use Herbie-backed paths where that
   repo supports them, respect its direct NCEI path for historical NAM analysis,
-  and run full NWP transfers on `notchpeak-dtn`.
+  force `conda run -n brc-tools-2026 ...` for its Python commands, and run full
+  NWP transfers on `notchpeak-dtn`.
 
 ## Parked For Human Review Or Approval
 
@@ -435,7 +541,7 @@ Do not lose sight of these. They are not good login-node free-running tasks.
 | #31 | `brc-tools` added the `WISHLIST-TASKS.md` pointer. |
 | #32 | `brc-wrf` docs point to current `../brc-tools/docs/WRF-INPUT-STAGING.md`, scratch layout, and handoff files; link-check passes with binary files ignored. |
 | Gate 11 | `brc-cases/wrf_case.py render-practical-harness` renders the maintained practical-test packet and benchmark Slurm review scripts outside the repo. |
-| Pelican quicklooks | `brc-cases/wrf_quicklook.py` now renders a standardized 10-product per-domain set using `brc-tools` plotting helpers; 333 m output has d01/d02/d03 and the earlier 3/1 km output has d01/d02. Latest 333 m baseline render: job `13729327`, 30 PNGs under `/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/pelican2013_nam_3_1_333m_75lev/full6h/run_20260626T163737Z/quicklooks/standardized_20260629T020921Z/`. |
+| Pelican quicklooks | `brc-cases/wrf_quicklook.py` now renders a standardized 10-product per-domain set using `brc-tools` plotting helpers; 333 m output has d01/d02/d03 and the earlier 3/1 km output has d01/d02. Latest like-for-like NAM/GFS render: job `13755401`, 30 PNGs per forcing under each archive's `quicklooks/standardized_compare_20260630T214000Z/`. |
 
 ## Documentation Refresh Map
 

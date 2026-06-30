@@ -111,8 +111,10 @@ Run these only in an approved compute/batch context or the appropriate transfer
 node. They read staged files, archive files, or NetCDF-backed quicklook inputs.
 
 ```bash
-python ../brc-tools/scripts/stage_wrf_inputs.py --verify-manifest \
+cd ../brc-tools
+conda run -n brc-tools-2026 python -m brc_tools.nwp.wrf_staging --verify-manifest \
   /scratch/general/vast/$USER/wrf_inputs/jan2013_basin_gefs/manifest_jan2013_basin_gefs.json
+cd ../brc-wrf
 
 python brc-cases/wrf_case.py validate \
   brc-cases/jan2013_basin_nam.case.yaml --strict-files
@@ -218,7 +220,7 @@ Use this table during the no-run walkthrough.
 | --- | --- | --- | --- | --- |
 | Git state | `git status --short --branch --untracked-files=all` | Clean or intentionally dirty | TBD | TBD |
 | Case metadata | `wrf_case.py validate` | Pass | TBD | TBD |
-| Input manifest | `stage_wrf_inputs.py --verify-manifest` | Existing proof manifest verifies | TBD | TBD |
+| Input manifest | `conda run -n brc-tools-2026 python -m brc_tools.nwp.wrf_staging --verify-manifest` from `../brc-tools` | Existing proof manifest verifies | TBD | TBD |
 | Strict case files | `wrf_case.py validate --strict-files` | Pass against current reconstructed contract | TBD | TBD |
 | Quicklook check | `wrf_quicklook.py check` | Finds required existing proof artifacts | TBD | TBD |
 | Slurm render | `wrf_case.py render-slurm` | Text only, no submission | TBD | TBD |

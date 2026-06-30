@@ -5,11 +5,11 @@ the current `brc-wrf` fork fits, what is proven, and what should happen next.
 
 ## One-Sentence State
 
-We have a BRC-local review layer around WRF 4.8.0, and one NAM-only Jan-2013
-Basin case is proven through `brc-tools` input staging, WPS, `real.exe`,
-`wrf.exe`, archive checks, no-run quicklooks, and a maintained practical-test
-harness; the first practical 28-task row now passes after fixing executable
-provenance and WRF runtime-file staging.
+We have a BRC-local review layer around WRF 4.8.0, a proven NAM-only Jan-2013
+Basin case, and a Pelican NAM/GFS forcing pair that now runs through WPS,
+`real.exe`, `wrf.exe`, archive checks, and paired standardized quicklooks; the
+first practical 28-task row also passes after fixing executable provenance and
+WRF runtime-file staging.
 
 ## Mental Model
 
@@ -58,7 +58,7 @@ proof, production archives, or `brc-tools` staging truth.
 | Practical testing | One 28-task row passed. Job `13550110` ran John's `~/gits/brc-wrf` WRF `V4.8.0`, passed `real.exe`/`wrf.exe`, and archived debug evidence under `practical_tests/scaling_t028/run_20260618T230858Z/`. Attempted `scaling_t016` jobs `13550555` and `13550909` failed before WRF runtime evidence: first from node-local `/tmp` Slurm paths, then from a `WRF_RUN` missing runtime files from John's `run/` directory. No `rsl.*`, archive, or debug evidence exists for `scaling_t016`. Memory rows remain unrun. |
 | Gate 10 visual review | Preliminary PNG-only visual sanity passed; see `brc-docs/BRC-WRF-GATE10-QUICKLOOK-REVIEW.md`. John/Michael science acceptance is still the decision point. |
 | Slurm profile | Aligned to max owned-node profile: `lawson-np`, `notch392`, 1 node, 56 tasks, `900G`, `srun --mpi=pmi2`. |
-| Alternate forcing | Active direction is one-source-at-a-time hot-swapping through `brc-tools` staging contracts, starting with RAP feasibility. The older GEFS+NAM two-stream idea is parked, not a working production method. |
+| Alternate forcing | NAM and GFS now form the first Pelican comparison pair. GFS analysis job `13753673` completed WPS/`real.exe`/`wrf.exe` with `NUM_METGRID_SOIL_LEVELS = 4`; paired quicklook job `13755401` rendered 30 standardized PNGs per forcing. RAP-only is blocked before `real.exe`: hybrid Vtable output lacked a real-ready 3D atmosphere, and pressure Vtable output lacked layered soil temperature/moisture fields. ERA5 is locally blocked by missing `brc-tools` source support, CDS Python tooling, and CDS credentials. FNL is optional third-source work. |
 
 ## Where We Should Go Next
 
@@ -66,7 +66,7 @@ proof, production archives, or `brc-tools` staging truth.
 | --- | --- | --- |
 | 1 | Have John/Michael accept or reject the Gate 10 quicklook review. | Decide whether the NAM-only proof remains a physically useful baseline. |
 | 2 | Decide whether to reapprove exactly one practical benchmark row. | Recommended next row is still `scaling_t016`; use the generated `prepare_scaling_t016.sh` in an approved off-login context, then submit exactly one row and stop on its result. |
-| 3 | Continue alternate-forcing hot-swap work only through a concrete source contract. | `brc-tools` now has RAP source planning/contract support on `feat/wrf-rap-source`; keep the next step in `brc-wrf` to RAP Vtable, field-adequacy, case-manifest, and render review. Do not revive GEFS+NAM unless John explicitly asks for that experiment. |
+| 3 | Inspect Pelican NAM and GFS outputs. | Use the rendered paired quicklooks under `standardized_compare_20260630T214000Z`; stop at a concise science-review packet. |
 
 ## Reading Packet
 
@@ -81,14 +81,17 @@ Read these in order for a milestone review:
 5. `brc-cases/README.md`
 6. `brc-docs/BRC-WRF-USAGE.md`
 7. `brc-docs/BRC-WRF-GATE10-QUICKLOOK-REVIEW.md`
-8. `../brc-tools/docs/walkthroughs/wrf-staging.md`
-9. `../brc-tools/docs/WRF-STAGING-STATE-PLAYBOOK.md`
-10. `brc-docs/BRC-TOOLS-LINK-HANDOFF.md` if opening a `brc-tools` session
-11. `../brc-knowledge/scholarium/reference-base/resources/chpc-team-resource-inventory.md` sections 1-3 and Q1
-12. `../brc-knowledge/scholarium/reference-base/resources/wrf-on-chpc-quickstart.md` sections 2, 3, and 8
+8. `brc-docs/BRC-WRF-PELICAN-NWP-HOTSWAP-HANDOFF.md` when working the Pelican
+   source hot-swap.
+9. `../brc-tools/docs/walkthroughs/wrf-staging.md`
+10. `../brc-tools/docs/WRF-STAGING-STATE-PLAYBOOK.md`
+11. `brc-docs/BRC-WRF-PELICAN-RAP-FEASIBILITY.md` only when working the parked
+    RAP blocker.
+12. `../brc-knowledge/scholarium/reference-base/resources/chpc-team-resource-inventory.md` sections 1-3 and Q1
+13. `../brc-knowledge/scholarium/reference-base/resources/wrf-on-chpc-quickstart.md` sections 2, 3, and 8
 
 For Michael, start with items 1, 4, 5, 7, and 8 before the full CHPC resource
-inventory. For John, start with items 2, 3, 4, 7, 8, 10, and 11; add item 9 when
+inventory. For John, start with items 2, 3, 4, 7, 8, and 10; add item 9 when
 the next task is in `brc-tools`.
 
 ## Maximum Owned-Node WRF Profile

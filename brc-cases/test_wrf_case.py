@@ -95,6 +95,93 @@ archive:
         )
         return case_file
 
+    def write_rap_case(
+        self,
+        workdir: Path,
+        *,
+        case_name: str = "pelican2013_rap_3_1_333m_75lev",
+        wps_root: str = "/tmp/brc_wrf_unit_missing_wps",
+        num_metgrid_levels: str = "field_adequacy_pending",
+    ) -> Path:
+        manifest = workdir / "manifest_rap.json"
+        manifest.write_text(
+            json.dumps(
+                {
+                    "manifest_kind": "wrf_input_staging",
+                    "case": {"name": case_name, "sources": ["rap_analysis"]},
+                }
+            ),
+            encoding="utf-8",
+        )
+        contract = workdir / "contract_rap.json"
+        contract.write_text(
+            json.dumps(
+                {
+                    "contract_kind": "wps_wrf_case_contract",
+                    "case": case_name,
+                    "wps_fg_name": ["RAP"],
+                    "interval_seconds": 3600,
+                }
+            ),
+            encoding="utf-8",
+        )
+        case_file = workdir / f"{case_name}.case.yaml"
+        case_file.write_text(
+            f"""
+schema_version: 1
+
+case:
+  name: {case_name}
+  start: "2013-02-02_12:00:00"
+  end: "2013-02-02_18:00:00"
+  domains: 3
+
+forcing:
+  sources: ["rap_analysis"]
+  wps_fg_name: ["RAP"]
+  interval_seconds: 3600
+  num_metgrid_levels: "{num_metgrid_levels}"
+  expected_met_em_count: "field_adequacy_pending"
+  manifest_path: "{manifest}"
+  contract_path: "{contract}"
+
+paths:
+  wrf_src: "{REPO_ROOT}"
+  wrf_build: "/tmp/brc_wrf_unit_missing_wrf_build"
+  wps_root: "{wps_root}"
+  input_root: "/scratch/general/vast/${{USER}}/wrf_inputs/{case_name}"
+  run_root: "/scratch/general/vast/${{USER}}/wrf_runs/{case_name}"
+  wps_run: "/scratch/general/vast/${{USER}}/wrf_runs/{case_name}/wps_run"
+  wrf_run: "/scratch/general/vast/${{USER}}/wrf_runs/{case_name}/wrf_run"
+  geog_data_path: "/tmp/brc_wrf_unit_missing_geog"
+  archive_root: "/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/{case_name}"
+
+wps:
+  vtable: "Vtable.RAP.hybrid.ncep"
+  ungrib_prefix: "RAP"
+  namelist_fg_name: ["RAP"]
+  namelist_template: "{workdir / 'namelist.wps'}"
+  geogrid_source: "{workdir / 'geogrid_source'}"
+
+slurm:
+  profile: owned_notch392_max
+  job_name: wrf_{case_name}
+  account: lawson-np
+  partition: lawson-np
+  nodelist: notch392
+  nodes: 1
+  ntasks: 56
+  memory: "900G"
+  time: "06:00:00"
+  mpi_launcher: "srun --mpi=pmi2"
+
+archive:
+  colon_safe_wrfout_source: "./wrfout_d0*"
+""".lstrip(),
+            encoding="utf-8",
+        )
+        return case_file
+
     def run_harness(self, case_file: Path, *args: str) -> subprocess.CompletedProcess[str]:
         return subprocess.run(
             [
@@ -146,6 +233,21 @@ archive:
                 sys.executable,
                 str(SCRIPT),
                 "render-slurm",
+                str(case_file),
+                *args,
+            ],
+            cwd=REPO_ROOT,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+
+    def run_wps_field_proof(self, case_file: Path, *args: str) -> subprocess.CompletedProcess[str]:
+        return subprocess.run(
+            [
+                sys.executable,
+                str(SCRIPT),
+                "render-wps-field-proof",
                 str(case_file),
                 *args,
             ],
@@ -242,6 +344,96 @@ archive:
                 "WARN: paths.wps_root missing top-level executable metgrid.exe",
                 result.stdout,
             )
+
+    def test_rap_case_uses_configured_vtable_and_pending_levels(self) -> None:
+        with tempfile.TemporaryDirectory() as raw:
+            workdir = Path(raw)
+            wps_root = workdir / "fake_wps"
+            for exe in ("geogrid.exe", "ungrib.exe", "metgrid.exe"):
+                path = wps_root / exe
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text("#!/bin/sh\n", encoding="utf-8")
+                path.chmod(0o755)
+            for subdir in ("geogrid", "metgrid", "ungrib"):
+                (wps_root / subdir).mkdir(parents=True, exist_ok=True)
+            (wps_root / "link_grib.csh").write_text("#!/bin/csh\n", encoding="utf-8")
+            vtable = wps_root / "ungrib" / "Variable_Tables" / "Vtable.RAP.hybrid.ncep"
+            vtable.parent.mkdir(parents=True, exist_ok=True)
+            vtable.write_text("# RAP hybrid\n", encoding="utf-8")
+            case_file = self.write_rap_case(workdir, wps_root=str(wps_root))
+
+            result = self.run_validate(case_file)
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn(
+                "WARN: forcing.num_metgrid_levels is pending; set it from metgrid field proof before real.exe",
+                result.stdout,
+            )
+            self.assertNotIn("Vtable.NAM", result.stdout)
+
+            strict = self.run_validate(case_file, "--strict-files")
+
+            self.assertNotEqual(strict.returncode, 0)
+            self.assertIn(
+                "ERROR: forcing.num_metgrid_levels is pending; set it from metgrid field proof before real.exe",
+                strict.stdout,
+            )
+
+    def test_rap_case_reports_missing_configured_vtable_not_nam(self) -> None:
+        with tempfile.TemporaryDirectory() as raw:
+            workdir = Path(raw)
+            wps_root = workdir / "fake_wps"
+            for subdir in ("geogrid", "metgrid", "ungrib"):
+                (wps_root / subdir).mkdir(parents=True, exist_ok=True)
+            (wps_root / "link_grib.csh").write_text("#!/bin/csh\n", encoding="utf-8")
+            case_file = self.write_rap_case(workdir, wps_root=str(wps_root))
+
+            result = self.run_validate(case_file)
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn("Vtable.RAP.hybrid.ncep", result.stdout)
+            self.assertNotIn("Vtable.NAM", result.stdout)
+
+    def test_rap_wps_field_proof_packet_renders_wps_only_script(self) -> None:
+        with tempfile.TemporaryDirectory() as raw:
+            workdir = Path(raw)
+            case_file = self.write_rap_case(workdir)
+            output_dir = workdir / "wps_packet"
+
+            result = self.run_wps_field_proof(case_file, "--output-dir", str(output_dir))
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            script = (output_dir / "wps_field_proof.slurm").read_text(encoding="utf-8")
+            self.assertIn("BRC_WPS_FIELD_PROOF_APPROVED=YES", script)
+            self.assertIn("Vtable.RAP.hybrid.ncep", script)
+            self.assertIn("UNGRIB_PREFIX=RAP", script)
+            self.assertIn("METGRID_FG_NAME=RAP", script)
+            self.assertIn("EXPECTED_MET_EM_COUNT=21", script)
+            self.assertIn("run_phase ungrib ./ungrib.exe", script)
+            self.assertIn("run_phase metgrid ./metgrid.exe", script)
+            self.assertIn("num_metgrid_levels", script)
+            self.assertIn("field_check.tsv", script)
+            self.assertNotIn("./real.exe", script)
+            self.assertNotIn("./wrf.exe", script)
+            self.assertNotIn("srun --mpi=pmi2", script)
+
+            approval = (output_dir / "APPROVAL_PACKET.md").read_text(encoding="utf-8")
+            self.assertIn("No `real.exe`, `wrf.exe`, quicklooks", approval)
+            self.assertIn("BRC_WPS_FIELD_PROOF_APPROVED=YES sbatch wps_field_proof.slurm", approval)
+
+    def test_rap_full_run_render_refuses_pending_field_proof(self) -> None:
+        with tempfile.TemporaryDirectory() as raw:
+            workdir = Path(raw)
+            case_file = self.write_rap_case(workdir)
+
+            result = self.run_render_slurm(case_file)
+
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn(
+                "ERROR: forcing.num_metgrid_levels is pending; set it from metgrid field proof before real.exe",
+                result.stdout,
+            )
+            self.assertNotIn("#!/bin/bash", result.stdout)
 
     def test_default_packet_names_and_key_settings(self) -> None:
         with tempfile.TemporaryDirectory() as raw:

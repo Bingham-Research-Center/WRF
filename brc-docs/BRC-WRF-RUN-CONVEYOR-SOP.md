@@ -5,6 +5,18 @@ CFL gates, archive, and quicklooks.
 
 ## Non-Negotiables
 
+- Any command that invokes sibling `../brc-tools` Python, Herbie, source
+  planning, staging, manifest verification, or tests must force the maintained
+  environment:
+
+```bash
+conda run -n brc-tools-2026 python ...
+conda run -n brc-tools-2026 pytest ...
+```
+
+  Do not use bare `python`/`pytest` for `brc-tools` from a Codex shell; the
+  inherited env may be unrelated to WRF staging.
+
 - Do not let generated Slurm stdout default to `slurm-%j.out` in the git
   checkout. Rendered WRF Slurm scripts should set `#SBATCH --chdir`,
   `#SBATCH --output`, and `#SBATCH --error` to the shared log root:
@@ -176,4 +188,76 @@ manifest check: 2/2 OK
 products: 30 PNGs, 10 per d01/d02/d03
 path: /uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/pelican2013_nam_3_1_333m_75lev/full6h/run_20260626T163737Z/quicklooks/standardized_20260629T020921Z/
 log: /uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_build_logs/brc-wrf/quicklook_pelican333_13729327.out
+```
+
+## 2026-06-30 Pelican 333 m GFS Evidence
+
+Case: `pelican2013_gfs_3_1_333m_75lev`
+
+Run shape:
+
+```text
+d01: 3 km
+d02: 1 km
+d03: 0.333 km
+e_vert: 75
+window: 2013-02-02_12:00:00 to 2013-02-02_18:00:00
+forcing: GFS analysis, Vtable.GFS, prefix GFS, fg_name GFS
+interval_seconds: 21600
+metgrid: num_metgrid_levels = 27, NUM_METGRID_SOIL_LEVELS = 4
+```
+
+Key job:
+
+```text
+full6h: 13753673, completed 0:0 in 01:42:51 on notch392
+wrf.exe step: 01:41:14
+```
+
+Full archive:
+
+```text
+/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/pelican2013_gfs_3_1_333m_75lev/full6h/run_20260630T181555Z/
+```
+
+Control files:
+
+```text
+/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/pelican2013_gfs_3_1_333m_75lev/control/run_20260630T181555Z/
+```
+
+Acceptance:
+
+```text
+SUCCESS COMPLETE REAL_EM INIT
+SUCCESS COMPLETE WRF
+archive phases exited 0
+21 archived wrfout files, d01/d02/d03 hourly 12Z through 18Z
+```
+
+## 2026-06-30 Pelican 333 m NAM/GFS Comparison Quicklooks
+
+These are the like-for-like products for the completed NAM and GFS WRF runs.
+Both use the same six-hour window, 3/1/0.333 km nest, 75 vertical levels, and
+standardized product names.
+
+```text
+job: 13755401, completed 0:0 in 00:01:38 on notch392
+manifest checks: NAM 2/2 OK, GFS 2/2 OK
+products: NAM 30 PNGs, GFS 30 PNGs; 10 per d01/d02/d03
+stamp: standardized_compare_20260630T214000Z
+summary: /uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/pelican2013_nam_gfs_compare/control/quicklooks_20260630T214000Z/quicklook_summary_13755401.tsv
+log: /uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_build_logs/brc-wrf/quicklook_pelican333_compare_13755401.out
+```
+
+NAM quicklooks:
+
+```text
+/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/pelican2013_nam_3_1_333m_75lev/full6h/run_20260626T163737Z/quicklooks/standardized_compare_20260630T214000Z/
+```
+
+GFS quicklooks:
+
+```text
+/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/pelican2013_gfs_3_1_333m_75lev/full6h/run_20260630T181555Z/quicklooks/standardized_compare_20260630T214000Z/
 ```

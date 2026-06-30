@@ -27,7 +27,8 @@ The checkpoint is intentionally small:
    build root must expose `main/real.exe`, `main/wrf.exe`, and runtime source
    files under `run/`; a scratch run directory with copied executables is not a
    build root. The WPS root must expose top-level `geogrid.exe`, `ungrib.exe`,
-   `metgrid.exe`, `link_grib.csh`, and `ungrib/Variable_Tables/Vtable.NAM`. It
+   `metgrid.exe`, `link_grib.csh`, and the case's configured
+   `wps.vtable` under `ungrib/Variable_Tables/` (`Vtable.NAM` by default). It
    also rejects repo-local staged inputs, run directories, archive roots, logs,
    and generated data paths.
 
@@ -93,7 +94,26 @@ The checkpoint is intentionally small:
    copy/check of scratch or archive WRF files remains off-login and
    approval-gated, and `sbatch` still requires explicit approval.
 
-6. Render a one-command no-run report when you want a compact login-safe
+6. Render the RAP WPS-only field proof packet when working the Pelican RAP
+   hot-swap. This writes review artifacts only; it does not submit Slurm or run
+   WPS by itself. The rendered script requires
+   `BRC_WPS_FIELD_PROOF_APPROVED=YES` and stops after `ungrib.exe`,
+   `metgrid.exe`, `met_em` field extraction, `num_metgrid_levels`, warning
+   capture, and the field checklist. It never runs `real.exe`, `wrf.exe`, the
+   full conveyor, or quicklooks.
+
+   ```bash
+   python brc-cases/wrf_case.py render-wps-field-proof \
+     brc-cases/pelican2013_rap_3_1_333m_75lev.case.yaml \
+     --output-dir /uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/pelican2013_rap_3_1_333m_75lev/control/wps_field_proof_<UTC>
+   ```
+
+   The RAP proof packet uses the durable Pelican control `namelist.wps` as a
+   template and the existing NAM 333 m `geo_em.d0*.nc` files as the domain
+   source. If those scratch `geo_em` files have expired, stop and either restore
+   them or explicitly approve a geogrid rerun before continuing.
+
+7. Render a one-command no-run report when you want a compact login-safe
    checkpoint for handoff or approval review:
 
    ```bash
@@ -108,7 +128,7 @@ The checkpoint is intentionally small:
    manifests, read NetCDF/archive artifacts, render quicklooks, submit Slurm, or
    run WPS/WRF.
 
-7. Render no-run visual quicklooks from the existing proof artifacts:
+8. Render no-run visual quicklooks from the existing proof artifacts:
 
    ```bash
    python brc-cases/wrf_quicklook.py check brc-cases/jan2013_basin_nam.case.yaml
@@ -144,7 +164,21 @@ approval.
 Input downloads and staging are not owned here. Use `../brc-tools`, its
 Herbie-backed paths where available, and `notchpeak-dtn` for full NWP transfer
 work. This repo should consume the fresh `contract_<case>.json` sidecar, not add
-download logic.
+download logic. The RAP review case
+`pelican2013_rap_3_1_333m_75lev.case.yaml` points at the staged RAP contract
+and deliberately leaves metgrid-derived counts pending until the WPS-only
+field-adequacy proof runs off-login.
+
+When a case-review task needs sibling `brc-tools` Python, Herbie, source
+planning, staging, manifest verification, or tests, force the maintained env:
+
+```bash
+conda run -n brc-tools-2026 python ...
+conda run -n brc-tools-2026 pytest ...
+```
+
+Do not use bare `python` or `pytest` for `brc-tools` commands from this repo;
+Codex shells can inherit unrelated environments.
 
 `wrf_quicklook.py` is separate from `wrf_case.py` on purpose: the case validator
 stays dependency-free, while quicklook rendering uses the local NetCDF and

@@ -19,8 +19,12 @@ Later `scaling_t016` attempts failed before WRF runtime evidence and are not
 benchmark results.
 
 Current alternate-forcing work is one source at a time through `brc-tools`
-contracts, starting with RAP analysis for the Pelican 3/1/0.333 km baseline.
-GEFS+NAM two-stream forcing is parked unless John explicitly revives it.
+contracts for the Pelican 3/1/0.333 km baseline. NAM and GFS now form the first
+completed comparison pair, with paired standardized quicklooks rendered under
+`standardized_compare_20260630T214000Z`. RAP-only is blocked before `real.exe`;
+ERA5 is locally blocked by CDS tooling/credentials and missing source support.
+FNL is optional third-source work after the NAM/GFS review. GEFS+NAM two-stream
+forcing is parked unless John explicitly revives it.
 
 ## Gate Index
 
@@ -43,7 +47,7 @@ GEFS+NAM two-stream forcing is parked unless John explicitly revives it.
 
 | Lane | Default status | Stop point |
 | --- | --- | --- |
-| Pelican RAP alternate forcing | Active no-run review | Vtable candidate, field checklist, case manifest draft, rendered scripts, approval text. |
+| Pelican NWP hot-swap | NAM/GFS pair ready for review | Inspect paired quicklooks, summarize sensitivity, and decide whether FNL or a corrected RAP/ERA5 path is worth another approval. |
 | Additional scaling row | Approval-gated | Render/check packet only until one row is explicitly approved. |
 | Memory right-sizing | Approval-gated | Candidate table only until one row is explicitly approved. |
 | GEFS+NAM two-stream | Parked legacy | Do not pursue unless John explicitly revives it. |
