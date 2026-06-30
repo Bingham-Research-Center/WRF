@@ -1,143 +1,93 @@
 # BRC WRF
 
-This is the Bingham Research Center checkout of the Weather Research and
-Forecasting model. It is an upstream-style WRF source tree with BRC-local
-automation and development practices layered on top.
+This is the Bingham Research Center checkout of WRF 4.8.0 with BRC-local
+case tooling, CHPC run practices, and AI routing layered on top.
 
-The extensionless `README` is kept as the upstream WRF version, public-domain,
-release-note, and documentation-index file. This `README.md` is the BRC-facing
-entry point for human contributors; AI-assisted routing lives in `AGENTS.md`.
+The extensionless `README` is the upstream WRF notice/release/documentation
+file. This `README.md` is the local BRC entry point. Keep it terse and route
+details to the owning docs.
 
 ## Start Here
 
-- `README`: upstream WRF version, public-domain notice, release notes, and
-  documentation index.
-- `AGENTS.md`: cold-start routing, safety boundaries, and change expectations
-  for AI-assisted work.
-- `doc/BRC_FORK_GUIDE.md`: fork mental model, local-vs-upstream boundaries, and
-  cheap-before-expensive orientation.
-- `doc/BRC_WRF_HANDOFF.md`: slim pointer to the current WRF-run-side control
-  board.
-- `doc/BRC_WRF_END_TO_END_AI_HANDOFF.md`: AI-optimized pointer map for building
-  John's fork, pairing it with a John-owned WPS root, and progressing toward a
-  repeatable CHPC WRF run.
-- `brc-docs/`: concise BRC-facing usage and roadmap notes for CHPC work.
-  Start with `brc-docs/BRC-WRF-FORK-HIGHLIGHTS.md` and
-  `brc-docs/BRC-WRF-STATE-PLAYBOOK.md` for a print-sized milestone overview.
-- `brc-cases/README.md`: BRC case manifest, cheap validator, and render-only
-  Slurm checkpoint.
-- `doc/README.cmake_build`: CMake build flow using `configure_new`,
-  `compile_new`, and `cleanCMake.sh`.
-- `doc/README.test_cases`: legacy idealized and real-data test-case overview.
-- `.sane/wrf/README.md`: BRC-local automation map for build, run, and
-  regression-style work.
-- `.ci/tests/build.sh` and `.github/workflows/ci.yml`: CI compilation behavior.
+Read in this order for a cold start:
 
-This is a large source tree. Start with narrow local reads before searching WRF
-internals broadly.
-
-## Recommended Reading
-
-Use this list for cold-start orientation. The current queue and approval state
-live in `doc/BRC_WRF_MICROTASK_HANDOFF.md`; do not treat this README as the
-task board.
-
-Read these in order:
-
-1. `AGENTS.md` - AI router, ownership boundaries, and login/off-login rules.
-2. `doc/BRC_WRF_MICROTASK_HANDOFF.md` - active queue, evidence map, and approval
-   gates.
+1. `AGENTS.md` - repo ownership, safety boundaries, current durable truth.
+2. `doc/BRC_WRF_MICROTASK_HANDOFF.md` - active queue, approvals, and evidence.
 3. `brc-docs/BRC-WRF-STATE-PLAYBOOK.md` - compact human-facing state summary.
-4. `brc-cases/README.md` - case validator, Slurm renderer, practical harness,
-   and WRF-output quicklook adapter.
+4. `brc-cases/README.md` - case manifests, validators, Slurm renderers,
+   practical harness, and WRF-output quicklook adapter.
 5. `doc/BRC_WRF_END_TO_END_AI_HANDOFF.md` - build/WPS/WRF progression route.
 6. `brc-docs/BRC-WRF-RUN-CONVEYOR-SOP.md` - staged WRF conveyor, archive, and
    quicklook placement rules.
-7. `brc-docs/BRC-WRF-FIRST-CASE.md` - narrative NAM-only proof path.
+7. `brc-docs/BRC-WRF-PELICAN-ALTERNATE-FORCING.md` - Pelican alternate
+   forcing prompt, RAP feasibility, and approval boundary.
 8. `../brc-tools/docs/HANDOFF-TO-BRC-WRF.md` - input-staging handoff when the
    task touches manifests, contracts, or forcing.
+9. `../brc-knowledge/scholarium/reference-base/resources/` - CHPC node,
+   storage, scheduler, proxy, and validated Slurm truth.
 
-Current durable workflow lessons are summarized in `AGENTS.md`; detailed state
-belongs in `doc/BRC_WRF_MICROTASK_HANDOFF.md`.
+For a print-sized milestone overview, use
+`brc-docs/BRC-WRF-FORK-HIGHLIGHTS.md` and
+`brc-docs/BRC-WRF-STATE-PLAYBOOK.md`.
 
-## Human Resource List
+## Current Posture
 
-- BRC docs index: `brc-docs/README.md`.
-- Current WRF-run-side control board:
-  `doc/BRC_WRF_MICROTASK_HANDOFF.md`.
-- End-to-end AI handoff:
-  `doc/BRC_WRF_END_TO_END_AI_HANDOFF.md`.
-- Current first-case runbook: `brc-docs/BRC-WRF-FIRST-CASE.md`.
-- CHPC infrastructure truth:
-  `../brc-knowledge/scholarium/reference-base/resources/chpc-team-resource-inventory.md`.
-- CHPC WRF quickstart:
-  `../brc-knowledge/scholarium/reference-base/resources/wrf-on-chpc-quickstart.md`.
-- `brc-tools` input-staging contract:
-  `../brc-tools/docs/WRF-INPUT-STAGING.md`.
-- Upstream WRF registration, user guide, citation, and public notice links are
-  listed below.
+Validated baseline: NAM-only Jan-2013 Uinta Basin, 12/4 km nested, WPS
+`Vtable.NAM`, `interval_seconds = 21600`.
 
-## Build And Test Posture
+Roadmap Gates 5-11 passed on 2026-06-18 for the John-owned NAM-only proof:
+fresh contract, WPS, `real.exe`, `wrf.exe`, archive, quicklooks, and the
+maintained practical-test harness. The first approved practical row,
+`scaling_t028` job `13550110`, passed. Later `scaling_t016` attempts failed
+before WRF runtime evidence and are not benchmark results.
 
-Both WRF build paths exist here:
+Current Pelican baseline: NAM 3/1/0.333 km, 75 levels, six-hour run
+`pelican2013_nam_3_1_333m_75lev`, full job `13695261`, archived under
+`lawson-group6/jrlawson/wrf_archive/`. New forcing experiments should hot-swap
+one source at a time through `brc-tools` staging contracts, starting with RAP
+analysis. The older GEFS+NAM two-stream idea is parked unless explicitly
+revived.
+
+## Boundaries
+
+- `brc-wrf`: WRF source, WPS/WRF-side docs, case manifests, validators, run
+  templates, maintained wrappers, and WRF-output quicklook adaptation.
+- `brc-tools`: input staging, manifests, contracts, token checks, NWP download
+  logic, and reusable plotting helpers.
+- `brc-knowledge`: canonical CHPC infrastructure facts and validated Slurm
+  guidance.
+
+Do not add downloader/staging logic to `brc-wrf`. Do not put WRF/WPS execution
+wrappers in `brc-tools`. Do not point John's wrappers at Michael-owned WRF/WPS
+roots.
+
+## Build And Run
+
+Both WRF build paths exist:
 
 - Legacy: `./configure`, `./compile`, `./clean`
 - CMake-oriented: `./configure_new`, `./compile_new`, `./cleanCMake.sh`
 
-Do not assume one path is correct for a task. Inspect the relevant local doc,
-workflow, or script before choosing.
-
-Full builds, regression suites, Slurm jobs, and other HPC workflows can be
-expensive. Do not run them without explicit approval.
-
-## Near-Term BRC Roadmap
-
-The immediate aim is a real-life proof of concept: install/build this checkout
-with WPS, run one Uinta Basin case, preserve enough logs to debug without
-guesswork, then grow toward repeatable ensembles.
-
-| Order | Goal | Why It Comes Next | Mini To-Dos |
-| --- | --- | --- | --- |
-| 1 | Confirm CHPC authority | Prevents cargo-cult modules, paths, and Slurm flags. | Treat `../brc-knowledge/scholarium/reference-base/resources/chpc-team-resource-inventory.md` as canonical infrastructure truth; use its delegated WRF quickstart for WRF-specific build/run details. |
-| 2 | Prove the install recipe | This is the first proof of concept for the fork, compilers, modules, and WPS pairing. | Use `doc/BRC_WRF_END_TO_END_AI_HANDOFF.md` as the AI routing map. Use the legacy WRF/WPS path first because the CHPC WRF quickstart has validated it; keep CMake as a later comparison. Compile John's `~/gits/brc-wrf` checkout, keep build logs in persistent `lawson-group6` storage outside the repo, and record Git SHA, module list, build path, and executables. |
-| 3 | Run one submitted real-data case | Batch precedent beats login-node calamity and leaves pollable evidence. | Render and submit a guarded Slurm job; collect stdout, stderr, `rsl.*`, scheduler metadata, and success markers. |
-| 4 | Target the first Basin weather case | A small real case teaches more than a toy run once installation is proven. | Use the validated NAM-only Jan-2013 12/4 km nested Basin proof as the first run record. Keep GEFS+NAM reforecast forcing as the next unproven path. |
-| 5 | Make the outputs worth looking at | Build success is not the same as a useful simulation. | Archive namelists, `wrfout*`, WPS/WRF logs, provenance, and quick visual checks against expected snowy-weather behavior. Preserve `brc-tools` input manifests and contracts. |
-| 6 | Turn the case into a template | The second run should be boring in the best way. | Start from `brc-cases/`: a case manifest, cheap validator, render-only Slurm path, scratch/archive layout, and stable handoff to `../brc-tools` for staged input. |
-| 7 | Run 2+ ensemble members | Monte Carlo workflow pressure-tests paths, storage, logging, and reproducibility. | Use separate run directories per GEFS member; compare logs, timing, outputs, and archive records. |
-| 8 | Change nesting only after the baseline is solid | Nesting multiplies failure modes and should not hide install problems. | Treat the validated 12/4 km nest as the current baseline; introduce any new nesting pattern only after WPS, `real.exe`, `wrf.exe`, and archive behavior are routine. |
-| 9 | Explore stochastic schemes such as SKEB | This is a science extension, not an install prerequisite. | Record the baseline first; then test stochastic options as explicit experiments with comparable provenance. |
+Do not assume one path is correct for a task. Read the relevant local doc or
+script first. Full builds, WPS, `real.exe`, `wrf.exe`, Slurm jobs, large
+downloads, strict artifact reads, NetCDF-heavy checks, archive inventories, and
+quicklooks need explicit approval and the correct off-login context.
 
 ## Change Style
 
-Keep edits lean, scoped, and scientifically motivated. Prefer small logical
-batches with clear commit bodies that preserve the reasoning, evidence, and
-operational impact behind the change.
+Keep edits lean, scoped, and scientifically motivated. Update the canonical doc
+that owns the fact, then leave short pointers elsewhere. Stage only relevant
+files, leave sibling-repo dirt alone, and preserve command/evidence/stop-point
+details in commit bodies when workflow truth changes.
 
-When AI materially assists a change, include an appropriate `Co-authored-by:`
-trailer.
+When AI materially assists a change, include:
 
-## Current Gaps
-
-- BRC-supported build paths still need a host/compiler/use-case matrix.
-- BRC CHPC usage and on-rails workflow gaps are tracked in `brc-docs/`.
-- Local WRF deviations from upstream should be captured as they are confirmed.
-- Cheap smoke tests should be documented before any full regression workflow is
-  treated as routine.
+```text
+Co-authored-by: John Lawson <john.lawson@usu.edu>
+Co-authored-by: Codex <codex@openai.com>
+```
 
 ## Upstream WRF Resources
 
-New WRF users are requested to register:
-[WRF registration](https://www2.mmm.ucar.edu/wrf/users/download/wrf-regist.php).
-
-For downloads, user support, documentation, publications, and additional
-resources, see the
-[WRF Model Users' Web Site](https://www2.mmm.ucar.edu/wrf/users/).
-
-WRF citation information, including DOI guidance, is available at
-[citing WRF](https://www2.mmm.ucar.edu/wrf/users/citing_wrf.html).
-
-WRF is public-domain open-source code. The name "WRF" is a registered trademark
-of the University Corporation for Atmospheric Research. Public-domain notice and
-related information are available at
-[WRF public notice](https://www2.mmm.ucar.edu/wrf/users/public.html).
+WRF registration, documentation, support, citation, and public notice links are
+listed in the upstream `README`.

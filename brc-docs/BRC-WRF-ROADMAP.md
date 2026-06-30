@@ -1,647 +1,75 @@
-# BRC WRF End-To-End Roadmap
+# BRC WRF Roadmap
 
-Purpose: give John or a cold-start AI session a concrete gate sequence for
-getting `brc-wrf` compiled from John's checkout, paired with a John-owned WPS
-root, running the proven NAM-only case on CHPC, archiving outputs, rendering
-quicklooks, and then entering practical testing.
+Status: compact gate index. The active queue and approval state live in
+`doc/BRC_WRF_MICROTASK_HANDOFF.md`.
 
-This is a roadmap, not approval. Compile-scale work, WPS, `real.exe`,
-`wrf.exe`, Slurm submission, large staging, strict artifact reads, NetCDF
-inspection, archive inventories, and quicklook rendering all require the
-appropriate human-approved compute, batch, DTN, or interactive context.
+This is not approval to compile, stage inputs, run WPS, run `real.exe` or
+`wrf.exe`, submit Slurm jobs, inspect large artifacts, render quicklooks, or
+run scaling/memory tests.
 
-## Gate Count
+## Current State
 
-From the current state, expect 11 required gates before the system is genuinely
-ready for practical testing, plus 3 optional or follow-on gates.
+Gates 0-11 passed on 2026-06-18 for the John-owned NAM-only baseline:
+build/run contract, WRF compile proof, John-owned WPS proof, case manifest
+alignment, fresh input contract, WPS, `real.exe`, `wrf.exe`, archive,
+quicklooks, and maintained practical-test harness.
 
-| Set | Gates | Meaning |
-| --- | ---: | --- |
-| Required baseline | 11 | John-owned WRF and WPS, NAM-only rerun, archive, quicklooks, and maintained test harness. |
-| Optional science branch | 1 | GEFS+NAM WPS-only field proof if John chooses that path. |
-| Practical testing branch | 2 | Scaling and memory sweeps after the baseline is repeatable. |
+Practical testing has one approved passing row: `scaling_t028` job `13550110`.
+Later `scaling_t016` attempts failed before WRF runtime evidence and are not
+benchmark results.
 
-Current gate state as of 2026-06-18: Gates 0-11 have passed through the
-John-owned WRF/WPS build proof, fresh NAM-only input contract, NAM-only
-WPS/`real.exe`/`wrf.exe` rerun, archive, quicklooks, and a maintained
-render-only practical-test harness. Practical testing has one approved
-28-task scaling row complete after fixing executable provenance and WRF runtime
-file staging. Later `scaling_t016` submissions failed before WRF runtime
-evidence: first because the packet used node-local `/tmp` Slurm paths, then
-because the row-specific `WRF_RUN` lacked runtime files from John's `run/`
-directory. Memory sweeps, successful additional scaling rows, and the GEFS+NAM
-science branch remain separate follow-ons.
+Current alternate-forcing work is one source at a time through `brc-tools`
+contracts, starting with RAP analysis for the Pelican 3/1/0.333 km baseline.
+GEFS+NAM two-stream forcing is parked unless John explicitly revives it.
 
-Current practical evidence, submitted 2026-06-18:
+## Gate Index
 
-| Step | Job ID | Role | Result |
-| --- | --- | --- | --- |
-| 0 | `13548706` | original prepare per-scenario `wrf_run` directories | completed, but inherited wrong executable source |
-| 1 | `13548709` | original `scaling_t028` | `real.exe` passed; `wrf.exe` failed with missing `CAMtr_volume_mixing_ratio`; log showed WRF `V4.7.1` from Michael-owned binaries |
-| 2 | `13548711`, `13548714`, `13548717`, `13548719`, `13548747` | dependent scaling/memory/summary jobs | canceled after dependency failure |
-| 3 | `13550021` | provenance-fixed `scaling_t028` retry | used John's WRF `V4.8.0`; failed because runtime physics files from John's `run/` directory were absent |
-| 4 | `13550104` | runtime-file fixed `scaling_t028` prep | completed |
-| 5 | `13550110` | `scaling_t028`, 28 tasks, `900G` | passed `real.exe`, `wrf.exe`, archive, and debug summary; archive `run_20260618T230858Z` |
-| 6 | `13550555` | attempted `scaling_t016` from `/tmp` Gate 11 packet | failed before WRF runtime evidence; Slurm `WorkDir`/stdout/stderr pointed at node-local `/tmp`, no login-visible batch stdout, no `rsl.*`, no archive/debug |
-| 7 | `13550909` | attempted `scaling_t016` from shared-log Gate 11 packet | failed before `real.exe`; shared stdout showed missing `CAMtr_volume_mixing_ratio`; compact metadata showed all required runtime physics/table files absent, no `rsl.*`, no archive/debug |
+| Gate | Name | Status | Canonical detail |
+| ---: | --- | --- | --- |
+| 0 | Live state freeze | Passed | `doc/BRC_WRF_MICROTASK_HANDOFF.md` |
+| 1 | Build/run contract | Passed | `doc/BRC_WRF_END_TO_END_AI_HANDOFF.md` |
+| 2 | John-owned WRF compile proof | Passed | `brc-docs/BRC-WRF-FIRST-CASE.md` |
+| 3 | John-owned WPS proof | Passed | `brc-docs/BRC-WRF-FIRST-CASE.md` |
+| 4 | Case manifest root alignment | Passed | `brc-cases/README.md` |
+| 5 | Fresh NAM-only input contract | Passed | `brc-docs/BRC-WRF-FIRST-CASE.md` |
+| 6 | NAM-only WPS proof | Passed | `brc-docs/BRC-WRF-FIRST-CASE.md` |
+| 7 | NAM-only `real.exe` proof | Passed | `brc-docs/BRC-WRF-FIRST-CASE.md` |
+| 8 | NAM-only `wrf.exe` proof | Passed | `brc-docs/BRC-WRF-FIRST-CASE.md` |
+| 9 | Archive proof | Passed | `brc-docs/BRC-WRF-FIRST-CASE.md` |
+| 10 | Quicklook proof | Passed | `brc-cases/README.md` |
+| 11 | Practical-test harness | Passed | `brc-cases/README.md` |
+
+## Follow-On Lanes
+
+| Lane | Default status | Stop point |
+| --- | --- | --- |
+| Pelican RAP alternate forcing | Active no-run review | Vtable candidate, field checklist, case manifest draft, rendered scripts, approval text. |
+| Additional scaling row | Approval-gated | Render/check packet only until one row is explicitly approved. |
+| Memory right-sizing | Approval-gated | Candidate table only until one row is explicitly approved. |
+| GEFS+NAM two-stream | Parked legacy | Do not pursue unless John explicitly revives it. |
+| Storage promotion | Human decision | No blind copy from scratch; prepare inventory/decision notes only. |
 
 ## Standing Rules
 
-- Compile John's WRF from `~/gits/brc-wrf`; preserve branch, SHA, and dirty
-  status as provenance.
-- Use CHPC modules for compiler, MPI, HDF5, netCDF, Jasper, and related support
-  only. Do not use a prebuilt CHPC WRF product.
-- WPS must be John-owned too. Michael Davies' `lawson-group6/u6060939/wrf_build`
-  tree is comparison evidence only.
-- Read `../brc-knowledge` before selecting architecture, module stack, storage,
-  Slurm flags, or run location.
-- Keep `../brc-tools` as the input staging and contract owner.
-- Put active WPS/WRF I/O under `/scratch/general/vast/$USER/wrf_runs/<case>/`.
-- Put durable archives and quicklooks under
-  `lawson-group6/<namespace>/wrf_archive/<case>/run_<UTC>/`.
-- Keep generated logs, rendered one-off scripts, namelists, NetCDF, PNGs, and
-  run artifacts out of this repo.
-
-## Required Gates
-
-| Gate | Name | Owner | Human approval needed to execute? | Done when |
-| ---: | --- | --- | --- | --- |
-| 0 | Live state freeze | `brc-wrf` | No | Branch, SHA, dirty files, remote, host, date, and current docs are recorded. |
-| 1 | Build/run contract | `brc-wrf` + `brc-knowledge` | No for writing; yes before compile | A short contract names node, account, modules, WRF root, WPS root, build log root, scratch run root, archive root, configure choices, and stop points. |
-| 2 | Approved WRF compile proof | `brc-wrf` | Yes | John's checkout configures and compiles `em_real`; `main/real.exe` and `main/wrf.exe` exist with logs and module evidence outside repo. |
-| 3 | Approved John-owned WPS proof | John-owned WPS tree | Yes | WPS configures/builds or is verified under John's ownership; `geogrid.exe`, `ungrib.exe`, `metgrid.exe`, `link_grib.csh`, and `Vtable.NAM` exist; GRIB2 support is confirmed. |
-| 4 | Case manifest root alignment | `brc-wrf` | No if metadata-only | `brc-cases` points to John-owned WRF/WPS roots and current scratch/archive paths; cheap validation and render-only review pass. |
-| 5 | Fresh NAM-only input contract | `brc-tools` + `brc-wrf` | Yes if staging or artifact hashing is needed | Fresh `manifest_<case>.json` and `contract_<case>.json` exist on scratch; manifest verification and strict case validation pass off-login. |
-| 6 | NAM-only WPS proof | WPS + `brc-wrf` | Yes | WPS runs with `Vtable.NAM`, paired prefix/`fg_name`, `interval_seconds = 21600`; `met_em` count, fields, levels, and warnings are recorded. |
-| 7 | NAM-only `real.exe` proof | `brc-wrf` | Yes | John's `real.exe` reaches `SUCCESS COMPLETE REAL_EM INIT`; `wrfinput_d0*`, `wrfbdy_d01`, and `real.rsl.*` are preserved. |
-| 8 | NAM-only `wrf.exe` proof | `brc-wrf` | Yes | John's `wrf.exe` runs on `notch392` with `srun --mpi=pmi2` and reaches `SUCCESS COMPLETE WRF`. |
-| 9 | Archive proof | `brc-wrf` | Included in run approval | `wrfout`, namelists, WPS/WRF logs, debug files, and provenance records are copied to a timestamped `lawson-group6` archive. |
-| 10 | Quicklook proof | `brc-wrf` | Yes if reading NetCDF/archive artifacts | Quicklook check/render runs from the new archive and writes PNGs plus summary stats under `<archive-run>/quicklooks/`. |
-| 11 | Practical-test harness | `brc-wrf` | No for docs/templates/renders; yes for submissions | `wrf_case.py render-practical-harness` writes the maintained wrapper packet, validation checklist, result tables, and approval prompts for scaling/memory tests. |
-
-## Gate 0 - Live State Freeze
-
-Goal: make the current source and handoff state unambiguous before any build or
-run work.
-
-Login-node-safe commands:
-
-```bash
-git status --short --branch --untracked-files=all
-git rev-parse HEAD
-git remote -v
-hostname
-date -u '+UTC %Y-%m-%d %H:%M:%S'
-```
-
-Evidence to leave:
-
-| Field | Example |
-| --- | --- |
-| Repo | `~/gits/brc-wrf` |
-| Branch and SHA | current branch plus full commit SHA |
-| Dirty files | exact `git status` list |
-| Host/time | login host and UTC timestamp |
-| Stop point | "No compile, WPS, WRF, Slurm, artifact reads, or quicklooks." |
-
-## Gate 1 - Build/Run Contract
-
-Goal: choose the approved build and run shape before compiling.
-
-Read first:
-
-| Need | Source |
-| --- | --- |
-| CHPC node, account, storage, scheduler, modules | `../brc-knowledge/scholarium/reference-base/resources/chpc-team-resource-inventory.md` |
-| WRF build/run details | `../brc-knowledge/scholarium/reference-base/resources/wrf-on-chpc-quickstart.md` |
-| Repo boundaries | `AGENTS.md`, `doc/BRC_WRF_END_TO_END_AI_HANDOFF.md` |
-
-Contract fields:
-
-| Field | Default or expected value |
-| --- | --- |
-| Target node | `notch392` |
-| Account/partition | `lawson-np` / `lawson-np` |
-| Build host | approved compute/batch context, not login-node compile |
-| WRF source | `~/gits/brc-wrf` |
-| WRF configure path | legacy `./configure` + `./compile em_real` first |
-| WRF configure choices | Intel `dmpar`, basic nesting |
-| Toolchain | Intel oneAPI compilers, Intel MPI, HDF5, NetCDF-C, NetCDF-Fortran |
-| Env vars | `NETCDF=$(nf-config --prefix)`, `NETCDF_C=$(nc-config --prefix)`, `JASPERLIB`, `JASPERINC` |
-| WPS root | John-owned persistent WPS tree |
-| Build logs | `lawson-group6/<namespace>/wrf_build_logs/...` |
-| Active run root | `/scratch/general/vast/$USER/wrf_runs/<case>/` |
-| Archive root | `lawson-group6/<namespace>/wrf_archive/<case>/run_<UTC>/` |
-
-Done when: a human can approve or reject the exact build/run plan without
-guessing paths, modules, ownership, or stop points.
-
-## Gate 2 - Approved WRF Compile Proof
-
-Goal: build John's WRF from John's checkout and stop at executable proof.
-
-Approval boundary: compile-scale work. Do not start this gate without explicit
-human approval and a written stop point.
-
-Expected evidence:
-
-| Evidence | Notes |
-| --- | --- |
-| Source state | branch, SHA, dirty files before configure |
-| Module state | `module -t list` and key env vars |
-| Configure transcript | prompt choices and `configure.wrf` path |
-| Compile log | persistent log outside repo |
-| Executables | `main/real.exe`, `main/wrf.exe`, timestamps, sizes |
-| Stop point | "Compiled only; no WPS, real, WRF, or Slurm run." |
-
-Failure stops:
-
-- `netcdf.inc` missing.
-- Configure choice differs from contract.
-- Build writes logs/artifacts into the git checkout in a way that will be hard
-  to separate from source.
-- Any temptation to point wrappers at Michael-owned WRF.
-
-## Gate 3 - Approved John-Owned WPS Proof
-
-Goal: build or verify a John-owned WPS root paired with John's WRF build.
-
-Approval boundary: WPS configure/compile is compile-scale work.
-
-Current status: passed on 2026-06-18.
-
-| Field | Value |
-| --- | --- |
-| WPS source | `/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_sources/WPS-v4.6.0` |
-| WPS root | `/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_build/WPS` |
-| Evidence | `/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_build_logs/brc-wrf/gate3_20260618T054456Z_13539773/` |
-| Slurm job | `13539773` on `notch392` |
-| Configure choice | WPS v4.6.0 option `23`: Linux x86_64 Intel Classic compilers, `dmpar` |
-| CHPC fix | Pin Intel MPI wrappers in `configure.wps`: `DM_FC = mpif90 -f90=$(SFC)`, `DM_CC = mpicc -cc=$(SCC)` |
-
-Required WPS proof:
-
-| Required item | Evidence |
-| --- | --- |
-| `geogrid.exe` | path, owner, timestamp, target if symlink |
-| `ungrib.exe` | path, owner, timestamp, target if symlink |
-| `metgrid.exe` | path, owner, timestamp, target if symlink |
-| `link_grib.csh` | path |
-| `Vtable.NAM` | path, normally under `ungrib/Variable_Tables/` |
-| GRIB2 support | `configure.wps` includes JPEG2000/PNG support flags |
-| Static geog | `/uufs/chpc.utah.edu/common/home/lawson-group6/WPS_GEOG/` reachable in the chosen context |
-
-Failure stops:
-
-- `JASPER*` was not exported before configure.
-- `configure.wps` lacks GRIB2 support.
-- The WPS root is Michael-owned or otherwise not John's operational root.
-
-## Gate 4 - Case Manifest Root Alignment
-
-Goal: make the `brc-cases` manifest point at the new John-owned executable
-roots and current storage targets before any WPS/WRF run.
-
-Current status: passed as a metadata-only review on 2026-06-18.
-
-| Field | Value |
-| --- | --- |
-| Report | `/tmp/jan2013_basin_nam.gate4.20260618T054655Z.report.txt` |
-| Rendered Slurm review | `/tmp/jan2013_basin_nam.gate4.20260618T054655Z.rendered.slurm` |
-| Validation | `OK: no findings` |
-| Submitted? | No. Rendered text only. |
-
-Login-node-safe checks:
-
-```bash
-python brc-cases/wrf_case.py validate brc-cases/jan2013_basin_nam.case.yaml
-python brc-cases/wrf_case.py render-slurm brc-cases/jan2013_basin_nam.case.yaml
-```
-
-Do not use strict validation on a login node if it reads staged inputs,
-archives, WPS/WRF files, NetCDF, or generated artifacts.
-
-Done when:
-
-- The case manifest names John-owned WRF and WPS roots.
-- Rendered Slurm text still uses `lawson-np`, `notch392`, 56 tasks, `900G`, and
-  `srun --mpi=pmi2`.
-- Active run and archive paths are outside the repo.
-- The rendered wrapper keeps debug files:
-  `debug/run_debug_summary.txt`, `debug/run_phase_times.tsv`, and
-  `debug/run_file_inventory.tsv`.
-
-## Gate 5 - Fresh NAM-Only Input Contract
-
-Goal: retire dependence on the reconstructed legacy fallback only after a fresh
-`brc-tools` contract proves clean.
-
-Current status: passed on 2026-06-18.
-
-| Field | Value |
-| --- | --- |
-| Stage/verify job | `13539969` on `dtn05` |
-| Strict validation job | `13539980` on `notch137` |
-| Manifest | `/scratch/general/vast/u0737349/wrf_inputs/jan2013_basin_gefs/manifest_jan2013_basin_gefs.json` |
-| Contract | `/scratch/general/vast/u0737349/wrf_inputs/jan2013_basin_gefs/contract_jan2013_basin_gefs.json` |
-| Stage log | `/scratch/general/vast/u0737349/wrf_inputs/jan2013_basin_gefs/gate5_nam_contract_13539969.out` |
-| Strict validation log | `/scratch/general/vast/u0737349/wrf_inputs/jan2013_basin_gefs/gate5_validate_13539980.out` |
-| Result | `verify: 7/7 OK`; `wrf_case.py validate --strict-files` reported `OK: no findings` |
-
-Owner split:
-
-| Repo | Owns |
-| --- | --- |
-| `brc-tools` | GRIB staging, manifest, contract, token checks, DTN staging job |
-| `brc-wrf` | consuming the contract, case validation, WPS/WRF run side |
-
-Approval boundary: large staging, DTN submission, manifest hashing, strict file
-validation, and artifact reads.
-
-Expected off-login sequence after fresh staging exists:
-
-```bash
-python ../brc-tools/scripts/stage_wrf_inputs.py --verify-manifest \
-  /scratch/general/vast/$USER/wrf_inputs/<case>/manifest_<case>.json
-
-python brc-cases/wrf_case.py validate <review-case>.yaml --strict-files
-```
-
-Done when:
-
-- The fresh `contract_<case>.json` records NAM-only cadence and WPS settings.
-- Manifest verification passes.
-- `wrf_case.py validate --strict-files` passes against the fresh contract.
-- Any decision to retire `brc-cases/jan2013_basin_nam.contract.json` is explicit.
-
-## Gate 6 - NAM-Only WPS Proof
-
-Goal: rerun WPS using John-owned WPS against the proven NAM-only input lane.
-
-Approval boundary: WPS execution.
-
-Current status: passed on 2026-06-18.
-
-| Field | Value |
-| --- | --- |
-| Slurm job | `13539991` on `notch392` |
-| Run root | `/scratch/general/vast/u0737349/wrf_runs/jan2013_basin_gefs_gate6_13539991` |
-| WPS run | `/scratch/general/vast/u0737349/wrf_runs/jan2013_basin_gefs_gate6_13539991/wps_run` |
-| Evidence | `/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_build_logs/brc-wrf/gate6_20260618T061731Z_13539991/` |
-| Result | `met_em` count `14`, `num_metgrid_levels = 40`, required NAM land/soil/skin/snow fields present |
-
-Expected settings:
-
-| Item | Expected |
-| --- | --- |
-| Stream | NAM-only |
-| Vtable | `Vtable.NAM` |
-| WPS prefix/`fg_name` | paired values, either `FILE`/`FILE` or `NAM`/`NAM` |
-| Cadence | 6 hours |
-| `interval_seconds` | `21600` |
-| `geog_data_path` | `/uufs/chpc.utah.edu/common/home/lawson-group6/WPS_GEOG/` |
-
-Evidence:
-
-- `geogrid.log`, `ungrib.log`, `metgrid.log`.
-- `met_em.d0*` count for both domains and expected time window.
-- `num_metgrid_levels`.
-- Required field list including land/soil/skin/snow fields.
-- Warnings and whether they are fatal.
-
-Stop point: stop before `real.exe` unless the approval explicitly included
-`real.exe`.
-
-## Gate 7 - NAM-Only `real.exe` Proof
-
-Goal: prove John's compiled `real.exe` consumes the new WPS output.
-
-Approval boundary: model preprocessing execution.
-
-Current status: passed on 2026-06-18.
-
-| Field | Value |
-| --- | --- |
-| Slurm job | `13540001` on `notch392` |
-| WRF run root | `/scratch/general/vast/u0737349/wrf_runs/jan2013_basin_gefs_gate6_13539991/wrf_run_gate7_13540001` |
-| Evidence | `/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_build_logs/brc-wrf/gate7_20260618T062118Z_13540001/` |
-| Result | `SUCCESS COMPLETE REAL_EM INIT`; `wrfinput_d01`, `wrfinput_d02`, and `wrfbdy_d01` preserved |
-
-Evidence:
-
-| Evidence | Required |
-| --- | --- |
-| Executable | John's WRF build path, not Michael-owned |
-| Input | WPS `met_em` paths and count |
-| Marker | `SUCCESS COMPLETE REAL_EM INIT` |
-| Outputs | `wrfinput_d01`, `wrfinput_d02`, `wrfbdy_d01` |
-| Logs | `real.rsl.out.0000`, `real.rsl.error.0000`, warnings |
-
-Stop point: stop before `wrf.exe` unless the approval explicitly included WRF.
-
-## Gate 8 - NAM-Only `wrf.exe` Proof
-
-Goal: run John's compiled WRF on the proven NAM-only case.
-
-Approval boundary: WRF model execution and Slurm submission.
-
-Current status: passed on 2026-06-18.
-
-| Field | Value |
-| --- | --- |
-| Slurm job | `13540006` on `notch392` |
-| WRF run root | `/scratch/general/vast/u0737349/wrf_runs/jan2013_basin_gefs_gate6_13539991/wrf_run_gate7_13540001` |
-| Evidence | `/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_build_logs/brc-wrf/gate8_20260618T062439Z_13540006/` |
-| Result | `SUCCESS COMPLETE WRF`; `wrfout` count `74` |
-
-Required run facts:
-
-| Fact | Expected |
-| --- | --- |
-| Account/partition | `lawson-np` / `lawson-np` |
-| Node | `notch392` |
-| Shape | one node, 56 tasks, `900G` first |
-| Launcher | `srun --mpi=pmi2 -n "$SLURM_NTASKS" ./wrf.exe` |
-| Success marker | `SUCCESS COMPLETE WRF` in `rsl.out.0000` |
-
-Evidence to keep separate:
-
-- Slurm batch state.
-- WRF step state.
-- `real.exe` success marker.
-- `wrf.exe` success marker.
-- Archive success or failure.
-
-Do not collapse a post-run archive failure into a model failure without checking
-the WRF logs and output files.
-
-## Gate 9 - Archive Proof
-
-Goal: preserve the new run in durable storage with enough provenance to audit it.
-
-Current status: passed on 2026-06-18, included in Slurm job `13540006`.
-
-| Field | Value |
-| --- | --- |
-| Archive run | `/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/jan2013_basin_gefs/run_gate8_20260618T062439Z_13540006` |
-| Phase evidence | `/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_build_logs/brc-wrf/gate8_20260618T062439Z_13540006/run_phase_times.tsv` |
-| Result | `archive_wrfout`, WRF logs, WPS logs, debug, and provenance archive phases all exited `0` |
-
-Archive root:
+- Compile and run only John-owned WRF/WPS roots for production proof.
+- Use Michael-owned paths only as comparison evidence.
+- Keep NWP acquisition and staging contracts in `../brc-tools`.
+- Keep CHPC scheduler/storage/module truth in `../brc-knowledge`.
+- Put generated runs, namelists, logs, NetCDF, PNGs, inventories, and one-off
+  Slurm scripts outside this repo.
+- End each gate with command, host/context, owner repo, evidence path, result,
+  what was not run, and next stop point.
+
+## New-Session Prompt
 
 ```text
-/uufs/chpc.utah.edu/common/home/lawson-group6/<namespace>/wrf_archive/<case>/run_<UTC>/
+cwd=/uufs/chpc.utah.edu/common/home/u0737349/gits/brc-wrf
+
+Read AGENTS.md, then doc/BRC_WRF_MICROTASK_HANDOFF.md. Use this roadmap only as
+a compact gate index. Gates 0-11 are passed unless live docs contradict that.
+
+Pick exactly one follow-on lane. Do not run compile, staging, WPS, real.exe,
+wrf.exe, sbatch, strict artifact reads, NetCDF/archive checks, quicklooks,
+scaling, or memory tests without explicit approval for the exact command and
+stop point.
 ```
-
-Minimum archive contents:
-
-| Category | Examples |
-| --- | --- |
-| Model output | `wrfout_d0*` |
-| WRF logs | `rsl.out.0000`, `rsl.error.0000`, rank logs if kept |
-| Real logs | `real.rsl.out.0000`, `real.rsl.error.0000` |
-| Namelists | `namelist.input`, `namelist.wps` |
-| Debug | `debug/run_debug_summary.txt`, `debug/run_phase_times.tsv`, `debug/run_file_inventory.tsv` |
-| Build/run provenance | branch, SHA, module list, WRF root, WPS root, manifest, contract |
-
-WRF filenames contain colons. Archive local paths as local paths, for example:
-
-```bash
-rsync -av ./wrfout_d0* "$ARCHIVE_DIR/"
-```
-
-## Gate 10 - Quicklook Proof
-
-Goal: prove the new archive can produce quicklooks suitable for scientific
-review and practical testing triage.
-
-Approval boundary: quicklook checks/renders read NetCDF and archive artifacts,
-so run in approved compute/batch/interactive context, not on a login node.
-
-Current status: passed on 2026-06-18.
-
-| Field | Value |
-| --- | --- |
-| Slurm job | `13540365` on `notch392` |
-| Evidence | `/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_build_logs/brc-wrf/gate10_20260618T065224Z_13540365/` |
-| Quicklooks | `/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/jan2013_basin_gefs/run_gate8_20260618T062439Z_13540006/quicklooks/` |
-| Result | Quicklook check/render exited `0`; five PNGs written with shape `1275x975` |
-| Visual review | Basic visual sanity passed: plots were nonblank, framed, and showed coherent terrain, landmask, temperature/wind, and snow-depth structure |
-| Review note | `brc-docs/BRC-WRF-GATE10-QUICKLOOK-REVIEW.md` records the 2026-06-19 PNG-only visual pass and remaining John/Michael science decision |
-
-Expected commands after the case manifest points at the new archive:
-
-```bash
-python brc-cases/wrf_quicklook.py check brc-cases/jan2013_basin_nam.case.yaml
-python brc-cases/wrf_quicklook.py render brc-cases/jan2013_basin_nam.case.yaml
-```
-
-Done when:
-
-- Quicklook check passes.
-- PNGs are written under `<archive-run>/quicklooks/`, not the repo.
-- A small inventory, shape, or summary stats table exists beside the PNGs or in
-  the run record.
-- Any blank, unit-broken, or physically suspicious image is called out before
-  practical testing begins.
-
-Useful improvement before practical testing: add Basin/domain overlays and
-observation overlays only if the data path is already available or explicitly
-approved.
-
-## Gate 11 - Practical-Test Harness
-
-Goal: turn the successful one-off proof into a repeatable launch and review
-surface for practical testing.
-
-Current status: passed as a render/check-only repo-side harness on 2026-06-18.
-Generated scripts are review artifacts. John approved one practical chain; it
-found a source-run/executable mismatch before useful timing evidence. Future
-`sbatch`, WPS, `real.exe`, `wrf.exe`, strict artifact reads, or quicklook work
-still require explicit scope.
-
-Required pieces:
-
-| Piece | Done when |
-| --- | --- |
-| Maintained Slurm wrapper | `python brc-cases/wrf_case.py render-practical-harness <case.yaml> --output-dir <outside-repo-dir>` renders baseline/scaling/memory review scripts from the case manifest. |
-| Settings readback | Run logs show case window, forcing, WPS cadence, Vtable/prefix/`fg_name`, Slurm shape, launcher, scratch path, archive path. |
-| Executable provenance check | Rendered wrappers fail before `real.exe` unless scenario `real.exe` and `wrf.exe` byte-match `paths.wrf_build/main/{real.exe,wrf.exe}` from John's `~/gits/brc-wrf` build. |
-| Runtime physics files | Rendered wrappers fail before `real.exe` unless current-case WRF runtime files such as `CAMtr_volume_mixing_ratio`, `RRTMG_LW_DATA`, `RRTMG_SW_DATA`, ozone files, and core land-surface tables are present and byte-match John's `paths.wrf_build/run/` source files. |
-| Debug artifacts | Summary, phase timing, and file inventory are created for every run. |
-| Validation checklist | Cheap metadata checks are separate from strict off-login artifact checks. |
-| Scenario prepare/check plan | `PREPARE_CHECKLIST.md` and `prepare_<scenario>.sh` name every per-scenario `WRF_RUN`, source executables and runtime physics files from John's WRF build, source `namelist.input`/`met_em` from the proven run artifacts, and keep artifact reads/copies off login nodes. |
-| Approval packet | `APPROVAL_PACKET.md` carries no-run rows for baseline, scaling, and memory candidates with job ID, Slurm state, WRF marker, wall time, simulated hours, peak memory evidence, archive path, debug path, and recommendation fields. |
-| No-run report | `python brc-cases/wrf_case.py render-no-run-report <case.yaml>` writes a login-safe Markdown report with branch/SHA, dirty state, metadata validation, rendered packet paths, shell syntax, and explicit skipped compute/artifact reads. |
-| Result tables | Scaling and memory tables are ready but empty until approved runs happen. |
-| Closeout prompt | A next AI session can pick up from exact commands, job IDs, archive paths, and stop points. |
-
-Login-node-safe render:
-
-```bash
-python brc-cases/wrf_case.py render-practical-harness \
-  brc-cases/jan2013_basin_nam.case.yaml \
-  --output-dir /tmp/brc_gate11_jan2013_basin_gefs
-
-python brc-cases/wrf_case.py render-no-run-report \
-  brc-cases/jan2013_basin_nam.case.yaml
-```
-
-The generated packet refuses repo-local output by default, uses per-scenario
-scratch/archive subdirectories under `practical_tests/<scenario>/`, includes a
-maintained prepare/check plan and no-run approval packet, and keeps benchmark
-result tables blank until approved runs produce evidence. Generated run wrappers
-fail fast unless the scenario `wrf_run` directory is prepared with `real.exe`,
-`wrf.exe`, `namelist.input`, and `met_em` files, and unless the scenario
-executables byte-match John's `paths.wrf_build/main` binaries. They also
-preflight and byte-match the current-case WRF runtime files needed by RRTMG and
-land-surface physics against John's `paths.wrf_build/run` directory.
-Generated prep helpers require `BRC_PREP_APPROVED=YES`, refuse Michael-owned
-comparison paths, copy/check files only, and never submit Slurm or execute WRF.
-
-Ready-for-practical-testing means: John can approve a scaling or memory run by
-choosing a row in a table, not by reconstructing the entire WRF/WPS path from
-memory.
-
-## Optional Gate A - GEFS+NAM WPS-Only Field Proof
-
-This is not on the default path to a repeatable NAM-only baseline.
-
-Use it only if John chooses GEFS+NAM as the science path now.
-
-Approval boundary: science branch plus WPS execution.
-
-Stop point: after `metgrid`. Do not run `real.exe` until the field list and
-warnings are reviewed.
-
-Required evidence:
-
-| Item | Evidence |
-| --- | --- |
-| Field map | `../brc-tools/docs/WRF-GEFS-NAM-FIELD-MAP.md` reviewed or patched |
-| GEFS Vtable | selected or built with pressure split and specific-humidity reality reflected |
-| Stream settings | separate ungrib streams and `fg_name = 'GEFS','NAM'` |
-| Cadence | 3 hours, `interval_seconds = 10800` |
-| `met_em` review | field list, levels, missing-field warnings, and decision before `real.exe` |
-
-## Optional Gate B - Scaling Sweep
-
-Goal: find the task-count knee for the proven case.
-
-Status: one row passed on 2026-06-18. The original `scaling_t028` job
-`13548709` failed after using Michael-owned WRF `V4.7.1` binaries through
-scratch symlinks. Follow-up job `13550021` corrected binary provenance and
-launched John's WRF `V4.8.0`, but the clean scenario run directory lacked
-runtime physics files such as `CAMtr_volume_mixing_ratio`. After the wrapper
-started sourcing executables from John's `main/` directory, byte-checking them,
-and staging required runtime files from John's `run/` directory, prep job
-`13550104` and `scaling_t028` job `13550110` passed. Evidence:
-`/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/jan2013_basin_gefs/practical_tests/scaling_t028/run_20260618T230858Z/debug/`.
-Attempted `scaling_t016` job `13550555` failed in `00:00:04` with Slurm state
-`FAILED` and exit `2:0` before `real.exe`: the submission used a `/tmp` Gate 11
-packet, so Slurm recorded node-local `/tmp` for `WorkDir`, stdout, and stderr.
-Rerendered shared-log job `13550909` also failed in `00:00:04` before
-`real.exe`: the batch stdout was visible at
-`/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_build_logs/brc-wrf/wrf_jan2013_nam_t016_13550909.out`
-and reported missing `CAMtr_volume_mixing_ratio`; compact metadata showed the
-target `WRF_RUN` also lacked `RRTMG_*`, ozone, GENPARM/LANDUSE/SOIL/VEG runtime
-files from John's `run/` directory. There are no `rsl.*` files and no
-`scaling_t016` archive/debug directory. Treat both `scaling_t016` attempts as
-setup evidence only, not benchmark results.
-
-Approval boundary: Slurm and WRF execution. The failed chain was approved for
-that attempt only; job `13550110` was the single approved retry. Do not add or
-resubmit rows without a fresh reason and explicit approval.
-
-Candidate table:
-
-| Tasks | Memory | Expected use | Evidence |
-| ---: | ---: | --- | --- |
-| 16 | `900G` | still the next lower-task benchmark after preparing the row-specific `WRF_RUN` with John's runtime files | jobs `13550555` and `13550909` failed before WRF runtime evidence; retry needs fresh approval |
-| 28 | `900G` | passed first practical row | `wrf.exe` 2296 s, success marker, archive `run_20260618T230858Z` |
-| 56 | `900G` first | high-power default | wall time, sim hours, marker, archive |
-
-Do not compare runs unless source SHA, WRF/WPS roots, input contract, namelists,
-and archive completeness are the same.
-
-## Optional Gate C - Memory Right-Sizing
-
-Goal: replace `900G` with an evidence-backed request for the proven case.
-
-Status: not run. Jobs `13548717` (`600G`) and `13548719` (`450G`) were canceled
-after the original upstream scaling failure. The later approved 28-task rerun
-passed at `900G`, but it is not a memory right-sizing result.
-
-Approval boundary: Slurm and WRF execution. Approve exactly one memory row and
-stop on its result; do not launch a sweep by default.
-
-Evidence:
-
-| Run | Memory request | Peak memory evidence | WRF marker | Archive | Recommendation |
-| --- | ---: | --- | --- | --- | --- |
-| Baseline | `900G` | TBD | TBD | TBD | TBD |
-| Candidate | TBD | TBD | TBD | TBD | TBD |
-
-Stop if a lower-memory candidate changes model behavior, fails for non-memory
-reasons that cannot be separated, or loses debug/archive evidence.
-
-## AI Handoff Prompt
-
-Paste this into a new AI session when the next step is end-to-end WRF progress:
-
-```text
-You are Codex in ~/gits/brc-wrf. Goal: advance John's end-to-end BRC WRF
-workflow toward a compiled John-owned WRF, John-owned WPS, NAM-only rerun,
-archive, quicklooks, and practical-test readiness.
-
-First verify live state:
-  git status --short --branch --untracked-files=all
-  git rev-parse HEAD
-  hostname
-  date -u '+UTC %Y-%m-%d %H:%M:%S'
-
-Read, in order:
-1. AGENTS.md
-2. doc/BRC_WRF_END_TO_END_AI_HANDOFF.md
-3. brc-docs/BRC-WRF-ROADMAP.md
-4. doc/BRC_WRF_MICROTASK_HANDOFF.md
-5. brc-docs/BRC-WRF-FIRST-CASE.md
-6. brc-cases/README.md
-7. ../brc-knowledge/scholarium/reference-base/resources/chpc-team-resource-inventory.md
-8. ../brc-knowledge/scholarium/reference-base/resources/wrf-on-chpc-quickstart.md
-9. ../brc-tools/docs/HANDOFF-TO-BRC-WRF.md
-10. ../brc-tools/docs/WRF-INPUT-STAGING.md
-
-Pick exactly one gate or follow-on from brc-docs/BRC-WRF-ROADMAP.md. Gates 0-11
-are complete as of 2026-06-18 if live docs still match this branch. Practical
-testing has one completed 28-task row, job 13550110, after fixing executable
-provenance and WRF runtime-file staging. A PNG-only Gate 10 visual pass is
-recorded in `brc-docs/BRC-WRF-GATE10-QUICKLOOK-REVIEW.md`; the next single gate
-is John/Michael science acceptance or explicit approval of exactly one
-additional benchmark row.
-
-Hard boundaries:
-- No compile, WPS, real.exe, wrf.exe, sbatch, large staging, strict artifact
-  reads, NetCDF/archive practical checks, or quicklooks without explicit human
-  approval.
-- Do not point John's wrappers at Michael-owned WRF or WPS roots.
-- Do not add downloader/staging logic to brc-wrf; that belongs in brc-tools.
-
-Leave breadcrumbs: command, host/context, evidence path, owner repo, artifact
-path, stop point, and the next gate.
-```
-
-## Closeout Format
-
-End every gate with this compact record:
-
-| Field | Value |
-| --- | --- |
-| Gate | number and name |
-| Command(s) | exact command or "docs-only" |
-| Host/context | login, DTN, interactive compute, or batch job ID |
-| Source | repo, branch, SHA, dirty status |
-| Evidence | log path, manifest, contract, archive, quicklooks, or doc path |
-| Result | passed, failed, blocked, or parked |
-| Stop point | what was deliberately not run |
-| Next gate | one numbered gate and why |
