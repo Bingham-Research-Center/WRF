@@ -61,8 +61,36 @@ quicklook-specific case YAML in the shared control directory that:
 Quicklook PNGs belong under:
 
 ```text
-<archive-run>/quicklooks/
+<archive-run>/quicklooks/dXX/
 ```
+
+That simple path is the default because the archive run already identifies the
+case and timestamp. Use `--output-dir` only when you intentionally need to
+preserve an alternate render. Older stamped folders such as
+`quicklooks/standardized_compare_20260630T214000Z/` remain valid historical
+evidence; do not move them just to rename them.
+
+## Source-Agnostic Conveyor
+
+NAM and GFS Pelican runs should follow the same WRF-side conveyor. The forcing
+contract decides the source token, cadence, and Vtable; the domain geometry,
+physics, archive, quicklook product list, and success checks stay parallel.
+
+| Step | NAM | GFS |
+| --- | --- | --- |
+| Staged source | `nam_analysis` contract in `../brc-tools` | `gfs_analysis` contract in `../brc-tools` |
+| WPS Vtable | `Vtable.NAM` | `Vtable.GFS` |
+| `ungrib` prefix / `metgrid fg_name` | `NAM` / `NAM` | `GFS` / `GFS` |
+| Pelican interval | `21600` seconds | `21600` seconds |
+| Required metgrid proof | positive `num_metgrid_levels`, soil levels present | positive `num_metgrid_levels`, `NUM_METGRID_SOIL_LEVELS > 0` |
+| WRF proof | `SUCCESS COMPLETE REAL_EM INIT`, then `SUCCESS COMPLETE WRF` | same |
+| Quicklook default | `<archive-run>/quicklooks/dXX/` | same |
+
+Do not hard-code NAM into the WRF-side conveyor. Read `forcing.sources`,
+`forcing.wps_fg_name`, `forcing.interval_seconds`, and `wps.vtable` from the
+case/contract. Reuse NAM namelists for a like-for-like GFS sensitivity only
+when the source contract has the same window and cadence, as the 2026-06-30 GFS
+run did.
 
 ## CFL Gate Pattern
 
@@ -177,10 +205,10 @@ Standardized quicklooks should be regenerated with `brc-cases/wrf_quicklook.py`
 from approved compute/batch context and should land under:
 
 ```text
-<archive-run>/quicklooks/standardized_<UTC>/dXX/
+<archive-run>/quicklooks/dXX/
 ```
 
-Latest standardized render:
+Historical standardized render:
 
 ```text
 job: 13729327, completed 0:0 in 00:00:55 on notch392
@@ -239,7 +267,8 @@ archive phases exited 0
 
 These are the like-for-like products for the completed NAM and GFS WRF runs.
 Both use the same six-hour window, 3/1/0.333 km nest, 75 vertical levels, and
-standardized product names.
+standardized product names. They predate the simplified default quicklook path
+and therefore live under a stamped historical subdirectory.
 
 ```text
 job: 13755401, completed 0:0 in 00:01:38 on notch392

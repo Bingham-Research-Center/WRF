@@ -7,6 +7,15 @@ The extensionless `README` is the upstream WRF notice/release/documentation
 file. This `README.md` is the local BRC entry point. Keep it terse and route
 details to the owning docs.
 
+## Contents
+
+- [Start Here](#start-here)
+- [Current Posture](#current-posture)
+- [To-Dos And Wishlists](#to-dos-and-wishlists)
+- [Boundaries](#boundaries)
+- [Build And Run](#build-and-run)
+- [Change Style](#change-style)
+
 ## Start Here
 
 Read in this order for a cold start:
@@ -21,10 +30,11 @@ Read in this order for a cold start:
    quicklook placement rules.
 7. `brc-docs/BRC-WRF-PELICAN-NWP-HOTSWAP-HANDOFF.md` - active Pelican
    NWP-source hot-swap prompt, source verdicts, and approval boundary.
-8. `brc-docs/BRC-WRF-PELICAN-ALTERNATE-FORCING.md` - historical Pelican
-   alternate-forcing background, RAP feasibility, and WPS proof evidence.
-9. `../brc-tools/docs/HANDOFF-TO-BRC-WRF.md` - input-staging handoff when the
-   task touches manifests, contracts, or forcing.
+8. `brc-docs/BRC-WRF-PELICAN-RAP-FEASIBILITY.md` - parked RAP-only blocker
+   evidence when that source is explicitly revived.
+9. `../brc-tools/docs/WRF-STAGING-STATE-PLAYBOOK.md` and
+   `../brc-tools/docs/WRF-INPUT-STAGING.md` - input-staging truth when the task
+   touches manifests, contracts, or forcing.
 10. `../brc-knowledge/scholarium/reference-base/resources/` - CHPC node,
    storage, scheduler, proxy, and validated Slurm truth.
 
@@ -49,7 +59,9 @@ Current Pelican baseline: NAM 3/1/0.333 km, 75 levels, six-hour run
 analysis `pelican2013_gfs_3_1_333m_75lev`, job `13753673`, completed
 WPS/`real.exe`/`wrf.exe` on 2026-06-30 with `NUM_METGRID_SOIL_LEVELS = 4`.
 Paired NAM/GFS standardized quicklooks are rendered by job `13755401` under
-each archive's `quicklooks/standardized_compare_20260630T214000Z/`.
+each archive's historical `quicklooks/standardized_compare_20260630T214000Z/`
+folder. Future renders default directly to each archive's `quicklooks/dXX/`
+tree unless an explicit `--output-dir` is supplied.
 New forcing experiments should hot-swap one source at a time through
 `brc-tools` staging contracts. RAP-only is blocked before `real.exe`, ERA5 is
 locally blocked by CDS tooling/credentials, and FNL is optional third-source

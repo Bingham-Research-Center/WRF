@@ -3,9 +3,8 @@
 This is the current paste-ready handoff for tracking Pelican 3/1/0.333 km,
 75-level NWP forcing hot-swaps.
 
-It supersedes the previous brc-tools link handoff and the RAP-first prompt that
-used to live in `BRC-WRF-PELICAN-ALTERNATE-FORCING.md`. Keep this file as the
-active prompt for the parallel `brc-wrf` and `brc-tools` source search.
+It supersedes older one-off context files. Keep this file as the active Pelican
+source verdict and review prompt.
 
 ## Current Verdict
 
@@ -52,6 +51,30 @@ summary: /uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/peli
 NAM: /uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/pelican2013_nam_3_1_333m_75lev/full6h/run_20260626T163737Z/quicklooks/standardized_compare_20260630T214000Z/
 GFS: /uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/pelican2013_gfs_3_1_333m_75lev/full6h/run_20260630T181555Z/quicklooks/standardized_compare_20260630T214000Z/
 ```
+
+The stamped folder above is historical. Future renders default to the simpler
+`<archive-run>/quicklooks/dXX/` layout unless an explicit `--output-dir` is
+needed to preserve a second render.
+
+## GFS Source Facts
+
+The consumed `brc-tools` GFS contract staged two NCEI GFS grid-004 analysis
+files for 2013-02-02 12Z and 18Z. It matched the NAM comparison window and
+cadence:
+
+```text
+source: gfs_analysis
+files: gfsanl_4_20130202_1200_000.grb2, gfsanl_4_20130202_1800_000.grb2
+cadence: 6 hours
+interval_seconds: 21600
+wps_fg_name: GFS
+Vtable: Vtable.GFS
+```
+
+The field reason GFS cleared the RAP blocker: grid-004 carries a real-ready
+pressure-level atmosphere and four soil temperature/moisture layers. The WRF
+acceptance evidence confirmed `num_metgrid_levels = 27` and
+`NUM_METGRID_SOIL_LEVELS = 4`.
 
 ## Ownership
 

@@ -12,20 +12,12 @@ files concise and route deeper operational records to `doc/`, `brc-cases/`,
   steps, practical-chain result, reading packet, and maximum owned-node Slurm
   profile. This is the WRF-side companion to
   `../brc-tools/docs/walkthroughs/wrf-staging.md`.
-- `BRC-WRF-MULTISCALE-ROADMAP.md`: terse task-size and time-horizon map for
-  the Pelican hot-swap lane, from RAP field proof through source campaign.
 - `BRC-WRF-PELICAN-NWP-HOTSWAP-HANDOFF.md`: current paste-ready handoff for
-  parallel `brc-wrf`/`brc-tools` work to find one additional working NWP source
-  after RAP-only and ERA5 were blocked.
-- `BRC-WRF-PLAN-MODE-RUN-HANDOFF.md`: short legacy Plan Mode pointer. Use only
-  when John explicitly asks for planning before implementation.
+  Pelican NAM/GFS review, source verdicts, and optional third-source routing.
 - `BRC-WRF-DOMAIN-PREVIEW-SOP.md`: geogrid-only domain-preview workflow,
   storage rules, and review-packet expectations.
 - `BRC-WRF-RUN-CONVEYOR-SOP.md`: staged WRF conveyor rules for shared control
   files, Slurm logs, CFL gates, archives, and quicklooks.
-- `BRC-WRF-PELICAN-ALTERNATE-FORCING.md`: historical Pelican alternate-forcing
-  background, RAP feasibility memo, and RAP WPS proof evidence. Use
-  `BRC-WRF-PELICAN-NWP-HOTSWAP-HANDOFF.md` for the active prompt.
 - `BRC-WRF-PELICAN-RAP-FEASIBILITY.md`: RAP staged-contract consumption memo,
   selected WPS Vtable candidate, field-adequacy checklist, and WPS-only stop
   point.

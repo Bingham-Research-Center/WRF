@@ -131,8 +131,8 @@ python brc-cases/wrf_quicklook.py render \
 ```
 
 The optional render writes PNGs beside the durable archive run under
-`lawson-group6`, for example `<archive-run>/quicklooks/standardized_<UTC>/dXX/`. Repo-local PNG output
-is refused.
+`lawson-group6`, for example `<archive-run>/quicklooks/dXX/`. Repo-local PNG
+output is refused.
 
 For approved Slurm runs, the rendered wrapper adds compact debug files beside
 WRF's `rsl.*` logs:

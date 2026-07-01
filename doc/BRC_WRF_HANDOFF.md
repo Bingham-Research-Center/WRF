@@ -6,14 +6,10 @@ This file is intentionally slim; the active WRF-run-side control board is
 For any cold-start session, read `AGENTS.md` first, then
 `doc/BRC_WRF_MICROTASK_HANDOFF.md`. That pair is the current AI routing stack.
 
-The current stated next goal is Pelican NWP hot-swapping: find one additional
-working forcing source after RAP-only blocked before `real.exe` and ERA5 was
-locally blocked by CDS tooling/credentials. After the control board, read
-`brc-docs/BRC-WRF-PELICAN-NWP-HOTSWAP-HANDOFF.md`.
-
-For a session specifically focused on the older `scaling_t016` practical
-benchmark recovery, read `doc/BRC_WRF_NEXT_SESSION_HANDOFF.md` after the control
-board. Do not treat that recovery doc as the universal next task.
+The current stated next goal is to inspect the completed Pelican NAM/GFS
+quicklook pair and summarize forcing sensitivity. After the control board, read
+`brc-docs/BRC-WRF-PELICAN-NWP-HOTSWAP-HANDOFF.md` and
+`brc-docs/BRC-WRF-RUN-CONVEYOR-SOP.md`.
 
 For the end-to-end AI route toward compiling John's fork, pairing it with a
 John-owned WPS root, and proving a repeatable CHPC run, read
@@ -29,8 +25,8 @@ For current proof state and the human-facing overview, read
 
 For Pelican conveyor, comparison quicklooks, or domain-review work, read
 `brc-docs/BRC-WRF-PELICAN-NWP-HOTSWAP-HANDOFF.md`,
-`brc-docs/BRC-WRF-RUN-CONVEYOR-SOP.md`, and
-`brc-docs/BRC-WRF-PELICAN-ALTERNATE-FORCING.md`.
+`brc-docs/BRC-WRF-RUN-CONVEYOR-SOP.md`, and, only for parked RAP-only details,
+`brc-docs/BRC-WRF-PELICAN-RAP-FEASIBILITY.md`.
 
 For `brc-tools` staging context, read
 `../brc-tools/docs/WRF-STAGING-STATE-PLAYBOOK.md` and

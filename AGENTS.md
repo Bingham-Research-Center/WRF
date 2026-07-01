@@ -19,7 +19,7 @@ Keep this file as the AI router and safety contract, not a backlog.
 | Current queue, active evidence, and remaining approvals | `doc/BRC_WRF_MICROTASK_HANDOFF.md` |
 | End-to-end WRF/WPS route | `doc/BRC_WRF_END_TO_END_AI_HANDOFF.md` |
 | Pelican conveyor, 333 m baseline, and quicklook rules | `brc-docs/BRC-WRF-RUN-CONVEYOR-SOP.md` |
-| Pelican NWP hot-swap prompt, current source verdicts, and approval boundary | `brc-docs/BRC-WRF-PELICAN-NWP-HOTSWAP-HANDOFF.md` |
+| Pelican NWP source verdicts, review prompt, and approval boundary | `brc-docs/BRC-WRF-PELICAN-NWP-HOTSWAP-HANDOFF.md` |
 | First-case proof and run explanation | `brc-docs/BRC-WRF-FIRST-CASE.md` |
 | Printable state summary | `brc-docs/BRC-WRF-STATE-PLAYBOOK.md` |
 | Case manifests, validators, Slurm renderers, WRF-output quicklook adapter | `brc-cases/README.md` |
@@ -86,8 +86,8 @@ Task-specific adds:
 - Build/WPS/WRF progression: `doc/BRC_WRF_END_TO_END_AI_HANDOFF.md`
 - Pelican replay, source hot-swap, or comparison plots:
   `brc-docs/BRC-WRF-PELICAN-NWP-HOTSWAP-HANDOFF.md`,
-  `brc-docs/BRC-WRF-RUN-CONVEYOR-SOP.md`, and
-  `brc-docs/BRC-WRF-PELICAN-ALTERNATE-FORCING.md`
+  `brc-docs/BRC-WRF-RUN-CONVEYOR-SOP.md`, and, for parked RAP-only details,
+  `brc-docs/BRC-WRF-PELICAN-RAP-FEASIBILITY.md`
 - CI: `.ci/tests/build.sh` and `.github/workflows/ci.yml`
 
 ## Current Durable Truth
@@ -119,16 +119,17 @@ Task-specific adds:
   `NUM_METGRID_SOIL_LEVELS = 4`, archive
   `/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/pelican2013_gfs_3_1_333m_75lev/full6h/run_20260630T181555Z/`.
 - Pelican NAM/GFS paired quicklooks completed on 2026-06-30: job `13755401`,
-  30 PNGs per forcing under `quicklooks/standardized_compare_20260630T214000Z/`.
+  30 PNGs per forcing. Those historical products used the old
+  `quicklooks/standardized_compare_20260630T214000Z/` folder name.
 - RAP-only remains blocked before `real.exe`: hybrid RAP lacked a usable 3D
   atmosphere, and pressure RAP lacked layered soil temperature/moisture. ERA5
   remains locally blocked by missing `brc-tools` source support, CDS Python
   tooling, and CDS credentials. FNL is optional third-source work, not the
   current default.
-- Standardized WRF-output quicklooks render 10 PNGs per available domain under
-  `<archive-run>/quicklooks/<stamp>/dXX/` using reusable `brc-tools` plotting
-  helpers and a `brc-wrf` WRF-file adapter. Pelican forcing comparisons should
-  use the rendered NAM/GFS paired products before requesting new runs.
+- Standardized WRF-output quicklooks now default to 10 PNGs per available
+  domain under `<archive-run>/quicklooks/dXX/` using reusable `brc-tools`
+  plotting helpers and a `brc-wrf` WRF-file adapter. Use an explicit
+  `--output-dir` only for intentionally preserved alternate renders.
 - Michael Davies' working WRF/WPS path under `lawson-group6/u6060939/` is
   comparison evidence only. Do not point John's wrappers at Michael-owned WRF
   or WPS roots.
