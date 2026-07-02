@@ -11,6 +11,7 @@ source verdict and review prompt.
 | Source family | Verdict | Next action |
 | --- | --- | --- |
 | NAM baseline | Complete. `pelican2013_nam_3_1_333m_75lev` is the comparison anchor. | Preserve as baseline. |
+| NAM one-way feedback | Complete. `pelican2013_nam_3_1_333m_75lev_oneway` reused the NAM forcing/WPS artifacts and changed only `feedback = 1` to `feedback = 0` in `namelist.input`. | Review against the two-way NAM baseline quicklooks. |
 | RAP-only | Blocked before `real.exe`. Hybrid RAP lacked a real-ready 3D atmosphere; pressure RAP had 38 atmospheric levels but no layered soil temperature/moisture. | Park unchanged RAP-only reruns. Revisit only with a corrected RAP product or explicit filler-stream design. |
 | ERA5 | Locally blocked for immediate staging. `brc-tools` has no ERA5 WRF source, `brc-tools-2026` lacks `cdsapi`/`ecmwfapi`, and CDS credentials were not configured. WPS-side support is plausible via `Vtable.ECMWF`. | Defer until CDS tooling/credentials and pressure-level plus surface/land request support exist. |
 | GFS analysis | Complete. `pelican2013_gfs_3_1_333m_75lev` ran through WPS, `real.exe`, `wrf.exe`, and archive on 2026-06-30. `NUM_METGRID_SOIL_LEVELS = 4`, clearing the RAP failure mode. | Review with the rendered NAM/GFS standardized quicklooks. |
@@ -34,6 +35,7 @@ Completed and optional case names:
 
 ```text
 pelican2013_gfs_3_1_333m_75lev  # complete
+pelican2013_nam_3_1_333m_75lev_oneway  # complete WRF feedback=0 sensitivity
 pelican2013_fnl_3_1_333m_75lev
 ```
 
@@ -50,6 +52,17 @@ job: 13755401, completed 0:0 in 00:01:38 on notch392
 summary: /uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/pelican2013_nam_gfs_compare/control/quicklooks_20260630T214000Z/quicklook_summary_13755401.tsv
 NAM: /uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/pelican2013_nam_3_1_333m_75lev/full6h/run_20260626T163737Z/quicklooks/standardized_compare_20260630T214000Z/
 GFS: /uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/pelican2013_gfs_3_1_333m_75lev/full6h/run_20260630T181555Z/quicklooks/standardized_compare_20260630T214000Z/
+```
+
+NAM one-way feedback run and quicklooks:
+
+```text
+run job: 13788264, completed 0:0 in 02:12:32 on notch392
+quicklook retry job: 13791045, completed 0:0 in 00:00:53
+archive: /uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/pelican2013_nam_3_1_333m_75lev_oneway/full6h/run_20260702T053120Z/
+control: /uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/pelican2013_nam_3_1_333m_75lev_oneway/control/run_20260702T053120Z/
+quicklooks: /uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/pelican2013_nam_3_1_333m_75lev_oneway/full6h/run_20260702T053120Z/quicklooks/dXX/
+namelist diff: feedback = 1 -> feedback = 0 only; smooth_option retained at 0
 ```
 
 The stamped folder above is historical. Future renders default to the simpler
@@ -123,6 +136,8 @@ First read:
 
 Current source verdicts:
 - NAM baseline is complete: pelican2013_nam_3_1_333m_75lev.
+- NAM one-way feedback is complete: pelican2013_nam_3_1_333m_75lev_oneway,
+  job 13788264, feedback=0 only, 30 quicklook PNGs from retry job 13791045.
 - GFS analysis is complete: pelican2013_gfs_3_1_333m_75lev, job 13753673,
   NUM_METGRID_SOIL_LEVELS = 4, SUCCESS COMPLETE WRF.
 - NAM/GFS standardized quicklooks are complete: job 13755401, 30 PNGs per

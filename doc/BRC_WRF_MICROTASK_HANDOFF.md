@@ -16,10 +16,11 @@ large downloads.
 ## Active Goal For Next Session
 
 Current default goal, unless John says otherwise: inspect the rendered Pelican
-NAM/GFS 3/1/0.333 km, 75-level standardized quicklook pair and write a small
-science review packet. RAP-only is blocked before `real.exe`; ERA5 is locally
-blocked by source support, CDS tooling, and credentials. FNL is an optional
-third-source pass in `../brc-tools`, not the current default.
+NAM/GFS 3/1/0.333 km, 75-level standardized quicklook pair plus the NAM
+one-way-feedback sensitivity quicklooks, and write a small science review
+packet. RAP-only is blocked before `real.exe`; ERA5 is locally blocked by
+source support, CDS tooling, and credentials. FNL is an optional third-source
+pass in `../brc-tools`, not the current default.
 
 Read in this order after `AGENTS.md`:
 
@@ -44,6 +45,8 @@ the Pelican NAM namelists with `interval_seconds = 21600`.
 | --- | --- | --- | --- |
 | GFS analysis full6h | `13753673` | `COMPLETED`, `0:0`, elapsed `01:42:51`; `wrf.exe` step elapsed `01:41:14`; WPS, `real.exe`, `wrf.exe`, and archive phases all exited `0`. | Archive: `/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/pelican2013_gfs_3_1_333m_75lev/full6h/run_20260630T181555Z/`; debug: `.../debug/`; control: `/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/pelican2013_gfs_3_1_333m_75lev/control/run_20260630T181555Z/`. |
 | NAM/GFS standardized quicklooks | `13755401` | `COMPLETED`, `0:0`, elapsed `00:01:38`; both quicklook checks returned `OK: no findings` and `brc-tools manifest: verify: 2/2 OK`. | Summary: `/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/pelican2013_nam_gfs_compare/control/quicklooks_20260630T214000Z/quicklook_summary_13755401.tsv`; outputs: NAM and GFS each have 30 PNGs under `quicklooks/standardized_compare_20260630T214000Z/`, 10 per d01/d02/d03. |
+| NAM one-way feedback full6h | `13788264` | `COMPLETED`, `0:0`, elapsed `02:12:32`; `wrf.exe` step elapsed `02:11:26`; `real.exe`, `wrf.exe`, success-marker, and archive phases all exited `0`. | Archive: `/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/pelican2013_nam_3_1_333m_75lev_oneway/full6h/run_20260702T053120Z/`; debug: `.../debug/`; control: `/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/pelican2013_nam_3_1_333m_75lev_oneway/control/run_20260702T053120Z/`. |
+| NAM one-way feedback quicklooks | `13791045` | `COMPLETED`, `0:0`, elapsed `00:00:53`; rendered 30 PNGs, 10 per d01/d02/d03. First attempt `13791008` failed because `brc-tools-2026` lacked the xarray NetCDF backend; retry used the proven `clyfar-nov2025` NetCDF/render stack with `PYTHONPATH` pointed at `../brc-tools`. | Summary: `/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/pelican2013_nam_3_1_333m_75lev_oneway/control/run_20260702T053120Z/quicklook_summary_retry_13791045.tsv`; outputs: `/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/pelican2013_nam_3_1_333m_75lev_oneway/full6h/run_20260702T053120Z/quicklooks/dXX/`. |
 
 GFS acceptance facts:
 
@@ -51,6 +54,18 @@ GFS acceptance facts:
 Vtable.GFS, fg_name GFS, interval_seconds 21600
 num_metgrid_levels = 27
 NUM_METGRID_SOIL_LEVELS = 4
+SUCCESS COMPLETE REAL_EM INIT
+SUCCESS COMPLETE WRF
+21 archived wrfout files: d01/d02/d03 hourly 12Z through 18Z
+```
+
+NAM one-way feedback acceptance facts:
+
+```text
+source/forcing unchanged from NAM baseline: Vtable.NAM, fg_name NAM, interval_seconds 21600
+namelist.input diff: feedback = 1 -> feedback = 0 only; smooth_option retained at 0
+num_metgrid_levels = 40
+num_metgrid_soil_levels = 4
 SUCCESS COMPLETE REAL_EM INIT
 SUCCESS COMPLETE WRF
 21 archived wrfout files: d01/d02/d03 hourly 12Z through 18Z
@@ -157,6 +172,12 @@ stamp, `standardized_compare_20260630T214000Z`. Slurm job `13755401` completed
 with `0:0`; each forcing has 30 PNGs, 10 per d01/d02/d03, using matching
 product names for like-for-like review.
 
+As of 2026-07-02, the NAM one-way-feedback sensitivity is complete. It reused
+the proven NAM WPS/metgrid artifacts and John-owned WRF build, changed only
+`feedback = 1` to `feedback = 0` in `namelist.input`, retained
+`smooth_option = 0`, completed WRF job `13788264`, archived 21 hourly WRF
+outputs, and rendered 30 quicklook PNGs in retry job `13791045`.
+
 As of 2026-06-30, ERA5 is not ready for immediate staging in local evidence:
 `brc-tools` has no `era5` source, `cdsapi`/`ecmwfapi` are absent even in
 `brc-tools-2026`, and no CDS credentials are configured. WPS-side support is
@@ -178,7 +199,8 @@ batches repo-clean:
 Hot-swap rule for the current Pelican work: add and test one forcing source at
 a time in `brc-tools`, then consume its contract in `brc-wrf`. NAM and GFS now
 form the first comparison pair. The older GEFS+NAM two-stream idea is parked
-and should not be treated as the default next proof.
+and should not be treated as the default next proof. The NAM one-way-feedback
+run is a WRF-side feedback sensitivity, not a new `brc-tools` forcing source.
 
 ## Codex Cold Start
 

@@ -218,6 +218,60 @@ path: /uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/pelican
 log: /uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_build_logs/brc-wrf/quicklook_pelican333_13729327.out
 ```
 
+## 2026-07-02 Pelican 333 m NAM One-Way Feedback Evidence
+
+Case: `pelican2013_nam_3_1_333m_75lev_oneway`
+
+Run shape:
+
+```text
+d01: 3 km
+d02: 1 km
+d03: 0.333 km
+e_vert: 75
+window: 2013-02-02_12:00:00 to 2013-02-02_18:00:00
+forcing: NAM analysis, Vtable.NAM, prefix NAM, fg_name NAM
+nesting sensitivity: feedback = 0; smooth_option = 0
+only namelist.input change from the NAM baseline: feedback = 1 -> feedback = 0
+```
+
+Key jobs:
+
+```text
+full6h: 13788264, completed 0:0 in 02:12:32 on notch392
+wrf.exe step: 02:11:26
+quicklook first attempt: 13791008, failed 1:0 because brc-tools-2026 lacked the xarray NetCDF backend
+quicklook retry: 13791045, completed 0:0 in 00:00:53 using clyfar-nov2025 for NetCDF rendering
+```
+
+Full archive:
+
+```text
+/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/pelican2013_nam_3_1_333m_75lev_oneway/full6h/run_20260702T053120Z/
+```
+
+Control files:
+
+```text
+/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/pelican2013_nam_3_1_333m_75lev_oneway/control/run_20260702T053120Z/
+```
+
+Quicklooks:
+
+```text
+/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/pelican2013_nam_3_1_333m_75lev_oneway/full6h/run_20260702T053120Z/quicklooks/dXX/
+```
+
+Acceptance:
+
+```text
+SUCCESS COMPLETE REAL_EM INIT
+SUCCESS COMPLETE WRF
+archive phases exited 0
+21 archived wrfout files, d01/d02/d03 hourly 12Z through 18Z
+30 quicklook PNGs, 10 per d01/d02/d03
+```
+
 ## 2026-06-30 Pelican 333 m GFS Evidence
 
 Case: `pelican2013_gfs_3_1_333m_75lev`

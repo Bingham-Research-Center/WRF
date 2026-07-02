@@ -69,6 +69,12 @@ Do not use bare `python`, `pytest`, or `scripts/stage_wrf_inputs.py` for
 `clyfar-nov2025`. Bare `python brc-cases/...` remains acceptable for this
 dependency-light `brc-wrf` repo unless a task explicitly invokes `brc-tools`.
 
+Exception: WRF-output quicklook rendering reads WRF NetCDF and imports plotting
+helpers from `../brc-tools`. Source-planning still belongs in `brc-tools-2026`,
+but if that environment lacks the xarray NetCDF backend, use a proven
+NetCDF-capable render environment with `PYTHONPATH` pointed at `../brc-tools`
+and record the environment in the control/log evidence.
+
 ## Cold Start
 
 Read only what the task needs. A cheap default start is:
@@ -92,47 +98,39 @@ Task-specific adds:
 
 ## Current Durable Truth
 
-- Validated baseline: NAM-only Jan-2013 Uinta Basin, 12/4 km nested, WPS
-  `Vtable.NAM`, `interval_seconds = 21600`.
-- Fresh staging should emit `manifest_<case>.json` and
-  `contract_<case>.json`; the tracked reconstructed Jan-2013 NAM contract is a
-  fallback only.
-- Roadmap Gates 5-11 passed on 2026-06-18 for the John-owned NAM-only proof:
-  fresh contract, WPS, `real.exe`, `wrf.exe`, archive, quicklooks, and the
-  maintained practical-test harness.
-- John-owned WPS v4.6.0 proof passed on 2026-06-18 at
+- Validated Jan-2013 Basin proof: NAM-only, 12/4 km nested, WPS `Vtable.NAM`,
+  `interval_seconds = 21600`; Gates 5-11 passed on 2026-06-18. See
+  `brc-docs/BRC-WRF-FIRST-CASE.md`.
+- John-owned WPS v4.6.0 lives at
   `/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_build/WPS`.
-- Current owned-node WRF default is `lawson-np` on `notch392`, one node,
-  56 tasks, `900G`, and `srun --mpi=pmi2`.
-- Practical testing has one approved passing row: `scaling_t028` job
-  `13550110`. Later `scaling_t016` attempts failed before WRF runtime evidence
-  and are not benchmark results; see `doc/BRC_WRF_MICROTASK_HANDOFF.md`.
-- GEFSv12 plus NAM two-stream forcing is a parked optional path, not the
-  current hot-swap route. Do not foreground it unless John explicitly revives
-  that experiment.
-- Pelican NAM 3/1/0.333 km 75-level six-hour baseline completed on 2026-06-26:
-  `pelican2013_nam_3_1_333m_75lev`, full job `13695261`, archive
-  `/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/pelican2013_nam_3_1_333m_75lev/full6h/run_20260626T163737Z/`.
-- Pelican GFS analysis hot-swap completed on 2026-06-30:
-  `pelican2013_gfs_3_1_333m_75lev`, job `13753673`, `Vtable.GFS`,
-  `interval_seconds = 21600`, `num_metgrid_levels = 27`,
-  `NUM_METGRID_SOIL_LEVELS = 4`, archive
-  `/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/pelican2013_gfs_3_1_333m_75lev/full6h/run_20260630T181555Z/`.
-- Pelican NAM/GFS paired quicklooks completed on 2026-06-30: job `13755401`,
-  30 PNGs per forcing. Those historical products used the old
-  `quicklooks/standardized_compare_20260630T214000Z/` folder name.
+  John's WRF executable path must be taken from rendered control evidence and
+  checked on disk; do not borrow Michael-owned WRF/WPS roots for production
+  wrappers.
+- Current owned-node WRF profile: `lawson-np` on `notch392`, one node,
+  56 tasks, `900G`, `srun --mpi=pmi2`.
+- Fresh `brc-tools` staging should emit `manifest_<case>.json` and
+  `contract_<case>.json`; `brc-wrf` consumes those sidecars and does not add
+  downloader logic.
+- Pelican completed WRF-side runs:
+
+| Case | Meaning | Job | Notes |
+| --- | --- | --- | --- |
+| `pelican2013_nam_3_1_333m_75lev` | NAM 3/1/0.333 km, 75-level baseline | `13695261` | 2026-06-26 full6h success. |
+| `pelican2013_gfs_3_1_333m_75lev` | GFS analysis hot-swap | `13753673` | `Vtable.GFS`, `interval_seconds = 21600`, `NUM_METGRID_SOIL_LEVELS = 4`. |
+| `pelican2013_nam_3_1_333m_75lev_oneway` | NAM feedback sensitivity | `13788264` | Only `feedback = 1` -> `feedback = 0`; `smooth_option = 0`; quicklooks retry `13791045`. |
+
+- Pelican quicklook evidence now includes NAM/GFS comparison job `13755401`
+  and NAM one-way quicklook retry job `13791045`, each with 30 PNGs. Current
+  default output is `<archive-run>/quicklooks/dXX/`; older stamped comparison
+  folders remain valid historical evidence.
 - RAP-only remains blocked before `real.exe`: hybrid RAP lacked a usable 3D
   atmosphere, and pressure RAP lacked layered soil temperature/moisture. ERA5
   remains locally blocked by missing `brc-tools` source support, CDS Python
   tooling, and CDS credentials. FNL is optional third-source work, not the
   current default.
-- Standardized WRF-output quicklooks now default to 10 PNGs per available
-  domain under `<archive-run>/quicklooks/dXX/` using reusable `brc-tools`
-  plotting helpers and a `brc-wrf` WRF-file adapter. Use an explicit
-  `--output-dir` only for intentionally preserved alternate renders.
-- Michael Davies' working WRF/WPS path under `lawson-group6/u6060939/` is
-  comparison evidence only. Do not point John's wrappers at Michael-owned WRF
-  or WPS roots.
+- GEFSv12 plus NAM two-stream forcing is a parked optional path, not the
+  current hot-swap route. Do not foreground it unless John explicitly revives
+  that experiment.
 
 ## Login-Safe Versus Off-Login
 
@@ -190,6 +188,10 @@ scripts, logs, NetCDF, PNGs, and inventories do not belong in this repo.
   Treat `real.exe`, `wrf.exe`, archive completeness, Slurm state, and
   quicklooks as separate evidence.
 - Avoid `srun --jobid` probes inside a fully occupied WRF allocation.
+- Poll Slurm jobs with bounded `squeue -j <jobid>` intervals and back off while
+  WRF is integrating. If scheduler polling hits socket/accounting errors, do
+  not tight-loop; retry from an approved context and preserve the error as
+  evidence.
 - Prefer structured artifacts over large logs: `debug/run_debug_summary.txt`,
   `debug/run_phase_times.tsv`, `debug/run_file_inventory.tsv`, `sacct`, and
   targeted `rg` success/error patterns. Keep tails tightly bounded.
