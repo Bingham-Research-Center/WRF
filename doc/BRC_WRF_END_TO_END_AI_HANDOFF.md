@@ -36,7 +36,8 @@ to a specific file or failure mode.
 | WRF build/run details | `../brc-knowledge/scholarium/reference-base/resources/wrf-on-chpc-quickstart.md` sections 3, 4, 5, 7, 8, 10, 11, and 12 | Validated Intel stack, `--mpi=pmi2`, WRF/WPS build choices, run layout, scaling, and known failure modes. |
 | Generic Slurm only if needed | `../brc-knowledge/scholarium/reference-base/resources/chpc-slurm-job-examples.md` sections 5 and 7 | Ensemble shape and long-running LLM/API agent shape. Do not copy generic WRF body from here. |
 | Repo router | `AGENTS.md` | Boundaries, login-node-safe commands, and repo ownership. |
-| Current WRF queue | `doc/BRC_WRF_MICROTASK_HANDOFF.md` | Remaining gates, stopped work, and no-run templates. |
+| Current experiment todo | `doc/BRC_WRF_EXPERIMENT_TODO.md` | Active WRF experiment tasks across `brc-wrf` and `brc-tools`. |
+| Detailed WRF evidence ledger | `doc/BRC_WRF_MICROTASK_HANDOFF.md` | Historical gates, stopped work, and no-run templates. |
 | Proven NAM path | `brc-docs/BRC-WRF-FIRST-CASE.md` | Current start-to-finish proof and source identity. |
 | Case wrapper | `brc-cases/README.md` and `brc-cases/jan2013_basin_nam.case.yaml` | Manifest, executable roots, Slurm render, and validation behavior. |
 | Input handshake | `../brc-tools/docs/WRF-STAGING-STATE-PLAYBOOK.md` and `../brc-tools/docs/WRF-INPUT-STAGING.md` | Fresh `manifest_<case>.json` and `contract_<case>.json` expectations. |

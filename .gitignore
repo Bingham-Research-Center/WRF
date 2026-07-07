@@ -46,3 +46,7 @@ __pycache__/
 
 # BRC-local rendered review artifacts
 brc-cases/quicklooks/
+
+# BRC-local disposable prompts and handoff notes
+.local-handoffs/
+scratch-handoffs/

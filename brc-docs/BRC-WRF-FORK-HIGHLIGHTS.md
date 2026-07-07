@@ -32,7 +32,7 @@ on top of upstream WRF 4.8.0.
 | WPS output | 14 `met_em` files, d01/d02, with land, skin temp, snow, and soil fields. |
 | WRF run | `real.exe` and `wrf.exe` reached success markers on CHPC. |
 | Visual QA | Standardized WRF-output quicklooks render 10 PNGs per domain from existing WRF artifacts. |
-| Practical testing | One 28-task row passed; remaining scaling/memory work is approval-gated. See `doc/BRC_WRF_MICROTASK_HANDOFF.md`. |
+| Practical testing | One 28-task row passed; remaining scaling/memory work is approval-gated. See `doc/BRC_WRF_EXPERIMENT_TODO.md`; detailed history remains in `doc/BRC_WRF_MICROTASK_HANDOFF.md`. |
 | Not proven yet | GEFSv12 reforecast plus NAM two-stream forcing. |
 
 ## Current Review Commands

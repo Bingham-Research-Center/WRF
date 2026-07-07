@@ -12,8 +12,10 @@ files concise and route deeper operational records to `doc/`, `brc-cases/`,
   steps, practical-chain result, reading packet, and maximum owned-node Slurm
   profile. This is the WRF-side companion to
   `../brc-tools/docs/walkthroughs/wrf-staging.md`.
-- `BRC-WRF-PELICAN-NWP-HOTSWAP-HANDOFF.md`: current paste-ready handoff for
-  Pelican NAM/GFS review, source verdicts, and optional third-source routing.
+- `BRC-WRF-PELICAN-NWP-HOTSWAP-HANDOFF.md`: canonical Pelican NAM/GFS/NAM-one-way
+  and terrain state, source verdicts, and optional third-source routing. Do not
+  store copy-paste prompts here; put disposable prompts under `.local-handoffs/`,
+  `scratch-handoffs/`, or `/tmp`.
 - `BRC-WRF-DOMAIN-PREVIEW-SOP.md`: geogrid-only domain-preview workflow,
   storage rules, and review-packet expectations.
 - `BRC-WRF-RUN-CONVEYOR-SOP.md`: staged WRF conveyor rules for shared control
@@ -32,8 +34,11 @@ files concise and route deeper operational records to `doc/`, `brc-cases/`,
 - `BRC-WRF-FIRST-CASE.md`: current start-to-finish Jan-2013 Basin proof path
   connecting `brc-tools` staged inputs to WPS, `real.exe`, `wrf.exe`, and
   archive checks.
-- `BRC-WRF-ROADMAP.md`: compact gate index. The active queue and approval
-  state live in `../doc/BRC_WRF_MICROTASK_HANDOFF.md`.
+- `../doc/BRC_WRF_EXPERIMENT_TODO.md`: active experiment todo across
+  `brc-wrf` and sibling `brc-tools`.
+- `BRC-WRF-ROADMAP.md`: compact gate index. The active experiment todo and
+  approval state live in `../doc/BRC_WRF_EXPERIMENT_TODO.md`; detailed historical
+  evidence lives in `../doc/BRC_WRF_MICROTASK_HANDOFF.md`.
 - `../brc-cases/README.md`: BRC case manifest, cheap validator, and render-only
   Slurm checkpoint.
 - `handouts/`: rendered PDF copies for live review. Treat these as derivatives

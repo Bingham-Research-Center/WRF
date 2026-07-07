@@ -6,11 +6,10 @@ the current `brc-wrf` fork fits, what is proven, and what should happen next.
 ## One-Sentence State
 
 We have a BRC-local review layer around WRF 4.8.0, a proven NAM-only Jan-2013
-Basin case, and a Pelican NAM/GFS forcing pair that now runs through WPS,
-`real.exe`, `wrf.exe`, archive checks, and paired standardized quicklooks; the
-Pelican NAM one-way-feedback sensitivity also completes with quicklooks, and
-the first practical 28-task row passes after fixing executable provenance and
-WRF runtime-file staging.
+Basin case, and a Pelican NAM/GFS/NAM-one-way experiment set that runs through
+WPS, `real.exe`, `wrf.exe`, archive checks, standard quicklooks, and
+supplemental `_600hPa` and `_4h` quicklooks; the first practical 28-task row
+passes after fixing executable provenance and WRF runtime-file staging.
 
 ## Mental Model
 
@@ -59,37 +58,38 @@ proof, production archives, or `brc-tools` staging truth.
 | Practical testing | One 28-task row passed. Job `13550110` ran John's `~/gits/brc-wrf` WRF `V4.8.0`, passed `real.exe`/`wrf.exe`, and archived debug evidence under `practical_tests/scaling_t028/run_20260618T230858Z/`. Attempted `scaling_t016` jobs `13550555` and `13550909` failed before WRF runtime evidence: first from node-local `/tmp` Slurm paths, then from a `WRF_RUN` missing runtime files from John's `run/` directory. No `rsl.*`, archive, or debug evidence exists for `scaling_t016`. Memory rows remain unrun. |
 | Gate 10 visual review | Preliminary PNG-only visual sanity passed; see `brc-docs/BRC-WRF-GATE10-QUICKLOOK-REVIEW.md`. John/Michael science acceptance is still the decision point. |
 | Slurm profile | Aligned to max owned-node profile: `lawson-np`, `notch392`, 1 node, 56 tasks, `900G`, `srun --mpi=pmi2`. |
-| Alternate forcing and nesting sensitivity | NAM and GFS now form the first Pelican comparison pair. GFS analysis job `13753673` completed WPS/`real.exe`/`wrf.exe` with `NUM_METGRID_SOIL_LEVELS = 4`; paired quicklook job `13755401` rendered 30 standardized PNGs per forcing. The NAM one-way-feedback sensitivity job `13788264` changed only `feedback = 1` to `feedback = 0`, completed WRF/archive, and quicklook retry job `13791045` rendered 30 PNGs. RAP-only is blocked before `real.exe`: hybrid Vtable output lacked a real-ready 3D atmosphere, and pressure Vtable output lacked layered soil temperature/moisture fields. ERA5 is locally blocked by missing `brc-tools` source support, CDS Python tooling, and CDS credentials. FNL is optional third-source work. |
+| Alternate forcing and nesting sensitivity | NAM, GFS, and NAM one-way feedback now form the first Pelican review set. GFS analysis job `13753673` completed WPS/`real.exe`/`wrf.exe` with `NUM_METGRID_SOIL_LEVELS = 4`; paired quicklook job `13755401` rendered 30 standardized PNGs per forcing. The NAM one-way-feedback sensitivity job `13788264` changed only `feedback = 1` to `feedback = 0`, completed WRF/archive, and quicklook retry job `13791045` rendered 30 PNGs. Supplemental quicklook job `13792197` added `_600hPa` and `_4h` folders under each domain root for all three runs. RAP-only is blocked before `real.exe`: hybrid Vtable output lacked a real-ready 3D atmosphere, and pressure Vtable output lacked layered soil temperature/moisture fields. ERA5 is locally blocked by missing `brc-tools` source support, CDS Python tooling, and CDS credentials. FNL is optional third-source work. |
 
 ## Where We Should Go Next
 
 | Order | Next move | Stop point |
 | --- | --- | --- |
-| 1 | Have John/Michael accept or reject the Gate 10 quicklook review. | Decide whether the NAM-only proof remains a physically useful baseline. |
-| 2 | Decide whether to reapprove exactly one practical benchmark row. | Recommended next row is still `scaling_t016`; use the generated `prepare_scaling_t016.sh` in an approved off-login context, then submit exactly one row and stop on its result. |
-| 3 | Inspect Pelican NAM, GFS, and NAM one-way outputs. | Use the rendered paired quicklooks under `standardized_compare_20260630T214000Z` and the NAM one-way quicklooks under `run_20260702T053120Z/quicklooks/dXX/`; stop at a concise science-review packet. |
+| 1 | Inspect Pelican NAM, GFS, and NAM one-way outputs. | Use the standard quicklooks plus `_600hPa` and `_4h` supplemental folders; stop at a concise science-review packet. |
+| 2 | Decide whether the review justifies another forcing/source lane. | Pick one: FNL/GFS-family source, corrected RAP/filler design, ERA5 access work, scaling row, memory row, or stop. |
+| 3 | Decide whether to reapprove exactly one practical benchmark row. | Recommended next row is still `scaling_t016`; use the generated `prepare_scaling_t016.sh` in an approved off-login context, then submit exactly one row and stop on its result. |
 
 ## Reading Packet
 
 Read these in order for a milestone review:
 
-1. `brc-docs/BRC-WRF-MICHAEL-PRACTICAL-PACKET.md` for a pair-programming
+1. `doc/BRC_WRF_EXPERIMENT_TODO.md` for the active experiment todo.
+2. `brc-docs/BRC-WRF-MICHAEL-PRACTICAL-PACKET.md` for a pair-programming
    walkthrough.
-2. `doc/BRC_WRF_END_TO_END_AI_HANDOFF.md` for an AI-led build/WPS/WRF
+3. `doc/BRC_WRF_END_TO_END_AI_HANDOFF.md` for an AI-led build/WPS/WRF
    progression map.
-3. `brc-docs/BRC-WRF-FORK-HIGHLIGHTS.md`
-4. `brc-docs/BRC-WRF-FIRST-CASE.md`
-5. `brc-cases/README.md`
-6. `brc-docs/BRC-WRF-USAGE.md`
-7. `brc-docs/BRC-WRF-GATE10-QUICKLOOK-REVIEW.md`
-8. `brc-docs/BRC-WRF-PELICAN-NWP-HOTSWAP-HANDOFF.md` when working the Pelican
+4. `brc-docs/BRC-WRF-FORK-HIGHLIGHTS.md`
+5. `brc-docs/BRC-WRF-FIRST-CASE.md`
+6. `brc-cases/README.md`
+7. `brc-docs/BRC-WRF-USAGE.md`
+8. `brc-docs/BRC-WRF-GATE10-QUICKLOOK-REVIEW.md`
+9. `brc-docs/BRC-WRF-PELICAN-NWP-HOTSWAP-HANDOFF.md` when working the Pelican
    source hot-swap.
-9. `../brc-tools/docs/walkthroughs/wrf-staging.md`
-10. `../brc-tools/docs/WRF-STAGING-STATE-PLAYBOOK.md`
-11. `brc-docs/BRC-WRF-PELICAN-RAP-FEASIBILITY.md` only when working the parked
+10. `../brc-tools/docs/walkthroughs/wrf-staging.md`
+11. `../brc-tools/docs/WRF-STAGING-STATE-PLAYBOOK.md`
+12. `brc-docs/BRC-WRF-PELICAN-RAP-FEASIBILITY.md` only when working the parked
     RAP blocker.
-12. `../brc-knowledge/scholarium/reference-base/resources/chpc-team-resource-inventory.md` sections 1-3 and Q1
-13. `../brc-knowledge/scholarium/reference-base/resources/wrf-on-chpc-quickstart.md` sections 2, 3, and 8
+13. `../brc-knowledge/scholarium/reference-base/resources/chpc-team-resource-inventory.md` sections 1-3 and Q1
+14. `../brc-knowledge/scholarium/reference-base/resources/wrf-on-chpc-quickstart.md` sections 2, 3, and 8
 
 For Michael, start with items 1, 4, 5, 7, and 8 before the full CHPC resource
 inventory. For John, start with items 2, 3, 4, 7, 8, and 10; add item 9 when

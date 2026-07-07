@@ -1,6 +1,7 @@
 # BRC WRF Roadmap
 
-Status: compact gate index. The active queue and approval state live in
+Status: compact gate index. The active experiment todo and approval state live
+in `doc/BRC_WRF_EXPERIMENT_TODO.md`; detailed historical evidence lives in
 `doc/BRC_WRF_MICROTASK_HANDOFF.md`.
 
 This is not approval to compile, stage inputs, run WPS, run `real.exe` or
@@ -18,13 +19,13 @@ Practical testing has one approved passing row: `scaling_t028` job `13550110`.
 Later `scaling_t016` attempts failed before WRF runtime evidence and are not
 benchmark results.
 
-Current alternate-forcing work is one source at a time through `brc-tools`
-contracts for the Pelican 3/1/0.333 km baseline. NAM and GFS now form the first
-completed comparison pair, with paired standardized quicklooks rendered under
-`standardized_compare_20260630T214000Z`. RAP-only is blocked before `real.exe`;
-ERA5 is locally blocked by CDS tooling/credentials and missing source support.
-FNL is optional third-source work after the NAM/GFS review. GEFS+NAM two-stream
-forcing is parked unless John explicitly revives it.
+Current Pelican work is in review mode. The NAM two-way baseline, GFS analysis
+hot-swap, and NAM one-way feedback sensitivity are complete for the
+3/1/0.333 km case, with standard quicklooks plus supplemental `_600hPa` and
+`_4h` folders rendered. RAP-only is blocked before `real.exe`; ERA5 is locally
+blocked by CDS tooling/credentials and missing source support. FNL is optional
+third-source work after the Pelican review. GEFS+NAM two-stream forcing is
+parked unless John explicitly revives it.
 
 ## Gate Index
 
@@ -47,7 +48,7 @@ forcing is parked unless John explicitly revives it.
 
 | Lane | Default status | Stop point |
 | --- | --- | --- |
-| Pelican NWP hot-swap | NAM/GFS pair ready for review | Inspect paired quicklooks, summarize sensitivity, and decide whether FNL or a corrected RAP/ERA5 path is worth another approval. |
+| Pelican NWP hot-swap | NAM/GFS/NAM-one-way outputs ready for review | Inspect standard quicklooks plus `_600hPa` and `_4h` supplemental folders, summarize sensitivity, and decide whether FNL or a corrected RAP/ERA5 path is worth another approval. |
 | Additional scaling row | Approval-gated | Render/check packet only until one row is explicitly approved. |
 | Memory right-sizing | Approval-gated | Candidate table only until one row is explicitly approved. |
 | GEFS+NAM two-stream | Parked legacy | Do not pursue unless John explicitly revives it. |
@@ -69,8 +70,9 @@ forcing is parked unless John explicitly revives it.
 ```text
 cwd=/uufs/chpc.utah.edu/common/home/u0737349/gits/brc-wrf
 
-Read AGENTS.md, then doc/BRC_WRF_MICROTASK_HANDOFF.md. Use this roadmap only as
-a compact gate index. Gates 0-11 are passed unless live docs contradict that.
+Read AGENTS.md, then doc/BRC_WRF_EXPERIMENT_TODO.md. Use this roadmap only as a
+compact gate index and doc/BRC_WRF_MICROTASK_HANDOFF.md only as the detailed
+evidence ledger. Gates 0-11 are passed unless live docs contradict that.
 
 Pick exactly one follow-on lane. Do not run compile, staging, WPS, real.exe,
 wrf.exe, sbatch, strict artifact reads, NetCDF/archive checks, quicklooks,

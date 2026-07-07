@@ -79,7 +79,9 @@ Read these in order:
 4. `../brc-tools/docs/walkthroughs/wrf-staging.md`
 5. `../brc-tools/docs/WRF-STAGING-STATE-PLAYBOOK.md`
 
-Keep `doc/BRC_WRF_MICROTASK_HANDOFF.md` open as the detailed task board.
+Keep `doc/BRC_WRF_EXPERIMENT_TODO.md` open as the active task board. Use
+`doc/BRC_WRF_MICROTASK_HANDOFF.md` only when detailed historical evidence is
+needed.
 
 ## No-Run Walkthrough
 
