@@ -148,9 +148,66 @@ The checkpoint is intentionally small:
    temperature, surface pressure, and W-E/S-N potential-temperature cross
    sections. The helper is a WRF-file adapter; reusable plotting primitives
    live in `../brc-tools/brc_tools/visualize/grid.py`.
+
+   Supplemental review products can be added without touching the parent PNGs:
+
+   ```bash
+   python brc-cases/wrf_quicklook.py render-supplemental \
+     brc-cases/jan2013_basin_nam.case.yaml
+   ```
+
+   This writes four add-on PNGs per domain below the selected output root:
+   `_600hPa/01_600hPa_height_rh_wind_barbs.png` from the 1-hour lead WRF file,
+   and `_4h/{01_t2_10m_wind.png,04_10m_wind_speed.png,06_snow_depth.png}` from
+   the 4-hour lead WRF file. Use `--output-dir` to target an existing stamped
+   comparison root such as `quicklooks/standardized_compare_<UTC>/`.
    Path-only quicklook unit tests are login-node safe because they do not
    verify manifests, open NetCDF files, read archives, or render PNGs.
    The workflow source is tracked in `jan2013_nam_workflow.mmd`.
+
+9. Prepare custom WPS `HGT_M` terrain tiles. Login-safe commands can plan tiles
+   and render a Slurm packet. DEM metadata queries, network download/cache, and
+   GDAL static-tile builds should run from the rendered Slurm scripts, not on a
+   login node. Generated rasters and packet outputs stay outside this checkout.
+
+   ```bash
+   python brc-cases/wps_hgt_static.py plan --bounds -114 37 -105 44
+
+   python brc-cases/wps_hgt_static.py render-slurm-packet \
+     --case-name pelican2013_nam_3_1_333m_75lev_oneway_terrain3s \
+     --bounds -114 37 -105 44 \
+     --packet-dir /uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/pelican2013_nam_3_1_333m_75lev_oneway_terrain3s/control/terrain_static_<UTC> \
+     --geog-data-path /scratch/general/vast/$USER/wps_geog_terrain3s \
+     --rel-path topo_brc_custom_3s \
+     --download-dir /scratch/general/vast/$USER/wrf_inputs/pelican2013_terrain3s/usgs_3dep_1arcsec \
+     --max-products 600 \
+     --min-free-gb 10
+
+   bash /path/to/terrain_static_<UTC>/submit_terrain_static.sh
+
+   python brc-cases/wps_hgt_static.py patch-geogrid-table \
+     --base /path/to/GEOGRID.TBL.ARW \
+     --output /tmp/brc-wrf-terrain3s-control/GEOGRID.TBL.ARW.terrain3s \
+     --token brc_custom_3s \
+     --rel-path topo_brc_custom_3s
+
+   python brc-cases/wps_hgt_static.py render-namelist \
+     --template /path/to/namelist.wps \
+     --output /tmp/brc-wrf-terrain3s-control/namelist.wps \
+     --token brc_custom_3s \
+     --geog-data-path /scratch/general/vast/$USER/wps_geog_terrain3s
+   ```
+
+   The default `plan` bounds are the current Pelican terrain lane's broad Utah
+   review box. The helper emits regular-lat/lon, signed 16-bit, 3 arc-second,
+   WPS continuous terrain tiles with `tile_bdr=3`; the run-local
+   `GEOGRID.TBL` token should be used only for `HGT_M`, with all other static
+   fields falling through to `default`. The Pelican broad box needs 63 WPS
+   output tiles, but the current USGS 1 arc-second source query de-duplicates
+   to 99 one-degree GeoTIFF tiles, about 4.53 GiB before GDAL temporary files.
+   Keep at least 10 GiB free in the DEM cache filesystem. The rendered download
+   job defaults to the CHPC DTN convention used by `brc-tools`:
+   `account=dtn`, `partition=notchpeak-dtn`, `qos=notchpeak-dtn`.
 
 `wrf_case.py` uses only the Python standard library. Because this checkout does
 not currently carry a YAML dependency, the `*.case.yaml` format is a deliberately
@@ -162,10 +219,11 @@ The helper is a pre-run review gate, not a workflow engine. Real WPS, `real.exe`
 `wrf.exe`, scaling sweeps, and Slurm submission still require explicit human
 approval.
 
-Input downloads and staging are not owned here. Use `../brc-tools`, its
+NWP input downloads and staging are not owned here. Use `../brc-tools`, its
 Herbie-backed paths where available, and `notchpeak-dtn` for full NWP transfer
-work. This repo should consume the fresh `contract_<case>.json` sidecar, not add
-download logic. The RAP review case
+work. Static WPS terrain packets are a narrow exception in this repo because
+they build WPS geography, not forcing contracts. This repo should consume fresh
+NWP `contract_<case>.json` sidecars, not add GRIB download logic. The RAP review case
 `pelican2013_rap_3_1_333m_75lev.case.yaml` points at the staged RAP contract
 and deliberately leaves metgrid-derived counts pending until the WPS-only
 field-adequacy proof runs off-login.

@@ -20,14 +20,15 @@ successful job `13788264` as the Slurm/WRF reference, but with genuinely finer
 terrain. The completed `topo_gmted2010_5m` run proved the overlay/control path,
 but `5m` is 5 arc-minutes, not 5 metres, so it is coarser than the installed
 `topo_gmted2010_30s` default. Job `13847980` completed `0:0` in `02:17:41` on
-`notch392`; quicklook job `13848733` completed `0:0` and wrote 42 PNGs. Next
-target: custom `3s` `HGT_M` terrain for the same NAM one-way configuration.
+`notch392`; quicklook job `13848733` completed `0:0` and wrote 42 PNGs. The
+custom `3s` `HGT_M` static terrain source is built and cached. Next target:
+geogrid-only proof that WPS uses `topo_brc_custom_3s` for `HGT_M`.
 
 ## Next Tasks
 
 | Order | Repo | Task | Stop point |
 | ---: | --- | --- | --- |
-| 1 | `brc-wrf` | Build a custom WPS `HGT_M` overlay at `3s` resolution for the Pelican domains; keep shared `WPS_GEOG` for all other fields. | Geogrid-only proof: `geogrid.log` says `HGT_M` used the custom `3s` source; archive `geo_em.d0*.nc`, `namelist.wps`, `GEOGRID.TBL.ARW`, and a terrain-difference preview against the `30s`/`5m` runs. |
+| 1 | `brc-wrf` | Run geogrid-only proof with `topo_brc_custom_3s` as the `HGT_M` overlay and shared `WPS_GEOG` for all other fields. | `geogrid.log` says custom `3s` source was used; archive `geo_em.d0*.nc`, `namelist.wps`, `GEOGRID.TBL.ARW`, and a terrain-difference preview against the `30s`/`5m` runs. |
 | 2 | `brc-wrf` | If the `3s` geogrid proof is clean, rerun the same NAM one-way WPS/WRF conveyor as job `13847980`, changing only the terrain source and case/run names. | `real.exe`, `wrf.exe`, archive, standard quicklooks, and supplemental quicklooks; compare against job `13788264` and the `topo_gmted2010_5m` operator-proof run. |
 | 3 | `brc-wrf` | Review the completed Pelican quicklooks, including standard 10-product sets plus `_600hPa` and `_4h` supplemental folders. | Short science packet: similarities, differences, suspicious fields, and whether another source or `1s` terrain is worth trying. |
 | 4 | `brc-wrf` | Decide the next experiment lane from the review. | Pick one: `1s` terrain follow-up, FNL/GFS-family source, corrected RAP/filler design, ERA5 access work, scaling row, memory row, or stop. |
@@ -40,7 +41,8 @@ target: custom `3s` `HGT_M` terrain for the same NAM one-way configuration.
 | Need | File |
 | --- | --- |
 | Geogrid-only terrain/domain preview | `brc-docs/BRC-WRF-DOMAIN-PREVIEW-SOP.md` |
-| Pelican source verdicts, quicklook roots, and paste prompts | `brc-docs/BRC-WRF-PELICAN-NWP-HOTSWAP-HANDOFF.md` |
+| Custom WPS `HGT_M` static tile preparation | `brc-cases/wps_hgt_static.py` and `brc-cases/README.md` |
+| Pelican source verdicts, terrain state, and quicklook roots | `brc-docs/BRC-WRF-PELICAN-NWP-HOTSWAP-HANDOFF.md` |
 | Conveyor rules, archive layout, quicklook layout | `brc-docs/BRC-WRF-RUN-CONVEYOR-SOP.md` |
 | First Jan-2013 proof and gate evidence | `brc-docs/BRC-WRF-FIRST-CASE.md` |
 | Detailed historical evidence ledger | `doc/BRC_WRF_MICROTASK_HANDOFF.md` |
@@ -69,10 +71,12 @@ Login-safe:
 - read/edit docs;
 - run `git status`;
 - run path-only quicklook tests;
-- run `python -m py_compile` on `brc-cases` helpers.
+- run `python -m py_compile` on `brc-cases` helpers;
+- render terrain Slurm packets without submitting them.
 
 Off-login or approval-gated:
 
+- terrain DEM metadata/download/cache/build jobs;
 - strict manifest/contract checks that hash staged inputs;
 - NetCDF/archive reads;
 - quicklook rendering;

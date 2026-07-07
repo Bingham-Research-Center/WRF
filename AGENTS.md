@@ -10,30 +10,52 @@ This tree is large. Start narrow and local. Do not broad-scan WRF internals,
 scratch trees, archives, or sibling repos unless a named file or `rg` result
 points there.
 
-## Source Of Truth
+## Cold Start
 
 Keep this file as the AI router and safety contract, not a backlog.
 
+Default start:
+
+1. `git status --short --branch --untracked-files=no`
+2. `sed -n '1,180p' AGENTS.md`
+3. `sed -n '1,220p' doc/BRC_WRF_EXPERIMENT_TODO.md`
+
+Then load only the task-specific owner doc:
+
+- Detailed historical evidence: `doc/BRC_WRF_MICROTASK_HANDOFF.md`
+- Build/WPS/WRF route: `doc/BRC_WRF_END_TO_END_AI_HANDOFF.md`
+- Pelican review, source hot-swap, or comparison plots:
+  `brc-docs/BRC-WRF-PELICAN-NWP-HOTSWAP-HANDOFF.md` and
+  `brc-docs/BRC-WRF-RUN-CONVEYOR-SOP.md`
+- Parked RAP-only details: `brc-docs/BRC-WRF-PELICAN-RAP-FEASIBILITY.md`
+- Case manifests, validators, Slurm renderers, and quicklooks:
+  `brc-cases/README.md`
+- Input staging, manifests, contracts, source access:
+  `../brc-tools/docs/WRF-STAGING-STATE-PLAYBOOK.md`,
+  `../brc-tools/docs/WRF-INPUT-STAGING.md`, and
+  `../brc-tools/WISHLIST-TASKS.md`
+- CHPC node, storage, scheduler, proxy, and Slurm truth:
+  `../brc-knowledge/scholarium/reference-base/resources/`
+- Local automation: `.sane/wrf/README.md`
+- CI: `.ci/tests/build.sh` and `.github/workflows/ci.yml`
+
+Do not revive deleted June handoffs, chat-style notes, or stale priority files.
+If a fact changes, update the owner doc and leave only short pointers elsewhere.
+
+## Source Of Truth
+
 | Truth | Canonical file |
 | --- | --- |
-| Current queue, active evidence, and remaining approvals | `doc/BRC_WRF_MICROTASK_HANDOFF.md` |
+| Current experiment todo across `brc-wrf` and `brc-tools` | `doc/BRC_WRF_EXPERIMENT_TODO.md` |
+| Detailed evidence ledger | `doc/BRC_WRF_MICROTASK_HANDOFF.md` |
 | End-to-end WRF/WPS route | `doc/BRC_WRF_END_TO_END_AI_HANDOFF.md` |
-| Pelican conveyor, 333 m baseline, and quicklook rules | `brc-docs/BRC-WRF-RUN-CONVEYOR-SOP.md` |
-| Pelican NWP source verdicts, review prompt, and approval boundary | `brc-docs/BRC-WRF-PELICAN-NWP-HOTSWAP-HANDOFF.md` |
+| Pelican conveyor, archive, and quicklook rules | `brc-docs/BRC-WRF-RUN-CONVEYOR-SOP.md` |
+| Pelican source/terrain verdicts and review prompts | `brc-docs/BRC-WRF-PELICAN-NWP-HOTSWAP-HANDOFF.md` |
 | First-case proof and run explanation | `brc-docs/BRC-WRF-FIRST-CASE.md` |
 | Printable state summary | `brc-docs/BRC-WRF-STATE-PLAYBOOK.md` |
-| Case manifests, validators, Slurm renderers, WRF-output quicklook adapter | `brc-cases/README.md` |
-| Input staging, manifests, contracts, downloader behavior | `../brc-tools/docs/WRF-STAGING-STATE-PLAYBOOK.md` and `../brc-tools/docs/WRF-INPUT-STAGING.md` |
-| CHPC node, storage, scheduler, proxy, and validated Slurm truth | `../brc-knowledge/scholarium/reference-base/resources/` |
-
-If a fact changes, update the canonical file above and only leave short pointers
-elsewhere. Do not revive deleted priority files or copy task matrices into this
-router.
-
-For to-dos and wishlists, start with `doc/BRC_WRF_MICROTASK_HANDOFF.md`.
-Use `brc-docs/BRC-WRF-ROADMAP.md` only as a compact gate/follow-on index and
-`brc-docs/BRC-WRF-STATE-PLAYBOOK.md` for human-readable next moves. Sibling
-staging wishlists belong in `../brc-tools/docs/`, not this repo.
+| Case helpers, static terrain helper, and WRF-output quicklook adapter | `brc-cases/README.md` |
+| Input staging and downloader behavior | `../brc-tools/docs/WRF-STAGING-STATE-PLAYBOOK.md` and `../brc-tools/docs/WRF-INPUT-STAGING.md` |
+| CHPC infrastructure facts | `../brc-knowledge/scholarium/reference-base/resources/` |
 
 ## Ownership
 
@@ -50,87 +72,52 @@ Patch the repo that owns the behavior. Do not add downloader/staging logic to
 ## `brc-tools` Python Environment
 
 For any command that runs sibling `../brc-tools` Python, Herbie, NWP source
-planning, input staging, manifest verification, or `pytest`, do not rely on the
-active shell environment. Force the maintained environment:
+planning, input staging, manifest verification, or `pytest`, force the
+maintained environment:
 
 ```bash
 conda run -n brc-tools-2026 python ...
 conda run -n brc-tools-2026 pytest ...
 ```
 
-The stricter equivalent is the absolute interpreter:
+The stricter equivalent is:
 
 ```bash
 /uufs/chpc.utah.edu/common/home/u0737349/software/pkg/miniforge3/envs/brc-tools-2026/bin/python ...
 ```
 
-Do not use bare `python`, `pytest`, or `scripts/stage_wrf_inputs.py` for
-`brc-tools` work; Codex may inherit unrelated environments such as
-`clyfar-nov2025`. Bare `python brc-cases/...` remains acceptable for this
-dependency-light `brc-wrf` repo unless a task explicitly invokes `brc-tools`.
+Bare `python brc-cases/...` remains acceptable for this dependency-light
+`brc-wrf` repo unless the task invokes `brc-tools`.
 
 Exception: WRF-output quicklook rendering reads WRF NetCDF and imports plotting
-helpers from `../brc-tools`. Source-planning still belongs in `brc-tools-2026`,
-but if that environment lacks the xarray NetCDF backend, use a proven
-NetCDF-capable render environment with `PYTHONPATH` pointed at `../brc-tools`
-and record the environment in the control/log evidence.
+helpers from `../brc-tools`. Source planning still belongs in
+`brc-tools-2026`, but if that environment lacks the xarray NetCDF backend, use
+a proven NetCDF-capable render environment with `PYTHONPATH` pointed at
+`../brc-tools` and record the environment in the control/log evidence.
 
-## Cold Start
-
-Read only what the task needs. A cheap default start is:
-
-1. `git status --short --branch --untracked-files=no`
-2. `sed -n '1,180p' AGENTS.md`
-3. `sed -n '1,220p' doc/BRC_WRF_MICROTASK_HANDOFF.md`
-4. `sed -n '1,160p' brc-docs/BRC-WRF-STATE-PLAYBOOK.md`
-5. `sed -n '1,180p' brc-cases/README.md`
-6. `sed -n '1,140p' ../brc-tools/docs/WRF-STAGING-STATE-PLAYBOOK.md`
-
-Task-specific adds:
-
-- Local automation: `.sane/wrf/README.md`
-- Build/WPS/WRF progression: `doc/BRC_WRF_END_TO_END_AI_HANDOFF.md`
-- Pelican replay, source hot-swap, or comparison plots:
-  `brc-docs/BRC-WRF-PELICAN-NWP-HOTSWAP-HANDOFF.md`,
-  `brc-docs/BRC-WRF-RUN-CONVEYOR-SOP.md`, and, for parked RAP-only details,
-  `brc-docs/BRC-WRF-PELICAN-RAP-FEASIBILITY.md`
-- CI: `.ci/tests/build.sh` and `.github/workflows/ci.yml`
-
-## Current Durable Truth
+## Current Experiment Truth
 
 - Validated Jan-2013 Basin proof: NAM-only, 12/4 km nested, WPS `Vtable.NAM`,
-  `interval_seconds = 21600`; Gates 5-11 passed on 2026-06-18. See
-  `brc-docs/BRC-WRF-FIRST-CASE.md`.
+  `interval_seconds = 21600`; Gates 5-11 passed on 2026-06-18.
 - John-owned WPS v4.6.0 lives at
   `/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_build/WPS`.
-  John's WRF executable path must be taken from rendered control evidence and
-  checked on disk; do not borrow Michael-owned WRF/WPS roots for production
-  wrappers.
+  John's WRF executable path must come from rendered control evidence and be
+  checked on disk.
 - Current owned-node WRF profile: `lawson-np` on `notch392`, one node,
   56 tasks, `900G`, `srun --mpi=pmi2`.
-- Fresh `brc-tools` staging should emit `manifest_<case>.json` and
-  `contract_<case>.json`; `brc-wrf` consumes those sidecars and does not add
-  downloader logic.
-- Pelican completed WRF-side runs:
-
-| Case | Meaning | Job | Notes |
-| --- | --- | --- | --- |
-| `pelican2013_nam_3_1_333m_75lev` | NAM 3/1/0.333 km, 75-level baseline | `13695261` | 2026-06-26 full6h success. |
-| `pelican2013_gfs_3_1_333m_75lev` | GFS analysis hot-swap | `13753673` | `Vtable.GFS`, `interval_seconds = 21600`, `NUM_METGRID_SOIL_LEVELS = 4`. |
-| `pelican2013_nam_3_1_333m_75lev_oneway` | NAM feedback sensitivity | `13788264` | Only `feedback = 1` -> `feedback = 0`; `smooth_option = 0`; quicklooks retry `13791045`. |
-
-- Pelican quicklook evidence now includes NAM/GFS comparison job `13755401`
-  and NAM one-way quicklook retry job `13791045`, each with 30 PNGs. Current
-  default output is `<archive-run>/quicklooks/dXX/`; older stamped comparison
-  folders remain valid historical evidence.
-- RAP-only remains blocked before `real.exe`: hybrid RAP lacked a usable 3D
-  atmosphere, and pressure RAP lacked layered soil temperature/moisture. ERA5
-  remains locally blocked by missing `brc-tools` source support, CDS Python
-  tooling, and CDS credentials. FNL is optional third-source work, not the
-  current default.
-- GEFSv12 plus NAM two-stream forcing is a parked optional path, not the
-  current hot-swap route. Do not foreground it unless John explicitly revives
-  that experiment.
+- Fresh `brc-tools` staging emits `manifest_<case>.json` and
+  `contract_<case>.json`; `brc-wrf` consumes those sidecars.
+- Pelican completed WRF-side runs: NAM two-way baseline job `13695261`, GFS
+  analysis job `13753673`, and NAM one-way feedback sensitivity job `13788264`.
+- Current active lane: geogrid-only proof for custom `3s` `HGT_M` in the NAM
+  one-way terrain run. The source cache/build is done; stop before WRF unless
+  geogrid proof is accepted and WRF is explicitly approved.
+- Current static-terrain evidence: download job `13849489` on `dtn05` and build
+  job `13849490` on `notch137` completed `0:0`; 99 USGS 1 arc-second GeoTIFFs
+  cached at 4.6G; `topo_brc_custom_3s` built at 350M with 63 tiles plus index.
+- RAP-only remains blocked before `real.exe`; ERA5 is locally blocked by source
+  support, CDS tooling, and CDS credentials; FNL is optional; GEFSv12+NAM is
+  parked unless explicitly revived.
 
 ## Login-Safe Versus Off-Login
 
@@ -140,18 +127,23 @@ Login-node-safe examples when kept small:
 - `sed -n '1,180p' <named-doc>`
 - `rg -n '<specific-pattern>' <narrow-paths>`
 - `python -m py_compile brc-cases/wrf_case.py brc-cases/wrf_quicklook.py`
+- `python -m py_compile brc-cases/wps_hgt_static.py`
 - `PYTHONPATH=brc-cases python brc-cases/test_wrf_quicklook.py`
+- `PYTHONPATH=brc-cases python brc-cases/test_wps_hgt_static.py`
+- `python brc-cases/wps_hgt_static.py render-slurm-packet ...`
 - `python brc-cases/wrf_case.py validate brc-cases/jan2013_basin_nam.case.yaml`
 
 Run only in approved Slurm batch or interactive compute context:
 
+- `python brc-cases/wps_hgt_static.py query-usgs ...`
+- `python brc-cases/wps_hgt_static.py download-manifest ...`
+- `python brc-cases/wps_hgt_static.py build-from-inventory ...`
 - `conda run -n brc-tools-2026 python -m brc_tools.nwp.wrf_staging --verify-manifest ...`
-- `python brc-cases/wrf_case.py validate ... --strict-files` when it reads
-  staged inputs, manifests, WPS/WRF files, or archives
+- strict validators that read staged inputs, manifests, WPS/WRF files, or archives
 - `python brc-cases/wrf_quicklook.py check ...`
 - `python brc-cases/wrf_quicklook.py render ...`
 - WPS, `real.exe`, `wrf.exe`, NetCDF inspection, manifest hashing, archive
-  inventories, staging plans, and data-heavy filesystem searches
+  inventories, staging plans, scaling sweeps, memory tests, and large downloads
 
 Never run full builds, WPS, WRF, Slurm submissions, scaling sweeps, or large
 downloads without explicit approval.
@@ -159,42 +151,32 @@ downloads without explicit approval.
 ## Storage And Artifacts
 
 - Staged forcing: `/scratch/general/vast/$USER/wrf_inputs/<case>/`
+- Static terrain DEM cache: `/scratch/general/vast/$USER/wrf_inputs/<case>/terrain_dem_cache/`
+- Static WPS geography overlays: `/scratch/general/vast/$USER/wps_geog_<purpose>/`
 - Active WPS/WRF I/O: `/scratch/general/vast/$USER/wrf_runs/<case>/`
 - Durable run artifacts:
   `/uufs/chpc.utah.edu/common/home/lawson-group6/<namespace>/wrf_archive/<case>/run_<UTC>/`
 - Durable logs:
   `/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_build_logs/brc-wrf/`
 
-Generated runs, staged inputs, run-local namelists, rendered one-off Slurm
-scripts, logs, NetCDF, PNGs, and inventories do not belong in this repo.
+Generated runs, staged inputs, run-local namelists, rendered Slurm scripts,
+logs, NetCDF, PNGs, and inventories do not belong in this repo.
 
-## WRF Workflow Gotchas
+## Workflow Gotchas
 
-- Build truth must be checked from disk. A fresh checkout has no `real.exe` or
+- Build truth must be checked from disk; a fresh checkout has no `real.exe` or
   `wrf.exe` until compiled.
-- WPS is separate from this checkout. A real submission needs a John-owned WRF
-  executable root and a WPS root containing `geogrid.exe`, `ungrib.exe`,
-  `metgrid.exe`, `link_grib.csh`, and the case's configured Vtable such as
-  `Vtable.NAM` or `Vtable.GFS`.
-- Gate 11 practical wrappers byte-match scenario `real.exe`/`wrf.exe` against
-  John's `paths.wrf_build/main/` and runtime physics/table files against
-  John's `paths.wrf_build/run/` before `real.exe`.
-- Generated `prepare_<scenario>.sh` helpers require `BRC_PREP_APPROVED=YES`,
-  refuse Michael-owned comparison paths, copy/check files only, and must be run
-  only in an approved off-login context.
-- WRF filenames contain colons. Archive with local-style sources such as
+- WPS is separate from this checkout. Production wrappers must use John-owned
+  WRF/WPS roots, not Michael-owned comparison paths.
+- Gate 11 practical wrappers byte-match scenario executables and runtime tables
+  against John's build before `real.exe`.
+- WRF filenames contain colons; archive with local-style sources such as
   `rsync -av ./wrfout_d0* ...`.
-- A Slurm wrapper can fail after successful WRF execution if archive work fails.
-  Treat `real.exe`, `wrf.exe`, archive completeness, Slurm state, and
+- Treat `real.exe`, `wrf.exe`, archive completeness, Slurm state, and
   quicklooks as separate evidence.
-- Avoid `srun --jobid` probes inside a fully occupied WRF allocation.
-- Poll Slurm jobs with bounded `squeue -j <jobid>` intervals and back off while
-  WRF is integrating. If scheduler polling hits socket/accounting errors, do
-  not tight-loop; retry from an approved context and preserve the error as
-  evidence.
-- Prefer structured artifacts over large logs: `debug/run_debug_summary.txt`,
-  `debug/run_phase_times.tsv`, `debug/run_file_inventory.tsv`, `sacct`, and
-  targeted `rg` success/error patterns. Keep tails tightly bounded.
+- Prefer structured artifacts over large logs:
+  `debug/run_debug_summary.txt`, `debug/run_phase_times.tsv`,
+  `debug/run_file_inventory.tsv`, `sacct`, and targeted `rg` patterns.
 
 ## Build And Test Caution
 
@@ -208,8 +190,7 @@ Do not assume one path is correct. Read the relevant local doc or script first.
 ## Change SOP
 
 - Keep changes lean, logical, and scientifically grounded.
-- Update the canonical doc in the same commit when workflow truth changes.
-- Keep detailed task counts in `doc/BRC_WRF_MICROTASK_HANDOFF.md`, not here.
+- Update the canonical owner doc when workflow truth changes.
 - Stage only relevant files; leave unrelated sibling-repo dirt alone.
 - Write concise commit subjects and detailed bodies with motivation, evidence,
   validation, and operational impact.

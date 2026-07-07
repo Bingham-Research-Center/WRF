@@ -1,83 +1,52 @@
 # BRC WRF
 
-This is the Bingham Research Center checkout of WRF 4.8.0 with BRC-local
-case tooling, CHPC run practices, and AI routing layered on top.
+This is the Bingham Research Center checkout of WRF 4.8.0 with BRC-local case
+tooling, CHPC run practices, and AI routing layered on top.
 
 The extensionless `README` is the upstream WRF notice/release/documentation
 file. This `README.md` is the local BRC entry point. Keep it terse and route
 details to the owning docs.
 
-## Contents
+## Fast Start
 
-- [Start Here](#start-here)
-- [Current Posture](#current-posture)
-- [To-Dos And Wishlists](#to-dos-and-wishlists)
-- [Boundaries](#boundaries)
-- [Build And Run](#build-and-run)
-- [Change Style](#change-style)
+For a cold start, read:
 
-## Start Here
+1. `AGENTS.md` - repo safety, ownership, and task routing.
+2. `doc/BRC_WRF_EXPERIMENT_TODO.md` - the current WRF experiment todo list
+   spanning `brc-wrf` and sibling `brc-tools`.
 
-Read in this order for a cold start:
-
-1. `AGENTS.md` - repo ownership, safety boundaries, current durable truth.
-2. `doc/BRC_WRF_MICROTASK_HANDOFF.md` - active queue, approvals, and evidence.
-3. `brc-docs/BRC-WRF-STATE-PLAYBOOK.md` - compact human-facing state summary.
-4. `brc-cases/README.md` - case manifests, validators, Slurm renderers,
-   practical harness, and WRF-output quicklook adapter.
-5. `doc/BRC_WRF_END_TO_END_AI_HANDOFF.md` - build/WPS/WRF progression route.
-6. `brc-docs/BRC-WRF-RUN-CONVEYOR-SOP.md` - staged WRF conveyor, archive, and
-   quicklook placement rules.
-7. `brc-docs/BRC-WRF-PELICAN-NWP-HOTSWAP-HANDOFF.md` - active Pelican
-   NWP-source hot-swap prompt, source verdicts, and approval boundary.
-8. `brc-docs/BRC-WRF-PELICAN-RAP-FEASIBILITY.md` - parked RAP-only blocker
-   evidence when that source is explicitly revived.
-9. `../brc-tools/docs/WRF-STAGING-STATE-PLAYBOOK.md` and
-   `../brc-tools/docs/WRF-INPUT-STAGING.md` - input-staging truth when the task
-   touches manifests, contracts, or forcing.
-10. `../brc-knowledge/scholarium/reference-base/resources/` - CHPC node,
-   storage, scheduler, proxy, and validated Slurm truth.
-
-For a print-sized milestone overview, use
-`brc-docs/BRC-WRF-FORK-HIGHLIGHTS.md` and
-`brc-docs/BRC-WRF-STATE-PLAYBOOK.md`.
+Then read only the task-specific owner doc listed there. The long
+`doc/BRC_WRF_MICROTASK_HANDOFF.md` is now a detailed evidence ledger, not the
+default first stop.
 
 ## Current Posture
 
 Validated baseline: NAM-only Jan-2013 Uinta Basin, 12/4 km nested, WPS
-`Vtable.NAM`, `interval_seconds = 21600`.
+`Vtable.NAM`, `interval_seconds = 21600`; Gates 5-11 passed on 2026-06-18.
 
-Roadmap Gates 5-11 passed on 2026-06-18 for the John-owned NAM-only proof:
-fresh contract, WPS, `real.exe`, `wrf.exe`, archive, quicklooks, and the
-maintained practical-test harness. The first approved practical row,
-`scaling_t028` job `13550110`, passed. Later `scaling_t016` attempts failed
-before WRF runtime evidence and are not benchmark results.
+Current Pelican experiment set: NAM two-way baseline, GFS analysis hot-swap,
+and NAM one-way feedback sensitivity are complete for the 3/1/0.333 km,
+75-level case. Standard and supplemental quicklooks are rendered. The active
+lane is geogrid-only proof for the NAM one-way custom `3s` `HGT_M` terrain
+source now built under scratch; WRF rerun comes later only after approval.
 
-Current Pelican baseline: NAM 3/1/0.333 km, 75 levels, six-hour run
-`pelican2013_nam_3_1_333m_75lev`, full job `13695261`, archived under
-`lawson-group6/jrlawson/wrf_archive/`. A second forcing now exists: GFS
-analysis `pelican2013_gfs_3_1_333m_75lev`, job `13753673`, completed
-WPS/`real.exe`/`wrf.exe` on 2026-06-30 with `NUM_METGRID_SOIL_LEVELS = 4`.
-Paired NAM/GFS standardized quicklooks are rendered by job `13755401` under
-each archive's historical `quicklooks/standardized_compare_20260630T214000Z/`
-folder. Future renders default directly to each archive's `quicklooks/dXX/`
-tree unless an explicit `--output-dir` is supplied.
-New forcing experiments should hot-swap one source at a time through
-`brc-tools` staging contracts. RAP-only is blocked before `real.exe`, ERA5 is
-locally blocked by CDS tooling/credentials, and FNL is optional third-source
-work rather than the current default. The older GEFS+NAM two-stream idea is
-parked unless explicitly revived.
+RAP-only is blocked before `real.exe`, ERA5 is blocked locally by source
+support/tooling/credentials, FNL is optional third-source work, and the older
+GEFS+NAM two-stream idea is parked unless explicitly revived.
 
-## To-Dos And Wishlists
+## Where Work Lives
 
-Current work is intentionally split by ownership:
-
-- Active queue, next default task, remaining approvals, and parked work:
-  `doc/BRC_WRF_MICROTASK_HANDOFF.md`.
-- Compact gate/follow-on index: `brc-docs/BRC-WRF-ROADMAP.md`.
-- Human-readable next moves: `brc-docs/BRC-WRF-STATE-PLAYBOOK.md`.
-- Case-helper and practical-harness work: `brc-cases/README.md`.
-- Input-staging wishlists and source support: `../brc-tools/docs/`.
+| Need | File |
+| --- | --- |
+| Active experiment todo across `brc-wrf` and `brc-tools` | `doc/BRC_WRF_EXPERIMENT_TODO.md` |
+| Detailed evidence ledger | `doc/BRC_WRF_MICROTASK_HANDOFF.md` |
+| Build/WPS/WRF route | `doc/BRC_WRF_END_TO_END_AI_HANDOFF.md` |
+| Pelican source verdicts and review prompts | `brc-docs/BRC-WRF-PELICAN-NWP-HOTSWAP-HANDOFF.md` |
+| Conveyor, archive, and quicklook rules | `brc-docs/BRC-WRF-RUN-CONVEYOR-SOP.md` |
+| Case manifests, validators, Slurm renderers, quicklooks | `brc-cases/README.md` |
+| Input staging and source support | `../brc-tools/docs/WRF-STAGING-STATE-PLAYBOOK.md` and `../brc-tools/docs/WRF-INPUT-STAGING.md` |
+| Broader `brc-tools` backlog | `../brc-tools/WISHLIST-TASKS.md` |
+| CHPC node, storage, scheduler, proxy, Slurm truth | `../brc-knowledge/scholarium/reference-base/resources/` |
 
 Do not revive deleted June to-do, handoff, or chat-style files. Update the
 canonical owner above and leave only short pointers elsewhere.
@@ -102,10 +71,10 @@ Both WRF build paths exist:
 - Legacy: `./configure`, `./compile`, `./clean`
 - CMake-oriented: `./configure_new`, `./compile_new`, `./cleanCMake.sh`
 
-Do not assume one path is correct for a task. Read the relevant local doc or
-script first. Full builds, WPS, `real.exe`, `wrf.exe`, Slurm jobs, large
-downloads, strict artifact reads, NetCDF-heavy checks, archive inventories, and
-quicklooks need explicit approval and the correct off-login context.
+Do not assume one path is correct for a task. Full builds, WPS, `real.exe`,
+`wrf.exe`, Slurm jobs, large downloads, strict artifact reads, NetCDF-heavy
+checks, archive inventories, and quicklook rendering need explicit approval and
+the correct off-login context.
 
 ## Change Style
 

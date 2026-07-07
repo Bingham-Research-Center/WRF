@@ -1,10 +1,12 @@
-# Pelican NWP Hot-Swap Handoff
+# Pelican NWP Hot-Swap State
 
-This is the current paste-ready handoff for tracking Pelican 3/1/0.333 km,
-75-level NWP forcing hot-swaps.
+This is the canonical Pelican 3/1/0.333 km, 75-level NWP forcing and terrain
+state note.
 
-It supersedes older one-off context files. Keep this file as the active Pelican
-source verdict and review prompt.
+It supersedes older one-off context files. Keep durable verdicts and run facts
+here; keep copy-paste prompts and disposable next-session handoffs in
+`.local-handoffs/`, `scratch-handoffs/`, or `/tmp`, then migrate only durable
+facts back into the owner docs.
 
 ## Current Verdict
 
@@ -141,6 +143,53 @@ stop rule: run geogrid-only first; do not submit WRF until geogrid.log and geo_e
 comparison anchors: NAM one-way job 13788264, operator-proof topo5m job 13847980, and quicklooks from job 13848733
 ```
 
+Current helper surface: `brc-cases/wps_hgt_static.py` can plan 3s WPS tile
+coverage, query USGS terrain metadata, de-duplicate a URL manifest, cache DEMs
+from a Slurm/DTN job, build WPS-format `topo_brc_custom_3s/`, and render the
+run-local `GEOGRID.TBL` and `namelist.wps` edits. It does not submit Slurm, run
+WPS/geogrid, or write generated data inside the checkout.
+
+Dataset search verdict from 2026-07-07:
+
+```text
+local search: no usable DEM rasters found under bounded scratch input searches;
+  shared WPS_GEOG exposes topo_gmted2010_30s; the archived topo_gmted2010_5m
+  overlay remains only an operator-proof/control-path artifact.
+helper plan: bounds -114 37 -105 44 require 63 WPS 3s HGT_M output tiles.
+preferred source: USGS NED/3DEP 1 arc-second DEM GeoTIFF from The National Map;
+  API dataset token is "National Elevation Dataset (NED) 1 arc-second".
+  The expanded WPS-border query de-duplicates to 99 one-degree source tiles,
+  about 4.53 GiB from metadata for the current Pelican broad box. Confirm
+  vertical datum and meters from downloaded tile metadata before build.
+fallback source: NASADEM_HGT or SRTMGL1 1 arc-second HGT from NASA LP DAAC;
+  expect Earthdata/cloud access and a one-degree-tile cache of similar order.
+smallest fallback: SRTMGL3 3 arc-second HGT; native target spacing, about
+  60 MB compressed / 180 MB unpacked for 63 tiles, but lower source fidelity
+  than 1 arc-second terrain resampled to 3s.
+not preferred: Copernicus GLO-30/GLO-90 because it is a DSM including
+  vegetation/buildings and carries registration plus attribution obligations.
+next step: submit the rendered static-terrain Slurm packet; stop after source
+  manifest, download inventory/checksums, size evidence, and
+  topo_brc_custom_3s index verification. Geogrid is a separate step.
+```
+
+Static terrain packet evidence from 2026-07-07:
+
+```text
+case target: pelican2013_nam_3_1_333m_75lev_oneway_terrain3s
+control packet: /uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/pelican2013_nam_3_1_333m_75lev_oneway_terrain3s/control/terrain_static_20260707T222250Z/
+download job: 13849489, completed 0:0 in 00:02:04 on dtn05
+build job: 13849490, completed 0:0 in 00:03:01 on notch137
+source manifest: 99 de-duplicated USGS NED 1 arc-second GeoTIFF rows
+download inventory: 36 cached + 63 downloaded rows; 4 nonfatal TNM metadata size warnings
+DEM cache: /scratch/general/vast/u0737349/wrf_inputs/pelican2013_terrain3s/usgs_3dep_1arcsec/ = 4.6G
+WPS static output: /scratch/general/vast/u0737349/wps_geog_terrain3s/topo_brc_custom_3s/ = 350M
+WPS output files: 64 top-level files, meaning 63 WPS tiles plus index
+index proof: type=continuous, projection=regular_ll, dx=dy=0.000833333333333333, wordsize=2, tile_bdr=3, units="meters MSL"
+important caveat: no geogrid.exe has run against this source yet
+next stop: geogrid-only proof that WPS uses brc_custom_3s/topo_brc_custom_3s for HGT_M
+```
+
 Resolution choice tradeoff:
 
 | HGT_M target | Effective spacing near Utah | Pros | Cons | Recommendation |
@@ -191,109 +240,4 @@ python: /uufs/chpc.utah.edu/common/home/u0737349/software/pkg/miniforge3/envs/br
 herbie: 2026.3.0
 cdsapi: absent
 ecmwfapi: absent
-```
-
-## Prompt A: Codex In `brc-wrf`
-
-Use this when the session starts in `/uufs/chpc.utah.edu/common/home/u0737349/gits/brc-wrf`.
-
-```text
-cwd=/uufs/chpc.utah.edu/common/home/u0737349/gits/brc-wrf
-
-Goal: review the completed NAM, GFS, and NAM one-way Pelican 3/1/0.333 km,
-75-level WRF runs using the rendered standard and supplemental quicklooks,
-without rerunning blocked RAP-only or reviving GEFS+NAM unless explicitly
-asked.
-
-First read:
-1. AGENTS.md
-2. doc/BRC_WRF_EXPERIMENT_TODO.md
-3. brc-docs/BRC-WRF-PELICAN-NWP-HOTSWAP-HANDOFF.md
-4. brc-docs/BRC-WRF-RUN-CONVEYOR-SOP.md
-5. brc-cases/README.md
-6. ../brc-tools/docs/WRF-STAGING-STATE-PLAYBOOK.md
-7. ../brc-tools/docs/WRF-INPUT-STAGING.md
-8. ../brc-tools/docs/nwp/NWP-SOURCE-MATRIX.md
-
-Use doc/BRC_WRF_MICROTASK_HANDOFF.md only when detailed historical evidence is
-needed.
-
-Current source verdicts:
-- NAM baseline is complete: pelican2013_nam_3_1_333m_75lev.
-- NAM one-way feedback is complete: pelican2013_nam_3_1_333m_75lev_oneway,
-  job 13788264, feedback=0 only, 30 quicklook PNGs from retry job 13791045.
-- GFS analysis is complete: pelican2013_gfs_3_1_333m_75lev, job 13753673,
-  NUM_METGRID_SOIL_LEVELS = 4, SUCCESS COMPLETE WRF.
-- NAM/GFS standardized quicklooks are complete: job 13755401, 30 PNGs per
-  forcing, 10 per d01/d02/d03, stamp standardized_compare_20260630T214000Z.
-- Supplemental quicklooks are complete: job 13792197 added `_600hPa` and `_4h`
-  folders under each domain root for NAM, GFS, and NAM one-way.
-- RAP-only is blocked before real.exe; do not rerun unchanged.
-- ERA5 is blocked locally by missing brc-tools source support, CDS Python
-  tooling, and CDS credentials; WPS has a plausible Vtable.ECMWF.
-- FNL has not been tried and is optional third-source work.
-
-If no newer human instruction exists, inspect the paired NAM/GFS quicklooks and
-prepare a concise science-review packet. Do not add downloader/staging logic
-here.
-
-Hard stop: do not run downloads, staging, WPS, real.exe, wrf.exe, sbatch,
-NetCDF-heavy reads, archive inventories, or quicklooks without explicit
-approval for that exact action.
-```
-
-## Prompt B: Optional Third Source In `brc-tools`
-
-Use this when opening `/uufs/chpc.utah.edu/common/home/u0737349/gits/brc-tools`.
-
-```text
-cwd=/uufs/chpc.utah.edu/common/home/u0737349/gits/brc-tools
-
-Goal: only if John explicitly asks for a third Pelican NWP source, implement
-the smallest no-run FNL source-support pass. GFS analysis is already staged and
-completed through WRF in brc-wrf; do not redo it.
-
-First read:
-1. git status --short --branch --untracked-files=no
-2. docs/WRF-STAGING-STATE-PLAYBOOK.md
-3. docs/WRF-INPUT-STAGING.md
-4. docs/nwp/NWP-SOURCE-MATRIX.md
-5. docs/walkthroughs/wrf-staging.md
-6. ../brc-wrf/brc-docs/BRC-WRF-PELICAN-NWP-HOTSWAP-HANDOFF.md
-7. ../brc-wrf/doc/BRC_WRF_EXPERIMENT_TODO.md
-
-Environment guardrail:
-- Use conda run -n brc-tools-2026 python ...
-- Use conda run -n brc-tools-2026 pytest ...
-- Do not use bare python/pytest or an inherited shell env.
-
-Task:
-1. Preserve existing RAP and GFS proof changes and unrelated local dirt.
-2. Do a no-download FNL feasibility pass for 2013-02-02 12-18Z:
-   source access path, Herbie/NCEI/RDA support, cadence, likely WPS Vtable,
-   and whether pressure, humidity, winds, temperature, land/sea mask,
-   soil temperature/moisture, snow/ice, and skin/surface fields are available.
-3. If source support is missing, patch only brc-tools with the smallest
-   source/staging support step: metadata/source matrix/offline plan/tests.
-4. Stop before live downloads, staging, DTN work, manifest hashing of large
-   files, WPS, real.exe, wrf.exe, Slurm, NetCDF-heavy reads, and quicklooks.
-
-Return to brc-wrf with:
-- feasibility verdict,
-- proposed case name,
-- manifest/contract shape or exact blocker,
-- likely WPS Vtable,
-- exact approval text for the next stage.
-```
-
-## Next Review Prompt
-
-```text
-Inspect the completed NAM/GFS standardized quicklooks for the Pelican 2013
-12-18Z, 3/1/0.333 km, 75-level hot-swap lane and summarize the forcing
-sensitivity.
-
-Use the paired quicklook roots under standardized_compare_20260630T214000Z.
-Do not rerun downloads, staging, WPS, real.exe, wrf.exe, source-family
-experiments, or unbounded archive searches unless explicitly approved.
 ```
