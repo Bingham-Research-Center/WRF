@@ -13,6 +13,7 @@ import os
 import subprocess
 import sys
 from dataclasses import dataclass
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -23,6 +24,22 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 BRC_TOOLS_ROOT = (REPO_ROOT / "../brc-tools").resolve()
 if str(BRC_TOOLS_ROOT) not in sys.path:
     sys.path.insert(0, str(BRC_TOOLS_ROOT))
+
+STANDARD_SURFACE_PRODUCTS = (
+    "t2_10m_wind",
+    "t2_anomaly",
+    "theta2_10m_wind",
+    "10m_wind_speed",
+    "pbl_height",
+    "snow_depth",
+    "skin_temperature",
+    "surface_pressure",
+)
+SUPPLEMENTAL_SURFACE_PRODUCTS_4H = (
+    "t2_10m_wind",
+    "10m_wind_speed",
+    "snow_depth",
+)
 
 
 def _path_under(path: Path, parent: Path) -> bool:
@@ -87,6 +104,11 @@ def _find_first(paths: list[Path], label: str) -> Path:
 
 def _domain_tag(domain: int) -> str:
     return f"d{domain:02d}"
+
+
+def _valid_time_for_lead(case_start: str, lead_hours: int) -> str:
+    start = datetime.strptime(case_start, "%Y-%m-%d_%H:%M:%S")
+    return (start + timedelta(hours=lead_hours)).strftime("%Y-%m-%d_%H:%M:%S")
 
 
 def _latest_archive_run(archive_root: Path) -> Path:
@@ -240,7 +262,7 @@ def _distance_km(lon: Any, lat: Any) -> Any:
 
 
 def _annotation(path: Path) -> str:
-    return f"BRC WRF NAM-only proof | {path.name}"
+    return f"BRC WRF quicklook | {path.name}"
 
 
 def _theta_from_t_p(t_k: Any, p_pa: Any) -> Any:
@@ -255,6 +277,365 @@ def _symmetrical_limit(values: Any) -> float | None:
         return None
     limit = float(np.nanmax(np.abs(finite)))
     return limit if limit > 0.0 else None
+
+
+def _interp_to_pressure(values: Any, pressure_pa: Any, target_pa: float) -> Any:
+    import numpy as np
+
+    field = np.asarray(values, dtype=float)
+    pressure = np.asarray(pressure_pa, dtype=float)
+    if field.shape != pressure.shape:
+        raise ValueError(f"pressure interpolation shape mismatch: {field.shape} vs {pressure.shape}")
+
+    p_inc = pressure[::-1, :, :]
+    v_inc = field[::-1, :, :]
+    nlev = p_inc.shape[0]
+    idx_hi = np.sum(p_inc < target_pa, axis=0)
+    inside = (idx_hi > 0) & (idx_hi < nlev)
+    idx_hi = np.clip(idx_hi, 1, nlev - 1)
+    idx_lo = idx_hi - 1
+
+    p0 = np.take_along_axis(p_inc, idx_lo[np.newaxis, :, :], axis=0)[0]
+    p1 = np.take_along_axis(p_inc, idx_hi[np.newaxis, :, :], axis=0)[0]
+    v0 = np.take_along_axis(v_inc, idx_lo[np.newaxis, :, :], axis=0)[0]
+    v1 = np.take_along_axis(v_inc, idx_hi[np.newaxis, :, :], axis=0)[0]
+
+    denom = p1 - p0
+    with np.errstate(invalid="ignore", divide="ignore"):
+        weight = (target_pa - p0) / denom
+        out = v0 + weight * (v1 - v0)
+    out[~inside | ~np.isfinite(out) | (denom == 0.0)] = np.nan
+    return out
+
+
+def _relative_humidity_pct(pressure_pa: Any, temperature_k: Any, qvapor: Any) -> Any:
+    import numpy as np
+
+    pressure = np.asarray(pressure_pa, dtype=float)
+    temp_c = np.asarray(temperature_k, dtype=float) - 273.15
+    qv = np.maximum(np.asarray(qvapor, dtype=float), 0.0)
+    vapor_pressure_hpa = (qv * pressure / (0.622 + qv)) / 100.0
+    saturation_hpa = 6.112 * np.exp((17.67 * temp_c) / (temp_c + 243.5))
+    with np.errstate(invalid="ignore", divide="ignore"):
+        rh = 100.0 * vapor_pressure_hpa / saturation_hpa
+    return np.clip(rh, 0.0, 150.0)
+
+
+def _destagger_u_to_mass(u: Any, mass_shape: tuple[int, int, int]) -> Any:
+    if u.shape == mass_shape:
+        return u
+    if u.shape[:2] == mass_shape[:2] and u.shape[2] == mass_shape[2] + 1:
+        return 0.5 * (u[:, :, :-1] + u[:, :, 1:])
+    raise ValueError(f"U wind shape {u.shape} is not compatible with mass grid {mass_shape}")
+
+
+def _destagger_v_to_mass(v: Any, mass_shape: tuple[int, int, int]) -> Any:
+    if v.shape == mass_shape:
+        return v
+    if v.shape[0] == mass_shape[0] and v.shape[1] == mass_shape[1] + 1 and v.shape[2] == mass_shape[2]:
+        return 0.5 * (v[:, :-1, :] + v[:, 1:, :])
+    raise ValueError(f"V wind shape {v.shape} is not compatible with mass grid {mass_shape}")
+
+
+def _height_contour_levels(values: Any) -> Any:
+    import numpy as np
+
+    finite = np.asarray(values)[np.isfinite(values)]
+    if finite.size == 0:
+        return None
+    low = float(np.nanmin(finite))
+    high = float(np.nanmax(finite))
+    if low == high:
+        return None
+    for interval in (30.0, 60.0, 90.0, 120.0, 180.0):
+        start = np.floor(low / interval) * interval
+        stop = np.ceil(high / interval) * interval
+        levels = np.arange(start, stop + interval, interval)
+        if 5 <= levels.size <= 24:
+            return levels
+    return np.linspace(low, high, 14)
+
+
+def _wrfout_for_valid_time(ctx: QuicklookContext, domain: int, valid_time: str) -> Path:
+    tag = _domain_tag(domain)
+    return _find_first([ctx.archive_run / f"wrfout_{tag}_{valid_time}"], f"{tag} wrfout at {valid_time}")
+
+
+def _plot_pressure_level_product(
+    lon: Any,
+    lat: Any,
+    height_m: Any,
+    rh_pct: Any,
+    wind_u_ms: Any,
+    wind_v_ms: Any,
+    out_path: Path,
+    *,
+    domain_tag: str,
+    valid_time: str,
+    level_hpa: int,
+    annotation: str | None = None,
+    wind_max_barbs: int = 24,
+) -> Path:
+    import matplotlib
+    import numpy as np
+
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    lon = np.asarray(lon)
+    lat = np.asarray(lat)
+    height = np.asarray(height_m)
+    rh = np.asarray(rh_pct)
+    u_kt = np.asarray(wind_u_ms) * 1.94384
+    v_kt = np.asarray(wind_v_ms) * 1.94384
+
+    fig, ax = plt.subplots(figsize=(8.5, 6.5), constrained_layout=True)
+    mesh = ax.pcolormesh(
+        lon,
+        lat,
+        rh,
+        shading="nearest",
+        cmap="YlGnBu",
+        vmin=0.0,
+        vmax=100.0,
+        alpha=0.9,
+    )
+    fig.colorbar(mesh, ax=ax, shrink=0.8, label="RH %")
+
+    height_levels = _height_contour_levels(height)
+    if height_levels is not None:
+        height_lines = ax.contour(
+            lon,
+            lat,
+            height,
+            levels=height_levels,
+            colors="black",
+            linewidths=0.45,
+            alpha=0.7,
+        )
+        ax.clabel(height_lines, fontsize=5, fmt="%.0f m")
+
+    rh_levels = np.arange(10.0, 101.0, 10.0)
+    rh_lines = ax.contour(
+        lon,
+        lat,
+        rh,
+        levels=rh_levels,
+        colors="#0f766e",
+        linewidths=0.35,
+        alpha=0.55,
+    )
+    ax.clabel(rh_lines, fontsize=4.5, fmt="%.0f%%")
+
+    stride_y = max(1, u_kt.shape[0] // wind_max_barbs)
+    stride_x = max(1, u_kt.shape[1] // wind_max_barbs)
+    ax.barbs(
+        lon[::stride_y, ::stride_x],
+        lat[::stride_y, ::stride_x],
+        u_kt[::stride_y, ::stride_x],
+        v_kt[::stride_y, ::stride_x],
+        length=5.0,
+        linewidth=0.45,
+        color="black",
+        alpha=0.75,
+    )
+
+    ax.set_title(f"WRF {domain_tag} {level_hpa} hPa height, RH, and wind barbs, {valid_time}")
+    ax.set_xlabel("longitude")
+    ax.set_ylabel("latitude")
+    if annotation:
+        ax.text(
+            0.99,
+            0.01,
+            annotation,
+            transform=ax.transAxes,
+            ha="right",
+            va="bottom",
+            fontsize=6,
+            alpha=0.65,
+            bbox={"facecolor": "white", "edgecolor": "none", "alpha": 0.55, "pad": 1.5},
+        )
+
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(out_path, dpi=150)
+    plt.close(fig)
+    return out_path
+
+
+def _plot_domain_surface_products(
+    path: Path,
+    domain_dir: Path,
+    *,
+    domain_tag: str,
+    valid_time: str,
+    product_ids: tuple[str, ...],
+) -> list[Path]:
+    from brc_tools.visualize.grid import plot_grid_field, terrain_contour_levels
+
+    import numpy as np
+
+    outputs: list[Path] = []
+    with _open_dataset(path) as ds:
+        terrain = _as_2d(ds, "HGT")
+        hgt = terrain.values
+        lon, lat = _coords(ds, "XLONG", "XLAT", terrain)
+        terrain_levels = terrain_contour_levels(hgt)
+        annotation = _annotation(path)
+
+        t2_k = _as_2d(ds, "T2").values
+        t2_c = t2_k - 273.15
+        u10 = _as_2d(ds, "U10").values
+        v10 = _as_2d(ds, "V10").values
+        wspd10 = np.hypot(u10, v10)
+        psfc_pa = _as_2d(ds, "PSFC").values
+        psfc_hpa = psfc_pa / 100.0
+        theta2 = _theta_from_t_p(t2_k, psfc_pa)
+        t2_anomaly = t2_c - float(np.nanmedian(t2_c))
+        anomaly_limit = _symmetrical_limit(t2_anomaly)
+        tsk_c = _as_2d(ds, "TSK").values - 273.15
+        pblh = _as_2d(ds, "PBLH").values
+        snowh = _as_2d(ds, "SNOWH").values
+
+        for product_id in product_ids:
+            if product_id == "t2_10m_wind":
+                outputs.append(
+                    plot_grid_field(
+                        lon,
+                        lat,
+                        t2_c,
+                        domain_dir / "01_t2_10m_wind.png",
+                        title=f"WRF {domain_tag} 2 m temperature and 10 m wind, {valid_time}",
+                        colorbar_label="T2 deg C",
+                        cmap="RdYlBu_r",
+                        contour=hgt,
+                        contour_levels=terrain_levels,
+                        contour_label=True,
+                        wind_u=u10,
+                        wind_v=v10,
+                        annotation=annotation,
+                    )
+                )
+            elif product_id == "t2_anomaly":
+                outputs.append(
+                    plot_grid_field(
+                        lon,
+                        lat,
+                        t2_anomaly,
+                        domain_dir / "02_t2_anomaly.png",
+                        title=f"WRF {domain_tag} 2 m temperature anomaly from domain median, {valid_time}",
+                        colorbar_label="T2 anomaly deg C",
+                        cmap="RdBu_r",
+                        vmin=-anomaly_limit if anomaly_limit is not None else None,
+                        vmax=anomaly_limit,
+                        contour=hgt,
+                        contour_levels=terrain_levels,
+                        contour_label=True,
+                        annotation=annotation,
+                    )
+                )
+            elif product_id == "theta2_10m_wind":
+                outputs.append(
+                    plot_grid_field(
+                        lon,
+                        lat,
+                        theta2,
+                        domain_dir / "03_theta2_10m_wind.png",
+                        title=f"WRF {domain_tag} 2 m potential temperature and 10 m wind, {valid_time}",
+                        colorbar_label="theta2 K",
+                        cmap="RdYlBu_r",
+                        contour=hgt,
+                        contour_levels=terrain_levels,
+                        contour_label=True,
+                        wind_u=u10,
+                        wind_v=v10,
+                        annotation=annotation,
+                    )
+                )
+            elif product_id == "10m_wind_speed":
+                outputs.append(
+                    plot_grid_field(
+                        lon,
+                        lat,
+                        wspd10,
+                        domain_dir / "04_10m_wind_speed.png",
+                        title=f"WRF {domain_tag} 10 m wind speed and vectors, {valid_time}",
+                        colorbar_label="10 m wind speed m s-1",
+                        cmap="viridis",
+                        contour=hgt,
+                        contour_levels=terrain_levels,
+                        contour_label=True,
+                        wind_u=u10,
+                        wind_v=v10,
+                        annotation=annotation,
+                    )
+                )
+            elif product_id == "pbl_height":
+                outputs.append(
+                    plot_grid_field(
+                        lon,
+                        lat,
+                        pblh,
+                        domain_dir / "05_pbl_height.png",
+                        title=f"WRF {domain_tag} PBL height, {valid_time}",
+                        colorbar_label="PBLH m",
+                        cmap="YlOrRd",
+                        contour=hgt,
+                        contour_levels=terrain_levels,
+                        contour_label=True,
+                        annotation=annotation,
+                    )
+                )
+            elif product_id == "snow_depth":
+                outputs.append(
+                    plot_grid_field(
+                        lon,
+                        lat,
+                        snowh,
+                        domain_dir / "06_snow_depth.png",
+                        title=f"WRF {domain_tag} snow depth, {valid_time}",
+                        colorbar_label="SNOWH m",
+                        cmap="Blues",
+                        contour=hgt,
+                        contour_levels=terrain_levels,
+                        contour_label=True,
+                        annotation=annotation,
+                    )
+                )
+            elif product_id == "skin_temperature":
+                outputs.append(
+                    plot_grid_field(
+                        lon,
+                        lat,
+                        tsk_c,
+                        domain_dir / "07_skin_temperature.png",
+                        title=f"WRF {domain_tag} skin temperature, {valid_time}",
+                        colorbar_label="TSK deg C",
+                        cmap="RdYlBu_r",
+                        contour=hgt,
+                        contour_levels=terrain_levels,
+                        contour_label=True,
+                        annotation=annotation,
+                    )
+                )
+            elif product_id == "surface_pressure":
+                outputs.append(
+                    plot_grid_field(
+                        lon,
+                        lat,
+                        psfc_hpa,
+                        domain_dir / "08_surface_pressure.png",
+                        title=f"WRF {domain_tag} surface pressure, {valid_time}",
+                        colorbar_label="PSFC hPa",
+                        cmap="viridis",
+                        contour=hgt,
+                        contour_levels=terrain_levels,
+                        contour_label=True,
+                        annotation=annotation,
+                    )
+                )
+            else:
+                raise ValueError(f"unknown surface quicklook product: {product_id}")
+    return outputs
 
 
 def _plot_domain_cross_section(
@@ -316,149 +697,16 @@ def _plot_domain_cross_section(
 
 
 def _plot_domain_products(ctx: QuicklookContext, domain: int, output_dir: Path) -> list[Path]:
-    from brc_tools.visualize.grid import plot_grid_field, terrain_contour_levels
-
-    import numpy as np
-
     tag = _domain_tag(domain)
     path = ctx.wrf_by_domain[domain]
     domain_dir = output_dir / tag
-
-    with _open_dataset(path) as ds:
-        terrain = _as_2d(ds, "HGT")
-        hgt = terrain.values
-        lon, lat = _coords(ds, "XLONG", "XLAT", terrain)
-        terrain_levels = terrain_contour_levels(hgt)
-        annotation = _annotation(path)
-
-        t2_k = _as_2d(ds, "T2").values
-        t2_c = t2_k - 273.15
-        u10 = _as_2d(ds, "U10").values
-        v10 = _as_2d(ds, "V10").values
-        wspd10 = np.hypot(u10, v10)
-        psfc_pa = _as_2d(ds, "PSFC").values
-        psfc_hpa = psfc_pa / 100.0
-        theta2 = _theta_from_t_p(t2_k, psfc_pa)
-        t2_anomaly = t2_c - float(np.nanmedian(t2_c))
-        anomaly_limit = _symmetrical_limit(t2_anomaly)
-        tsk_c = _as_2d(ds, "TSK").values - 273.15
-        pblh = _as_2d(ds, "PBLH").values
-        snowh = _as_2d(ds, "SNOWH").values
-
-        outputs = [
-            plot_grid_field(
-                lon,
-                lat,
-                t2_c,
-                domain_dir / "01_t2_10m_wind.png",
-                title=f"WRF {tag} 2 m temperature and 10 m wind, {ctx.case_start}",
-                colorbar_label="T2 deg C",
-                cmap="RdYlBu_r",
-                contour=hgt,
-                contour_levels=terrain_levels,
-                contour_label=True,
-                wind_u=u10,
-                wind_v=v10,
-                annotation=annotation,
-            ),
-            plot_grid_field(
-                lon,
-                lat,
-                t2_anomaly,
-                domain_dir / "02_t2_anomaly.png",
-                title=f"WRF {tag} 2 m temperature anomaly from domain median, {ctx.case_start}",
-                colorbar_label="T2 anomaly deg C",
-                cmap="RdBu_r",
-                vmin=-anomaly_limit if anomaly_limit is not None else None,
-                vmax=anomaly_limit,
-                contour=hgt,
-                contour_levels=terrain_levels,
-                contour_label=True,
-                annotation=annotation,
-            ),
-            plot_grid_field(
-                lon,
-                lat,
-                theta2,
-                domain_dir / "03_theta2_10m_wind.png",
-                title=f"WRF {tag} 2 m potential temperature and 10 m wind, {ctx.case_start}",
-                colorbar_label="theta2 K",
-                cmap="RdYlBu_r",
-                contour=hgt,
-                contour_levels=terrain_levels,
-                contour_label=True,
-                wind_u=u10,
-                wind_v=v10,
-                annotation=annotation,
-            ),
-            plot_grid_field(
-                lon,
-                lat,
-                wspd10,
-                domain_dir / "04_10m_wind_speed.png",
-                title=f"WRF {tag} 10 m wind speed and vectors, {ctx.case_start}",
-                colorbar_label="10 m wind speed m s-1",
-                cmap="viridis",
-                contour=hgt,
-                contour_levels=terrain_levels,
-                contour_label=True,
-                wind_u=u10,
-                wind_v=v10,
-                annotation=annotation,
-            ),
-            plot_grid_field(
-                lon,
-                lat,
-                pblh,
-                domain_dir / "05_pbl_height.png",
-                title=f"WRF {tag} PBL height, {ctx.case_start}",
-                colorbar_label="PBLH m",
-                cmap="YlOrRd",
-                contour=hgt,
-                contour_levels=terrain_levels,
-                contour_label=True,
-                annotation=annotation,
-            ),
-            plot_grid_field(
-                lon,
-                lat,
-                snowh,
-                domain_dir / "06_snow_depth.png",
-                title=f"WRF {tag} snow depth, {ctx.case_start}",
-                colorbar_label="SNOWH m",
-                cmap="Blues",
-                contour=hgt,
-                contour_levels=terrain_levels,
-                contour_label=True,
-                annotation=annotation,
-            ),
-            plot_grid_field(
-                lon,
-                lat,
-                tsk_c,
-                domain_dir / "07_skin_temperature.png",
-                title=f"WRF {tag} skin temperature, {ctx.case_start}",
-                colorbar_label="TSK deg C",
-                cmap="RdYlBu_r",
-                contour=hgt,
-                contour_levels=terrain_levels,
-                contour_label=True,
-                annotation=annotation,
-            ),
-            plot_grid_field(
-                lon,
-                lat,
-                psfc_hpa,
-                domain_dir / "08_surface_pressure.png",
-                title=f"WRF {tag} surface pressure, {ctx.case_start}",
-                colorbar_label="PSFC hPa",
-                cmap="viridis",
-                contour=hgt,
-                contour_levels=terrain_levels,
-                contour_label=True,
-                annotation=annotation,
-            ),
-        ]
+    outputs = _plot_domain_surface_products(
+        path,
+        domain_dir,
+        domain_tag=tag,
+        valid_time=ctx.case_start,
+        product_ids=STANDARD_SURFACE_PRODUCTS,
+    )
 
     outputs.extend(
         [
@@ -481,10 +729,115 @@ def _plot_domain_products(ctx: QuicklookContext, domain: int, output_dir: Path) 
     return outputs
 
 
+def _plot_domain_pressure_supplement(
+    ctx: QuicklookContext,
+    domain: int,
+    output_dir: Path,
+    *,
+    level_hpa: int,
+    lead_hours: int,
+) -> list[Path]:
+    import numpy as np
+
+    tag = _domain_tag(domain)
+    valid_time = _valid_time_for_lead(ctx.case_start, lead_hours)
+    path = _wrfout_for_valid_time(ctx, domain, valid_time)
+    target_pa = float(level_hpa) * 100.0
+
+    with _open_dataset(path) as ds:
+        pressure_pa = _as_3d(ds, "P").values + _as_3d(ds, "PB").values
+        theta_k = _as_3d(ds, "T").values + 300.0
+        temperature_k = theta_k * (pressure_pa / 100000.0) ** 0.2854
+        qvapor = _as_3d(ds, "QVAPOR").values
+        rh_pct = _relative_humidity_pct(pressure_pa, temperature_k, qvapor)
+
+        z_w = (_as_3d(ds, "PH").values + _as_3d(ds, "PHB").values) / 9.80665
+        height_m = 0.5 * (z_w[:-1, :, :] + z_w[1:, :, :])
+        mass_shape = pressure_pa.shape
+        u_ms = _destagger_u_to_mass(_as_3d(ds, "U").values, mass_shape)
+        v_ms = _destagger_v_to_mass(_as_3d(ds, "V").values, mass_shape)
+
+        sample_field = _as_2d(ds, "HGT")
+        lon, lat = _coords(ds, "XLONG", "XLAT", sample_field)
+        height_level = _interp_to_pressure(height_m, pressure_pa, target_pa)
+        rh_level = _interp_to_pressure(rh_pct, pressure_pa, target_pa)
+        u_level = _interp_to_pressure(u_ms, pressure_pa, target_pa)
+        v_level = _interp_to_pressure(v_ms, pressure_pa, target_pa)
+
+    if not np.isfinite(height_level).any():
+        raise RuntimeError(f"{path} has no finite {level_hpa} hPa height values for {tag}")
+
+    out_path = output_dir / tag / f"_{level_hpa}hPa" / f"01_{level_hpa}hPa_height_rh_wind_barbs.png"
+    return [
+        _plot_pressure_level_product(
+            lon,
+            lat,
+            height_level,
+            rh_level,
+            u_level,
+            v_level,
+            out_path,
+            domain_tag=tag,
+            valid_time=valid_time,
+            level_hpa=level_hpa,
+            annotation=_annotation(path),
+        )
+    ]
+
+
+def _plot_domain_4h_supplement(
+    ctx: QuicklookContext,
+    domain: int,
+    output_dir: Path,
+    *,
+    lead_hours: int,
+) -> list[Path]:
+    tag = _domain_tag(domain)
+    valid_time = _valid_time_for_lead(ctx.case_start, lead_hours)
+    path = _wrfout_for_valid_time(ctx, domain, valid_time)
+    return _plot_domain_surface_products(
+        path,
+        output_dir / tag / f"_{lead_hours}h",
+        domain_tag=tag,
+        valid_time=valid_time,
+        product_ids=SUPPLEMENTAL_SURFACE_PRODUCTS_4H,
+    )
+
+
 def _render(ctx: QuicklookContext, output_dir: Path) -> list[Path]:
     outputs: list[Path] = []
     for domain in ctx.domains:
         outputs.extend(_plot_domain_products(ctx, domain, output_dir))
+    return outputs
+
+
+def _render_supplemental(
+    ctx: QuicklookContext,
+    output_dir: Path,
+    *,
+    pressure_level_hpa: int,
+    pressure_lead_hours: int,
+    surface_lead_hours: int,
+) -> list[Path]:
+    outputs: list[Path] = []
+    for domain in ctx.domains:
+        outputs.extend(
+            _plot_domain_pressure_supplement(
+                ctx,
+                domain,
+                output_dir,
+                level_hpa=pressure_level_hpa,
+                lead_hours=pressure_lead_hours,
+            )
+        )
+        outputs.extend(
+            _plot_domain_4h_supplement(
+                ctx,
+                domain,
+                output_dir,
+                lead_hours=surface_lead_hours,
+            )
+        )
     return outputs
 
 
@@ -517,6 +870,50 @@ def _check_inputs(ctx: QuicklookContext, *, verbose_manifest: bool) -> None:
     print(f"archive run: {ctx.archive_run}")
 
 
+def _check_supplemental_inputs(
+    ctx: QuicklookContext,
+    *,
+    verbose_manifest: bool,
+    pressure_level_hpa: int,
+    pressure_lead_hours: int,
+    surface_lead_hours: int,
+) -> None:
+    _verify_brc_tools_manifest(ctx.manifest_path, verbose=verbose_manifest)
+    pressure_valid_time = _valid_time_for_lead(ctx.case_start, pressure_lead_hours)
+    surface_valid_time = _valid_time_for_lead(ctx.case_start, surface_lead_hours)
+    pressure_vars = [
+        "XLONG",
+        "XLAT",
+        "HGT",
+        "P",
+        "PB",
+        "PH",
+        "PHB",
+        "T",
+        "QVAPOR",
+        "U",
+        "V",
+    ]
+    surface_vars = ["XLONG", "XLAT", "HGT", "T2", "U10", "V10", "SNOWH", "PSFC", "PBLH", "TSK"]
+    for domain in ctx.domains:
+        pressure_path = _wrfout_for_valid_time(ctx, domain, pressure_valid_time)
+        surface_path = _wrfout_for_valid_time(ctx, domain, surface_valid_time)
+        _require_vars(pressure_path, pressure_vars)
+        _require_vars(surface_path, surface_vars)
+    for domain in ctx.domains:
+        tag = _domain_tag(domain)
+        print(
+            f"WRF {tag} {pressure_level_hpa} hPa source: "
+            f"{_wrfout_for_valid_time(ctx, domain, pressure_valid_time)}"
+        )
+        print(
+            f"WRF {tag} {surface_lead_hours}h source: "
+            f"{_wrfout_for_valid_time(ctx, domain, surface_valid_time)}"
+        )
+        print(f"supplemental {tag} products: 4")
+    print(f"archive run: {ctx.archive_run}")
+
+
 def cmd_check(args: argparse.Namespace) -> int:
     try:
         ctx = _load_context(args)
@@ -535,6 +932,34 @@ def cmd_render(args: argparse.Namespace) -> int:
             Path(args.output_dir) if args.output_dir else _default_output_dir(ctx)
         )
         outputs = _render(ctx, output_dir)
+    except Exception as exc:  # noqa: BLE001 - CLI boundary
+        print(f"ERROR: {exc}", file=sys.stderr)
+        return 1
+    for path in outputs:
+        print(f"wrote {path}")
+    return 0
+
+
+def cmd_render_supplemental(args: argparse.Namespace) -> int:
+    try:
+        ctx = _load_context(args)
+        _check_supplemental_inputs(
+            ctx,
+            verbose_manifest=args.verbose_manifest,
+            pressure_level_hpa=args.pressure_level_hpa,
+            pressure_lead_hours=args.pressure_lead_hours,
+            surface_lead_hours=args.surface_lead_hours,
+        )
+        output_dir = _validate_output_dir(
+            Path(args.output_dir) if args.output_dir else _default_output_dir(ctx)
+        )
+        outputs = _render_supplemental(
+            ctx,
+            output_dir,
+            pressure_level_hpa=args.pressure_level_hpa,
+            pressure_lead_hours=args.pressure_lead_hours,
+            surface_lead_hours=args.surface_lead_hours,
+        )
     except Exception as exc:  # noqa: BLE001 - CLI boundary
         print(f"ERROR: {exc}", file=sys.stderr)
         return 1
@@ -570,6 +995,47 @@ def build_parser() -> argparse.ArgumentParser:
                     "repo-local paths are refused"
                 ),
             )
+
+    cmd = subparsers.add_parser(
+        "render-supplemental",
+        help="render additive Pelican review products under each domain directory",
+    )
+    cmd.add_argument("case_file")
+    cmd.add_argument(
+        "--archive-run",
+        help="specific archive run directory; defaults to the latest run_* under paths.archive_root",
+    )
+    cmd.add_argument(
+        "--output-dir",
+        help=(
+            "domain-root directory for PNG output; default is <archive-run>/quicklooks; "
+            "repo-local paths are refused"
+        ),
+    )
+    cmd.add_argument(
+        "--pressure-level-hpa",
+        type=int,
+        default=600,
+        help="pressure level for the upper-air proof product; default: 600",
+    )
+    cmd.add_argument(
+        "--pressure-lead-hours",
+        type=int,
+        default=1,
+        help="forecast lead hour for the pressure-level product; default: 1",
+    )
+    cmd.add_argument(
+        "--surface-lead-hours",
+        type=int,
+        default=4,
+        help="forecast lead hour for the copied surface products; default: 4",
+    )
+    cmd.add_argument(
+        "--verbose-manifest",
+        action="store_true",
+        help="print every brc-tools manifest verification row",
+    )
+    cmd.set_defaults(func=cmd_render_supplemental)
 
     return parser
 

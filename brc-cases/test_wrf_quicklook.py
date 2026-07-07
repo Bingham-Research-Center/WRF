@@ -74,6 +74,35 @@ class QuicklookPathTests(unittest.TestCase):
                 explicit,
             )
 
+    def test_valid_time_for_lead_formats_wrf_timestamp(self) -> None:
+        self.assertEqual(
+            wrf_quicklook._valid_time_for_lead("2013-02-02_12:00:00", 4),
+            "2013-02-02_16:00:00",
+        )
+
+    def test_wrfout_for_valid_time_uses_archive_run_domain_file(self) -> None:
+        with tempfile.TemporaryDirectory() as raw:
+            archive_run = Path(raw)
+            expected = archive_run / "wrfout_d03_2013-02-02_16:00:00"
+            expected.write_text("placeholder", encoding="utf-8")
+            ctx = wrf_quicklook.QuicklookContext(
+                case_file=Path("unit.case.yaml"),
+                data={},
+                case_name="unit_case",
+                case_start="2013-02-02_12:00:00",
+                domains=(1, 2, 3),
+                manifest_path=Path("/tmp/manifest.json"),
+                wps_run=Path("/tmp/wps_run"),
+                archive_run=archive_run,
+                met_by_domain={},
+                wrf_by_domain={},
+            )
+
+            self.assertEqual(
+                wrf_quicklook._wrfout_for_valid_time(ctx, 3, "2013-02-02_16:00:00"),
+                expected,
+            )
+
 
 if __name__ == "__main__":
     unittest.main()
