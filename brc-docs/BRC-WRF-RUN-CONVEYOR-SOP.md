@@ -318,10 +318,10 @@ Implemented sequence for `run_20260707T182414Z`:
    30 standard products plus 12 supplemental `_600hPa` and `_4h` products under
    `quicklooks/dXX/`.
 
-High-terrain archive:
+Coarse-terrain (`5m` ≈ 9 km) archive:
 
 ```text
-/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/pelican2013_nam_3_1_333m_75lev_oneway_hires_terrain/full6h/run_20260707T182414Z/
+/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/pelican2013_nam_3_1_333m_75lev_oneway_terrain5m/full6h/run_20260707T182414Z/
 ```
 
 The `topo_gmted2010_5m` run is not the final high-resolution-terrain
@@ -336,6 +336,7 @@ case name suggestion: pelican2013_nam_3_1_333m_75lev_oneway_terrain3s
 reference control packet: 13847980 / run_20260707T182414Z
 change only: HGT_M terrain source, case/run/archive names, and derived control paths
 retain: NAM forcing, Vtable.NAM, interval_seconds = 21600, feedback = 0, smooth_option = 0, 75 levels, 3/1/0.333 km domains
+render fresh terrain3s wrappers; archived terrain5m scripts are a shape reference only and may still contain topo5m/hires_terrain path labels
 first stop: geogrid-only proof that geogrid.log used custom 3s HGT_M
 second stop: WPS/metgrid proof from fresh met_em files
 final steps after approval: real.exe, wrf.exe, archive, standard quicklooks, supplemental quicklooks

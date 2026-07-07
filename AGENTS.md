@@ -109,12 +109,13 @@ a proven NetCDF-capable render environment with `PYTHONPATH` pointed at
   `contract_<case>.json`; `brc-wrf` consumes those sidecars.
 - Pelican completed WRF-side runs: NAM two-way baseline job `13695261`, GFS
   analysis job `13753673`, and NAM one-way feedback sensitivity job `13788264`.
-- Current active lane: geogrid-only proof for custom `3s` `HGT_M` in the NAM
-  one-way terrain run. The source cache/build is done; stop before WRF unless
-  geogrid proof is accepted and WRF is explicitly approved.
+- Current active lane: custom `3s` `HGT_M` geogrid proof for the NAM one-way
+  terrain run is accepted; stop before WRF unless the WRF conveyor is
+  explicitly approved.
 - Current static-terrain evidence: download job `13849489` on `dtn05` and build
   job `13849490` on `notch137` completed `0:0`; 99 USGS 1 arc-second GeoTIFFs
-  cached at 4.6G; `topo_brc_custom_3s` built at 350M with 63 tiles plus index.
+  cached at 4.6G; `topo_brc_custom_3s` built at 350M with 63 tiles plus index;
+  corrected geogrid-only job `13849737` proved nonzero custom 3s `HGT_M`.
 - RAP-only remains blocked before `real.exe`; ERA5 is locally blocked by source
   support, CDS tooling, and CDS credentials; FNL is optional; GEFSv12+NAM is
   parked unless explicitly revived.

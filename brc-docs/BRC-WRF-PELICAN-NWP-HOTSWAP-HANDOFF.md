@@ -38,7 +38,7 @@ Completed and optional case names:
 ```text
 pelican2013_gfs_3_1_333m_75lev  # complete
 pelican2013_nam_3_1_333m_75lev_oneway  # complete WRF feedback=0 sensitivity
-pelican2013_nam_3_1_333m_75lev_oneway_hires_terrain  # complete overlay proof; HGT_M from topo_gmted2010_5m
+pelican2013_nam_3_1_333m_75lev_oneway_terrain5m  # complete overlay proof; HGT_M from topo_gmted2010_5m
 pelican2013_fnl_3_1_333m_75lev
 ```
 
@@ -113,15 +113,15 @@ real fine-terrain sensitivity.
 Current execution packet:
 
 ```text
-case: pelican2013_nam_3_1_333m_75lev_oneway_hires_terrain
+case: pelican2013_nam_3_1_333m_75lev_oneway_terrain5m
 run_id: run_20260707T182414Z
 WPS proof job: 13847970; geogrid/ungrib/metgrid all completed, batch failed only in a post-summary Python block
 WRF job: 13847980; completed 0:0 in 02:17:41 on notch392
 quicklook job: 13848733; completed 0:0 in 00:01:06
-control: /uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/pelican2013_nam_3_1_333m_75lev_oneway_hires_terrain/control/run_20260707T182414Z/
-WPS archive: /uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/pelican2013_nam_3_1_333m_75lev_oneway_hires_terrain/wps_run_run_20260707T182414Z_13847970/
-WRF archive: /uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/pelican2013_nam_3_1_333m_75lev_oneway_hires_terrain/full6h/run_20260707T182414Z/
-quicklooks: /uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/pelican2013_nam_3_1_333m_75lev_oneway_hires_terrain/full6h/run_20260707T182414Z/quicklooks/dXX/
+control: /uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/pelican2013_nam_3_1_333m_75lev_oneway_terrain5m/control/run_20260707T182414Z/
+WPS archive: /uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/pelican2013_nam_3_1_333m_75lev_oneway_terrain5m/wps_run_run_20260707T182414Z_13847970/
+WRF archive: /uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/pelican2013_nam_3_1_333m_75lev_oneway_terrain5m/full6h/run_20260707T182414Z/
+quicklooks: /uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/pelican2013_nam_3_1_333m_75lev_oneway_terrain5m/full6h/run_20260707T182414Z/quicklooks/dXX/
 geogrid proof: "Using gmted2010_5m data source for HGT_M."
 namelist carry-forward: feedback = 0; smooth_option = 0
 WRF proof: SUCCESS COMPLETE WRF; 21 archived wrfout files; no fatal/CFL/NaN markers seen during monitoring
@@ -138,7 +138,7 @@ why not 15s first: only modestly finer than 30s and still near/coarser than d03 
 why not 1s first: much larger download/tiling/geogrid cost; likely little added value before proving 3s matters on 333 m d03
 approx Utah spacing at 40N: 15s ~463 m N-S / 355 m E-W; 3s ~93 m / 71 m; 1s ~31 m / 24 m
 case name suggestion: pelican2013_nam_3_1_333m_75lev_oneway_terrain3s
-control-path rule: copy the 13847980 control shape, but replace only the HGT_M terrain source, case names, run ids, and archive roots
+control-path rule: copy the 13847980 control shape, but render fresh terrain3s wrappers; do not copy literal terrain5m script path strings because archived wrapper internals still carry topo5m/hires_terrain labels
 stop rule: run geogrid-only first; do not submit WRF until geogrid.log and geo_em metadata prove custom 3s HGT_M was used
 comparison anchors: NAM one-way job 13788264, operator-proof topo5m job 13847980, and quicklooks from job 13848733
 ```
@@ -146,8 +146,10 @@ comparison anchors: NAM one-way job 13788264, operator-proof topo5m job 13847980
 Current helper surface: `brc-cases/wps_hgt_static.py` can plan 3s WPS tile
 coverage, query USGS terrain metadata, de-duplicate a URL manifest, cache DEMs
 from a Slurm/DTN job, build WPS-format `topo_brc_custom_3s/`, and render the
-run-local `GEOGRID.TBL` and `namelist.wps` edits. It does not submit Slurm, run
-WPS/geogrid, or write generated data inside the checkout.
+run-local `GEOGRID.TBL` and `namelist.wps` edits. For 3 arc-second global-style
+tiles it must emit WPS `filename_digits = 6` in the static `index` so geogrid
+looks for six-digit tile names such as `295201-296400.152401-153600`. It does
+not submit Slurm, run WPS/geogrid, or write generated data inside the checkout.
 
 Dataset search verdict from 2026-07-07:
 
@@ -168,9 +170,8 @@ smallest fallback: SRTMGL3 3 arc-second HGT; native target spacing, about
   than 1 arc-second terrain resampled to 3s.
 not preferred: Copernicus GLO-30/GLO-90 because it is a DSM including
   vegetation/buildings and carries registration plus attribution obligations.
-next step: submit the rendered static-terrain Slurm packet; stop after source
-  manifest, download inventory/checksums, size evidence, and
-  topo_brc_custom_3s index verification. Geogrid is a separate step.
+status: source selection, static-terrain build, and geogrid-only proof are
+  complete; next work is the WRF conveyor only after explicit approval.
 ```
 
 Static terrain packet evidence from 2026-07-07:
@@ -185,9 +186,23 @@ download inventory: 36 cached + 63 downloaded rows; 4 nonfatal TNM metadata size
 DEM cache: /scratch/general/vast/u0737349/wrf_inputs/pelican2013_terrain3s/usgs_3dep_1arcsec/ = 4.6G
 WPS static output: /scratch/general/vast/u0737349/wps_geog_terrain3s/topo_brc_custom_3s/ = 350M
 WPS output files: 64 top-level files, meaning 63 WPS tiles plus index
-index proof: type=continuous, projection=regular_ll, dx=dy=0.000833333333333333, wordsize=2, tile_bdr=3, units="meters MSL"
-important caveat: no geogrid.exe has run against this source yet
-next stop: geogrid-only proof that WPS uses brc_custom_3s/topo_brc_custom_3s for HGT_M
+index proof: type=continuous, projection=regular_ll, dx=dy=0.000833333333333333, wordsize=2, filename_digits=6, tile_bdr=3, units="meters MSL"
+```
+
+Geogrid-only proof evidence from 2026-07-07:
+
+```text
+first proof job: 13849698 completed geogrid but produced all-zero HGT_M; cause was missing filename_digits=6 in the custom static index, so WPS used the brc_custom_3s token but looked for five-digit tile names and filled HGT_M with fill_missing=0
+corrected proof job: 13849737 on notch392; geogrid phase exit 0 in 10 s
+control: /uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/pelican2013_nam_3_1_333m_75lev_oneway_terrain3s/control/geogrid_20260707T230301Z/
+archive: /uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/pelican2013_nam_3_1_333m_75lev_oneway_terrain3s/domain_review/geogrid_20260707T230301Z_13849737/
+scratch WPS run: /scratch/general/vast/u0737349/wrf_runs/pelican2013_nam_3_1_333m_75lev_oneway_terrain3s/geogrid_20260707T230301Z/wps_run/
+source proof: geogrid.log says "Using brc_custom_3s data source for HGT_M." for d01, d02, and d03
+HGT_M summary: d01 min/mean/max = 1113.251/2122.432/3879.707 m; d02 = 1417.477/2084.941/3823.632 m; d03 = 1414.842/1558.500/2148.225 m
+terrain comparison: d03 terrain3s minus 30s mean_abs = 5.103 m, range -36.682 to 68.782 m; d03 terrain3s minus topo5m mean_abs = 27.531 m, range -122.784 to 235.096 m
+preview: terrain3s_hgt_and_diffs.png in the corrected archive, comparing HGT_M and differences against installed 30s and topo5m
+stop point: geogrid only; no ungrib, metgrid, real.exe, wrf.exe, or quicklooks
+next stop: rerun the NAM one-way WPS/WRF conveyor with 3s terrain only after explicit approval
 ```
 
 Resolution choice tradeoff:

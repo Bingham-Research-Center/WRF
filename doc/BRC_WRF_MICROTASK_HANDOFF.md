@@ -78,14 +78,14 @@ Terrain-fidelity rerun constraint:
 
 ```text
 reference run: 13788264, NAM one-way feedback=0
-active terrain run: 13847980, case pelican2013_nam_3_1_333m_75lev_oneway_hires_terrain
-control: /uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/pelican2013_nam_3_1_333m_75lev_oneway_hires_terrain/control/run_20260707T182414Z/
-archive: /uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/pelican2013_nam_3_1_333m_75lev_oneway_hires_terrain/full6h/run_20260707T182414Z/
+coarse terrain comparison run: 13847980, case pelican2013_nam_3_1_333m_75lev_oneway_terrain5m
+control: /uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/pelican2013_nam_3_1_333m_75lev_oneway_terrain5m/control/run_20260707T182414Z/
+archive: /uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/pelican2013_nam_3_1_333m_75lev_oneway_terrain5m/full6h/run_20260707T182414Z/
 WPS HGT_M source: gmted2010_5m via topo_gmted2010_5m overlay; this is 5 arc-minutes, not 5 metres
 namelist carry-forward: feedback = 0; smooth_option = 0
 WRF proof: completed 0:0, SUCCESS COMPLETE WRF, 21 archived wrfout files, no fatal/CFL/NaN markers
 quicklook proof: job 13848733 completed 0:0, 42 PNGs under quicklooks/dXX/
-next run: custom 3s HGT_M, same NAM one-way conveyor, geogrid-only proof before WRF
+next run: custom 3s HGT_M, same NAM one-way conveyor, fresh terrain3s wrappers, geogrid-only proof before WRF
 ```
 
 John approved the end-to-end RAP sensitivity attempt on 2026-06-30, with the

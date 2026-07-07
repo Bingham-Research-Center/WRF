@@ -21,15 +21,20 @@ terrain. The completed `topo_gmted2010_5m` run proved the overlay/control path,
 but `5m` is 5 arc-minutes, not 5 metres, so it is coarser than the installed
 `topo_gmted2010_30s` default. Job `13847980` completed `0:0` in `02:17:41` on
 `notch392`; quicklook job `13848733` completed `0:0` and wrote 42 PNGs. The
-custom `3s` `HGT_M` static terrain source is built and cached. Next target:
-geogrid-only proof that WPS uses `topo_brc_custom_3s` for `HGT_M`.
+custom `3s` `HGT_M` static terrain source is built, cached, and geogrid-proven
+after adding the required WPS `filename_digits = 6` index metadata. Corrected
+geogrid-only job `13849737` completed on `notch392`, used
+`brc_custom_3s`/`topo_brc_custom_3s` for `HGT_M`, and archived nonzero
+`geo_em.d0*.nc` plus 30s/topo5m terrain-difference evidence. Next target,
+only after explicit approval: rerun the NAM one-way WPS/WRF conveyor with this
+3s terrain source.
 
 ## Next Tasks
 
 | Order | Repo | Task | Stop point |
 | ---: | --- | --- | --- |
-| 1 | `brc-wrf` | Run geogrid-only proof with `topo_brc_custom_3s` as the `HGT_M` overlay and shared `WPS_GEOG` for all other fields. | `geogrid.log` says custom `3s` source was used; archive `geo_em.d0*.nc`, `namelist.wps`, `GEOGRID.TBL.ARW`, and a terrain-difference preview against the `30s`/`5m` runs. |
-| 2 | `brc-wrf` | If the `3s` geogrid proof is clean, rerun the same NAM one-way WPS/WRF conveyor as job `13847980`, changing only the terrain source and case/run names. | `real.exe`, `wrf.exe`, archive, standard quicklooks, and supplemental quicklooks; compare against job `13788264` and the `topo_gmted2010_5m` operator-proof run. |
+| 1 | `brc-wrf` | Complete geogrid-only proof with `topo_brc_custom_3s` as the `HGT_M` overlay and shared `WPS_GEOG` for all other fields. | Done in job `13849737`; archive has `geo_em.d0*.nc`, `namelist.wps`, `GEOGRID.TBL.ARW`, source grep, summary TSVs, and 30s/topo5m terrain-difference PNG. |
+| 2 | `brc-wrf` | If approved, rerun the same NAM one-way WPS/WRF conveyor as job `13847980`, changing only the terrain source and case/run names. | `real.exe`, `wrf.exe`, archive, standard quicklooks, and supplemental quicklooks; compare against job `13788264` and the `topo_gmted2010_5m` operator-proof run. |
 | 3 | `brc-wrf` | Review the completed Pelican quicklooks, including standard 10-product sets plus `_600hPa` and `_4h` supplemental folders. | Short science packet: similarities, differences, suspicious fields, and whether another source or `1s` terrain is worth trying. |
 | 4 | `brc-wrf` | Decide the next experiment lane from the review. | Pick one: `1s` terrain follow-up, FNL/GFS-family source, corrected RAP/filler design, ERA5 access work, scaling row, memory row, or stop. |
 | 5 | `brc-tools` | If another forcing source is chosen, do source feasibility first: source access, fields, cadence, Vtable implications, manifest/contract plan. | No WPS/WRF; hand back a staged or clearly blocked contract path. |
