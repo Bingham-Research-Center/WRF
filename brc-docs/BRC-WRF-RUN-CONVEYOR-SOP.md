@@ -64,11 +64,20 @@ Quicklook PNGs belong under:
 <archive-run>/quicklooks/dXX/
 ```
 
+Supplemental review products belong below the relevant domain directory rather
+than beside the parent product set:
+
+```text
+<archive-run>/quicklooks/dXX/_600hPa/
+<archive-run>/quicklooks/dXX/_4h/
+```
+
 That simple path is the default because the archive run already identifies the
 case and timestamp. Use `--output-dir` only when you intentionally need to
 preserve an alternate render. Older stamped folders such as
 `quicklooks/standardized_compare_20260630T214000Z/` remain valid historical
-evidence; do not move them just to rename them.
+evidence; add supplemental products below those stamped `dXX/` directories when
+the parent quicklooks live there.
 
 ## Source-Agnostic Conveyor
 
@@ -272,6 +281,66 @@ archive phases exited 0
 30 quicklook PNGs, 10 per d01/d02/d03
 ```
 
+## Terrain-Fidelity NAM One-Way Variant
+
+Use job `13788264` as the successful WRF/Slurm reference only after the WPS
+static geography change has been proven. The previous one-way run reused the
+baseline NAM `met_em` files, so it is not a valid control packet for a terrain
+change by itself.
+
+Initial preflight finding from 2026-07-07:
+
+```text
+baseline namelist.wps geog_data_res = 'default','default','default'
+default HGT_M source in GEOGRID.TBL.ARW = topo_gmted2010_30s/
+installed WPS_GEOG HGT_M source finer than 30 arc-sec = none found
+installed VAR_SSO alternates = varsso, varsso_10m, varsso_5m, varsso_2m
+```
+
+Implemented sequence for `run_20260707T182414Z`:
+
+1. Reuse the shared `/uufs/chpc.utah.edu/common/home/lawson-group6/WPS_GEOG`
+   tree through a small overlay, adding only `topo_gmted2010_5m` instead of
+   installing a private full GEOG tree.
+2. Use the short WPS path `/scratch/general/vast/u0737349/wps_geog_topo5m` to
+   avoid the geogrid formatted-write/path-length failure seen with the long
+   archive overlay path.
+3. Add `gmted2010_5m` only to the run-local `HGT_M` block in
+   `GEOGRID.TBL.ARW`; keep all other static fields on `default`.
+4. Rerun `geogrid.exe`, `ungrib.exe`, and `metgrid.exe`; WPS proof job
+   `13847970` completed all three stages and failed only in a post-summary
+   Python block.
+5. Submit WRF job `13847980` from the fresh `met_em` files with `feedback = 0`
+   and `smooth_option = 0`. It completed `0:0` in `02:17:41` on `notch392`.
+6. Archive proof: `SUCCESS COMPLETE WRF`, 21 hourly `wrfout` files, zero-exit
+   phase log, and no fatal/CFL/NaN markers seen during monitoring.
+7. Quicklook job `13848733` completed `0:0` in `00:01:06` and wrote 42 PNGs:
+   30 standard products plus 12 supplemental `_600hPa` and `_4h` products under
+   `quicklooks/dXX/`.
+
+High-terrain archive:
+
+```text
+/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/pelican2013_nam_3_1_333m_75lev_oneway_hires_terrain/full6h/run_20260707T182414Z/
+```
+
+The `topo_gmted2010_5m` run is not the final high-resolution-terrain
+sensitivity because `5m` means 5 arc-minutes. Treat it as the successful overlay
+and conveyor proof. For the next run, use the same WPS/WRF/quicklook sequence
+but replace `HGT_M` with custom `3s` terrain, after a geogrid-only proof packet.
+
+Next-run control points:
+
+```text
+case name suggestion: pelican2013_nam_3_1_333m_75lev_oneway_terrain3s
+reference control packet: 13847980 / run_20260707T182414Z
+change only: HGT_M terrain source, case/run/archive names, and derived control paths
+retain: NAM forcing, Vtable.NAM, interval_seconds = 21600, feedback = 0, smooth_option = 0, 75 levels, 3/1/0.333 km domains
+first stop: geogrid-only proof that geogrid.log used custom 3s HGT_M
+second stop: WPS/metgrid proof from fresh met_em files
+final steps after approval: real.exe, wrf.exe, archive, standard quicklooks, supplemental quicklooks
+```
+
 ## 2026-06-30 Pelican 333 m GFS Evidence
 
 Case: `pelican2013_gfs_3_1_333m_75lev`
@@ -343,4 +412,27 @@ GFS quicklooks:
 
 ```text
 /uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/pelican2013_gfs_3_1_333m_75lev/full6h/run_20260630T181555Z/quicklooks/standardized_compare_20260630T214000Z/
+```
+
+Supplemental proof-of-concept quicklooks:
+
+```text
+job: 13792197, completed from log evidence on notch392
+manifest checks: NAM 2/2 OK, GFS 2/2 OK, NAM_ONEWAY 2/2 OK
+products: 12 PNGs per case; 4 per d01/d02/d03
+summary: /uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/pelican2013_nam_gfs_compare/control/quicklooks_supplemental_20260702T082027Z/quicklook_supplemental_summary_13792197.tsv
+log: /uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_build_logs/brc-wrf/quicklook_pelican333_supplemental_13792197.out
+products per domain:
+  _600hPa/01_600hPa_height_rh_wind_barbs.png from 2013-02-02_13:00:00
+  _4h/01_t2_10m_wind.png from 2013-02-02_16:00:00
+  _4h/04_10m_wind_speed.png from 2013-02-02_16:00:00
+  _4h/06_snow_depth.png from 2013-02-02_16:00:00
+```
+
+Supplemental roots:
+
+```text
+NAM: /uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/pelican2013_nam_3_1_333m_75lev/full6h/run_20260626T163737Z/quicklooks/standardized_compare_20260630T214000Z/dXX/{_600hPa,_4h}/
+GFS: /uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/pelican2013_gfs_3_1_333m_75lev/full6h/run_20260630T181555Z/quicklooks/standardized_compare_20260630T214000Z/dXX/{_600hPa,_4h}/
+NAM_ONEWAY: /uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/pelican2013_nam_3_1_333m_75lev_oneway/full6h/run_20260702T053120Z/quicklooks/dXX/{_600hPa,_4h}/
 ```

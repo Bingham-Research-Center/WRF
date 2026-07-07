@@ -15,12 +15,14 @@ large downloads.
 
 ## Active Goal For Next Session
 
-Current default goal, unless John says otherwise: inspect the rendered Pelican
-NAM/GFS 3/1/0.333 km, 75-level standardized quicklook pair plus the NAM
-one-way-feedback sensitivity quicklooks, and write a small science review
-packet. RAP-only is blocked before `real.exe`; ERA5 is locally blocked by
-source support, CDS tooling, and credentials. FNL is an optional third-source
-pass in `../brc-tools`, not the current default.
+Current user-selected goal: run the real terrain-fidelity sensitivity based on
+the successful Pelican NAM one-way run, job `13788264`. The shared `WPS_GEOG`
+tree did not contain finer `HGT_M` terrain, so the completed overlay proof used
+`topo_gmted2010_5m`; WPS proof for `run_20260707T182414Z` confirmed `HGT_M`
+came from `gmted2010_5m`, WRF job `13847980` completed `0:0`, and quicklook job
+`13848733` wrote 42 PNGs. Important correction: WPS `5m` means 5 arc-minutes,
+so the next true fine-terrain run should use custom `3s` `HGT_M` terrain and
+otherwise copy the `13847980` NAM one-way run shape.
 
 Read in this order after `AGENTS.md`:
 
@@ -47,6 +49,7 @@ the Pelican NAM namelists with `interval_seconds = 21600`.
 | NAM/GFS standardized quicklooks | `13755401` | `COMPLETED`, `0:0`, elapsed `00:01:38`; both quicklook checks returned `OK: no findings` and `brc-tools manifest: verify: 2/2 OK`. | Summary: `/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/pelican2013_nam_gfs_compare/control/quicklooks_20260630T214000Z/quicklook_summary_13755401.tsv`; outputs: NAM and GFS each have 30 PNGs under `quicklooks/standardized_compare_20260630T214000Z/`, 10 per d01/d02/d03. |
 | NAM one-way feedback full6h | `13788264` | `COMPLETED`, `0:0`, elapsed `02:12:32`; `wrf.exe` step elapsed `02:11:26`; `real.exe`, `wrf.exe`, success-marker, and archive phases all exited `0`. | Archive: `/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/pelican2013_nam_3_1_333m_75lev_oneway/full6h/run_20260702T053120Z/`; debug: `.../debug/`; control: `/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/pelican2013_nam_3_1_333m_75lev_oneway/control/run_20260702T053120Z/`. |
 | NAM one-way feedback quicklooks | `13791045` | `COMPLETED`, `0:0`, elapsed `00:00:53`; rendered 30 PNGs, 10 per d01/d02/d03. First attempt `13791008` failed because `brc-tools-2026` lacked the xarray NetCDF backend; retry used the proven `clyfar-nov2025` NetCDF/render stack with `PYTHONPATH` pointed at `../brc-tools`. | Summary: `/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/pelican2013_nam_3_1_333m_75lev_oneway/control/run_20260702T053120Z/quicklook_summary_retry_13791045.tsv`; outputs: `/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/pelican2013_nam_3_1_333m_75lev_oneway/full6h/run_20260702T053120Z/quicklooks/dXX/`. |
+| Supplemental Pelican quicklooks | `13792197` | Completed from log evidence on `notch392`; rendered 12 add-on PNGs per case, 4 per d01/d02/d03, for NAM, GFS, and NAM one-way. `sacct` accounting was unavailable after completion due to a transient SlurmDBD connection error, but the job log finished with all three case rows and `squeue` no longer listed the job. | Summary: `/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/pelican2013_nam_gfs_compare/control/quicklooks_supplemental_20260702T082027Z/quicklook_supplemental_summary_13792197.tsv`; log: `/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_build_logs/brc-wrf/quicklook_pelican333_supplemental_13792197.out`; outputs: `_600hPa/01_600hPa_height_rh_wind_barbs.png` at 1-hour lead plus `_4h/{01_t2_10m_wind.png,04_10m_wind_speed.png,06_snow_depth.png}` at 4-hour lead under each domain directory. |
 
 GFS acceptance facts:
 
@@ -69,6 +72,20 @@ num_metgrid_soil_levels = 4
 SUCCESS COMPLETE REAL_EM INIT
 SUCCESS COMPLETE WRF
 21 archived wrfout files: d01/d02/d03 hourly 12Z through 18Z
+```
+
+Terrain-fidelity rerun constraint:
+
+```text
+reference run: 13788264, NAM one-way feedback=0
+active terrain run: 13847980, case pelican2013_nam_3_1_333m_75lev_oneway_hires_terrain
+control: /uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/pelican2013_nam_3_1_333m_75lev_oneway_hires_terrain/control/run_20260707T182414Z/
+archive: /uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/pelican2013_nam_3_1_333m_75lev_oneway_hires_terrain/full6h/run_20260707T182414Z/
+WPS HGT_M source: gmted2010_5m via topo_gmted2010_5m overlay; this is 5 arc-minutes, not 5 metres
+namelist carry-forward: feedback = 0; smooth_option = 0
+WRF proof: completed 0:0, SUCCESS COMPLETE WRF, 21 archived wrfout files, no fatal/CFL/NaN markers
+quicklook proof: job 13848733 completed 0:0, 42 PNGs under quicklooks/dXX/
+next run: custom 3s HGT_M, same NAM one-way conveyor, geogrid-only proof before WRF
 ```
 
 John approved the end-to-end RAP sensitivity attempt on 2026-06-30, with the
@@ -178,6 +195,12 @@ the proven NAM WPS/metgrid artifacts and John-owned WRF build, changed only
 `smooth_option = 0`, completed WRF job `13788264`, archived 21 hourly WRF
 outputs, and rendered 30 quicklook PNGs in retry job `13791045`.
 
+As of 2026-07-02, supplemental Pelican quicklooks are rendered for all three
+completed 333 m runs: NAM two-way, GFS, and NAM one-way. Job `13792197` added
+four nested products per domain without deleting parent quicklooks: one
+`_600hPa` product from 2013-02-02 13Z and three `_4h` surface products from
+2013-02-02 16Z.
+
 As of 2026-06-30, ERA5 is not ready for immediate staging in local evidence:
 `brc-tools` has no `era5` source, `cdsapi`/`ecmwfapi` are absent even in
 `brc-tools-2026`, and no CDS credentials are configured. WPS-side support is
@@ -208,15 +231,16 @@ Start in `~/gits/brc-wrf` and keep the first pass small:
 
 1. `git status --short --branch --untracked-files=no`
 2. `sed -n '1,180p' AGENTS.md`
-3. `sed -n '1,180p' doc/BRC_WRF_MICROTASK_HANDOFF.md`
+3. `sed -n '1,220p' doc/BRC_WRF_EXPERIMENT_TODO.md`
 4. `sed -n '1,220p' brc-docs/BRC-WRF-PELICAN-NWP-HOTSWAP-HANDOFF.md`
 5. `sed -n '1,140p' brc-docs/BRC-WRF-STATE-PLAYBOOK.md`
 6. `sed -n '1,180p' brc-docs/BRC-WRF-FIRST-CASE.md`
 7. `sed -n '1,130p' ../brc-tools/docs/WRF-STAGING-STATE-PLAYBOOK.md`
 
-Then read only the task-owned files named below. Do not broad-scan WRF source
-or load high-token scripts until `rg` points to a specific function, test, or
-doc section.
+This file is now the detailed evidence ledger. Read it only when the shorter
+todo or a task-specific owner doc points here. Do not broad-scan WRF source or
+load high-token scripts until `rg` points to a specific function, test, or doc
+section.
 
 Login-node-safe checks from this repo:
 
@@ -311,7 +335,7 @@ render path performs practical checks.
 | CHPC settings | Rechecked 2026-06-17 against `brc-knowledge`: WRF default remains single-node `notch392` on `lawson-np`; avoid multi-node for Basin-scale cases unless memory/size proves it. | `../brc-knowledge/scholarium/reference-base/resources/chpc-team-resource-inventory.md`; `wrf-on-chpc-quickstart.md`; `chpc-slurm-job-examples.md`. |
 | John-owned WPS proof | Passed 2026-06-18 from official WPS v4.6.0 source. | `/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_build_logs/brc-wrf/gate3_20260618T054456Z_13539773/`; WPS root `/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_build/WPS`. |
 | Case-root metadata review | Passed 2026-06-18. | `/tmp/jan2013_basin_nam.gate4.20260618T054655Z.report.txt`; rendered review `/tmp/jan2013_basin_nam.gate4.20260618T054655Z.rendered.slurm`; not submitted. |
-| Docs/router state | This file is the detailed queue; `AGENTS.md` and `doc/BRC_WRF_HANDOFF.md` should stay short. | Update detailed counts here, then leave only pointers in router docs. |
+| Docs/router state | `doc/BRC_WRF_EXPERIMENT_TODO.md` is the active todo; this file is the detailed evidence ledger; `AGENTS.md` and `README.md` should stay short. | Update the owner doc, then leave only pointers in router docs. |
 
 ## Current Countdown
 
@@ -570,9 +594,10 @@ Update docs where the evidence belongs, not all in one place.
 
 | Evidence changes | Primary doc | Secondary pointer |
 | --- | --- | --- |
-| Remaining microtask counts or routing changes | `doc/BRC_WRF_MICROTASK_HANDOFF.md` | `AGENTS.md` only as a short router |
+| Active experiment todo or routing changes | `doc/BRC_WRF_EXPERIMENT_TODO.md` | `AGENTS.md` only as a short router |
+| Historical microtask counts or evidence details | `doc/BRC_WRF_MICROTASK_HANDOFF.md` | `doc/BRC_WRF_EXPERIMENT_TODO.md` only if the current next task changes |
 | NAM-only run proof facts | `brc-docs/BRC-WRF-FIRST-CASE.md` | `brc-docs/BRC-WRF-STATE-PLAYBOOK.md` |
-| Case manifest or render-only Slurm review | `brc-cases/README.md` | `doc/BRC_WRF_HANDOFF.md` |
+| Case manifest or render-only Slurm review | `brc-cases/README.md` | `doc/BRC_WRF_EXPERIMENT_TODO.md` |
 | WRF quicklook product list or adapter behavior | `brc-cases/README.md` and `brc-cases/wrf_quicklook.py` | `brc-docs/BRC-WRF-RUN-CONVEYOR-SOP.md` |
 | Reusable plotting primitives | `../brc-tools/brc_tools/visualize/` | `brc-wrf` should only point to the helper |
 | brc-tools staging behavior, manifests, contracts | `../brc-tools/docs/WRF-INPUT-STAGING.md` | `brc-docs/BRC-WRF-FIRST-CASE.md` |
