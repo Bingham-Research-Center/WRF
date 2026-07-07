@@ -53,7 +53,17 @@ name=LANDUSEF
         text = hgt.index_text()
         self.assertIn("type = continuous", text)
         self.assertIn("projection = regular_ll", text)
+        self.assertIn("filename_digits = 6", text)
         self.assertIn("tile_bdr=3", text)
+
+    def test_index_text_preserves_five_digit_names_for_30s_grid(self) -> None:
+        text = hgt.index_text(dx_deg=30.0 / 3600.0)
+        self.assertIn("filename_digits = 5", text)
+
+    def test_tile_name_uses_selected_filename_width(self) -> None:
+        tile = hgt.Tile(1, 1200, 1201, 2400)
+        self.assertEqual(hgt.tile_name(tile, filename_digits=5), "00001-01200.01201-02400")
+        self.assertEqual(hgt.tile_name(tile, filename_digits=6), "000001-001200.001201-002400")
 
     def test_manifest_round_trip_and_inventory_paths(self) -> None:
         with tempfile.TemporaryDirectory() as raw:

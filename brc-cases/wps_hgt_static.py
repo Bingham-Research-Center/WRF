@@ -453,14 +453,35 @@ def tile_projwin(
     return left, north, right, south
 
 
+def filename_digits_for_grid(dx_deg: float, *, tile_size: int = DEFAULT_TILE_SIZE) -> int:
+    max_index = max(int(round(360.0 / dx_deg)), int(round(180.0 / dx_deg)))
+    if max_index <= 99999:
+        return 5
+    if max_index <= 999999:
+        return 6
+    raise ValueError("WPS geogrid supports only 5- or 6-digit static tile filenames")
+
+
+def tile_name(tile: Tile, *, filename_digits: int) -> str:
+    if filename_digits not in {5, 6}:
+        raise ValueError("filename_digits must be 5 or 6")
+    return (
+        f"{tile.x_start:0{filename_digits}d}-{tile.x_end:0{filename_digits}d}."
+        f"{tile.y_start:0{filename_digits}d}-{tile.y_end:0{filename_digits}d}"
+    )
+
+
 def index_text(
     *,
     dx_deg: float = DEFAULT_DX_DEG,
     tile_size: int = DEFAULT_TILE_SIZE,
     tile_border: int = DEFAULT_TILE_BORDER,
+    filename_digits: int | None = None,
     description: str = "Custom 3-arc-second topography height for BRC WRF",
 ) -> str:
     known = dx_deg / 2.0
+    if filename_digits is None:
+        filename_digits = filename_digits_for_grid(dx_deg, tile_size=tile_size)
     return "\n".join(
         [
             "type = continuous",
@@ -476,6 +497,7 @@ def index_text(
             f"tile_x = {tile_size}",
             f"tile_y = {tile_size}",
             "tile_z = 1",
+            f"filename_digits = {filename_digits}",
             f"tile_bdr={tile_border}",
             'units="meters MSL"',
             f'description="{description}"',
@@ -603,6 +625,7 @@ def build_tiles(args: argparse.Namespace) -> None:
     tile_height = args.tile_size + 2 * args.tile_border
     bounds = tuple(args.bounds)
     tiles = tiles_for_bounds(bounds, dx_deg=args.dx_deg, tile_size=args.tile_size)
+    filename_digits = filename_digits_for_grid(args.dx_deg, tile_size=args.tile_size)
 
     gdalbuildvrt = _need_tool("gdalbuildvrt")
     gdalwarp = _need_tool("gdalwarp")
@@ -633,6 +656,7 @@ def build_tiles(args: argparse.Namespace) -> None:
             dx_deg=args.dx_deg,
             tile_size=args.tile_size,
             tile_border=args.tile_border,
+            filename_digits=filename_digits,
             description=args.description,
         ),
         encoding="utf-8",
@@ -640,7 +664,8 @@ def build_tiles(args: argparse.Namespace) -> None:
 
     for tile in tiles:
         left, north, right, south = tile_projwin(tile, dx_deg=args.dx_deg, tile_border=args.tile_border)
-        raw = build_dir / f"{tile.name}.envi"
+        name = tile_name(tile, filename_digits=filename_digits)
+        raw = build_dir / f"{name}.envi"
         header = Path(f"{raw}.hdr")
         _run(
             [
@@ -671,18 +696,27 @@ def build_tiles(args: argparse.Namespace) -> None:
                 str(raw),
             ]
         )
-        _write_wps_tile_from_envi(raw, header, output_dir / tile.name, tile_width, tile_height)
+        _write_wps_tile_from_envi(raw, header, output_dir / name, tile_width, tile_height)
 
 
 def cmd_plan(args: argparse.Namespace) -> int:
     bounds = tuple(args.bounds)
     tiles = tiles_for_bounds(bounds, dx_deg=args.dx_deg, tile_size=args.tile_size)
+    filename_digits = filename_digits_for_grid(args.dx_deg, tile_size=args.tile_size)
     print("tile\tleft\tright\tsouth\tnorth")
     for tile in tiles:
         left, north, right, south = tile_projwin(tile, dx_deg=args.dx_deg, tile_border=args.tile_border)
-        print(f"{tile.name}\t{left:.6f}\t{right:.6f}\t{south:.6f}\t{north:.6f}")
+        print(f"{tile_name(tile, filename_digits=filename_digits)}\t{left:.6f}\t{right:.6f}\t{south:.6f}\t{north:.6f}")
     print()
-    print(index_text(dx_deg=args.dx_deg, tile_size=args.tile_size, tile_border=args.tile_border), end="")
+    print(
+        index_text(
+            dx_deg=args.dx_deg,
+            tile_size=args.tile_size,
+            tile_border=args.tile_border,
+            filename_digits=filename_digits,
+        ),
+        end="",
+    )
     return 0
 
 

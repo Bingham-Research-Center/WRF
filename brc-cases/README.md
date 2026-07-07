@@ -205,8 +205,11 @@ The checkpoint is intentionally small:
    fields falling through to `default`. The Pelican broad box needs 63 WPS
    output tiles, but the current USGS 1 arc-second source query de-duplicates
    to 99 one-degree GeoTIFF tiles, about 4.53 GiB before GDAL temporary files.
-   Keep at least 10 GiB free in the DEM cache filesystem. The rendered download
-   job defaults to the CHPC DTN convention used by `brc-tools`:
+   The generated 3 arc-second WPS `index` must include `filename_digits = 6`
+   because the global tile indices exceed five digits; without it geogrid can
+   select the custom source token but fill `HGT_M` with zeros. Keep at least
+   10 GiB free in the DEM cache filesystem. The rendered download job defaults
+   to the CHPC DTN convention used by `brc-tools`:
    `account=dtn`, `partition=notchpeak-dtn`, `qos=notchpeak-dtn`.
 
 `wrf_case.py` uses only the Python standard library. Because this checkout does
