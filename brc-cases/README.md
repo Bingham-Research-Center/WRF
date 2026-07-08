@@ -128,7 +128,24 @@ The checkpoint is intentionally small:
    manifests, read NetCDF/archive artifacts, render quicklooks, submit Slurm, or
    run WPS/WRF.
 
-8. Render no-run visual quicklooks from the existing proof artifacts:
+8. Compare existing `namelist.input` text artifacts without touching model
+   outputs:
+
+   ```bash
+   python brc-cases/namelist_diff.py \
+     --case label_a=/path/to/run_or_namelist.input \
+     --case label_b=/path/to/other_run_or_namelist.input \
+     --output-dir /tmp/brc_wrf_namelist_diff
+   ```
+
+   The helper accepts labeled `LABEL=PATH` inputs where `PATH` is either a
+   `namelist.input` file or a directory containing one. It parses normalized
+   section/key values, writes a Markdown summary, a TSV matrix, and pairwise
+   raw unified diffs, and refuses output inside this checkout. It reads text
+   namelists only; it does not run WPS, WRF, Slurm, NetCDF reads, quicklooks,
+   or archive promotion.
+
+9. Render no-run visual quicklooks from the existing proof artifacts:
 
    ```bash
    python brc-cases/wrf_quicklook.py check brc-cases/jan2013_basin_nam.case.yaml
@@ -165,7 +182,7 @@ The checkpoint is intentionally small:
    verify manifests, open NetCDF files, read archives, or render PNGs.
    The workflow source is tracked in `jan2013_nam_workflow.mmd`.
 
-9. Prepare custom WPS `HGT_M` terrain tiles. Login-safe commands can plan tiles
+10. Prepare custom WPS `HGT_M` terrain tiles. Login-safe commands can plan tiles
    and render a Slurm packet. DEM metadata queries, network download/cache, and
    GDAL static-tile builds should run from the rendered Slurm scripts, not on a
    login node. Generated rasters and packet outputs stay outside this checkout.
