@@ -40,6 +40,12 @@ SUPPLEMENTAL_SURFACE_PRODUCTS_4H = (
     "10m_wind_speed",
     "snow_depth",
 )
+SURFACE_ENERGY_PRODUCTS = (
+    ("SWDOWN", "01_swdown.png", "downward shortwave radiation", "W m-2", "magma"),
+    ("GLW", "02_glw.png", "downward longwave radiation", "W m-2", "viridis"),
+    ("HFX", "03_hfx.png", "sensible heat flux", "W m-2", "RdBu_r"),
+    ("LH", "04_lh.png", "latent heat flux", "W m-2", "RdBu_r"),
+)
 
 
 def _path_under(path: Path, parent: Path) -> bool:
@@ -804,6 +810,49 @@ def _plot_domain_4h_supplement(
     )
 
 
+def _plot_domain_surface_energy(
+    ctx: QuicklookContext,
+    domain: int,
+    output_dir: Path,
+    *,
+    lead_hours: int,
+) -> list[Path]:
+    from brc_tools.visualize.grid import plot_grid_field, terrain_contour_levels
+
+    tag = _domain_tag(domain)
+    valid_time = _valid_time_for_lead(ctx.case_start, lead_hours)
+    path = _wrfout_for_valid_time(ctx, domain, valid_time)
+    outputs: list[Path] = []
+    with _open_dataset(path) as ds:
+        terrain = _as_2d(ds, "HGT")
+        hgt = terrain.values
+        lon, lat = _coords(ds, "XLONG", "XLAT", terrain)
+        terrain_levels = terrain_contour_levels(hgt)
+        annotation = _annotation(path)
+        for variable, filename, label, units, cmap in SURFACE_ENERGY_PRODUCTS:
+            values = _as_2d(ds, variable).values
+            symmetric = variable in {"HFX", "LH"}
+            limit = _symmetrical_limit(values) if symmetric else None
+            outputs.append(
+                plot_grid_field(
+                    lon,
+                    lat,
+                    values,
+                    output_dir / tag / f"_{lead_hours}h_energy" / filename,
+                    title=f"WRF {tag} {label}, {valid_time}",
+                    colorbar_label=f"{variable} {units}",
+                    cmap=cmap,
+                    vmin=-limit if limit is not None else None,
+                    vmax=limit,
+                    contour=hgt,
+                    contour_levels=terrain_levels,
+                    contour_label=True,
+                    annotation=annotation,
+                )
+            )
+    return outputs
+
+
 def _render(ctx: QuicklookContext, output_dir: Path) -> list[Path]:
     outputs: list[Path] = []
     for domain in ctx.domains:
@@ -839,6 +888,23 @@ def _render_supplemental(
             )
         )
     return outputs
+
+
+def _check_surface_energy_inputs(
+    ctx: QuicklookContext,
+    *,
+    verbose_manifest: bool,
+    lead_hours: int,
+) -> None:
+    _verify_brc_tools_manifest(ctx.manifest_path, verbose=verbose_manifest)
+    valid_time = _valid_time_for_lead(ctx.case_start, lead_hours)
+    required = ["XLONG", "XLAT", "HGT", *[item[0] for item in SURFACE_ENERGY_PRODUCTS]]
+    for domain in ctx.domains:
+        path = _wrfout_for_valid_time(ctx, domain, valid_time)
+        _require_vars(path, required)
+        print(f"WRF {_domain_tag(domain)} {lead_hours}h surface-energy source: {path}")
+        print(f"surface-energy {_domain_tag(domain)} products: {len(SURFACE_ENERGY_PRODUCTS)}")
+    print(f"archive run: {ctx.archive_run}")
 
 
 def _check_inputs(ctx: QuicklookContext, *, verbose_manifest: bool) -> None:
@@ -968,6 +1034,35 @@ def cmd_render_supplemental(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_render_surface_energy(args: argparse.Namespace) -> int:
+    try:
+        ctx = _load_context(args)
+        _check_surface_energy_inputs(
+            ctx,
+            verbose_manifest=args.verbose_manifest,
+            lead_hours=args.lead_hours,
+        )
+        output_dir = _validate_output_dir(
+            Path(args.output_dir) if args.output_dir else _default_output_dir(ctx)
+        )
+        outputs: list[Path] = []
+        for domain in ctx.domains:
+            outputs.extend(
+                _plot_domain_surface_energy(
+                    ctx,
+                    domain,
+                    output_dir,
+                    lead_hours=args.lead_hours,
+                )
+            )
+    except Exception as exc:  # noqa: BLE001 - CLI boundary
+        print(f"ERROR: {exc}", file=sys.stderr)
+        return 1
+    for path in outputs:
+        print(f"wrote {path}")
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description="Check and render BRC WRF quicklooks from existing proof artifacts."
@@ -1036,6 +1131,35 @@ def build_parser() -> argparse.ArgumentParser:
         help="print every brc-tools manifest verification row",
     )
     cmd.set_defaults(func=cmd_render_supplemental)
+
+    cmd = subparsers.add_parser(
+        "render-surface-energy",
+        help="render additive SWDOWN, GLW, HFX, and LH treatment diagnostics",
+    )
+    cmd.add_argument("case_file")
+    cmd.add_argument(
+        "--archive-run",
+        help="specific archive run directory; defaults to the latest run_* under paths.archive_root",
+    )
+    cmd.add_argument(
+        "--output-dir",
+        help=(
+            "domain-root directory for PNG output; default is <archive-run>/quicklooks; "
+            "repo-local paths are refused"
+        ),
+    )
+    cmd.add_argument(
+        "--lead-hours",
+        type=int,
+        default=4,
+        help="forecast lead hour for surface-energy products; default: 4",
+    )
+    cmd.add_argument(
+        "--verbose-manifest",
+        action="store_true",
+        help="print every brc-tools manifest verification row",
+    )
+    cmd.set_defaults(func=cmd_render_surface_energy)
 
     return parser
 

@@ -579,6 +579,14 @@ def validate_case(data: dict[str, Any], *, strict_files: bool) -> list[Finding]:
     sources = [str(v) for v in as_list(forcing["sources"])]
     wps_fg_name = [str(v) for v in as_list(forcing["wps_fg_name"])]
     interval_seconds = int(forcing["interval_seconds"])
+    artifact_case_name = str(forcing.get("artifact_case_name", case_name))
+    if not CASE_NAME_RE.match(artifact_case_name):
+        findings.append(
+            Finding(
+                "ERROR",
+                f"forcing.artifact_case_name is not path-safe: {artifact_case_name!r}",
+            )
+        )
     parse_positive_int_setting(
         forcing["num_metgrid_levels"],
         "forcing.num_metgrid_levels",
@@ -639,14 +647,14 @@ def validate_case(data: dict[str, Any], *, strict_files: bool) -> list[Finding]:
     validate_manifest(
         findings,
         as_path(forcing["manifest_path"]),
-        case_name,
+        artifact_case_name,
         sources,
         strict_files,
     )
     validate_contract(
         findings,
         as_path(forcing["contract_path"]),
-        case_name,
+        artifact_case_name,
         wps_fg_name,
         interval_seconds,
         strict_files,

@@ -80,6 +80,13 @@ class QuicklookPathTests(unittest.TestCase):
             "2013-02-02_16:00:00",
         )
 
+    def test_surface_energy_product_contract(self) -> None:
+        self.assertEqual(
+            [item[0] for item in wrf_quicklook.SURFACE_ENERGY_PRODUCTS],
+            ["SWDOWN", "GLW", "HFX", "LH"],
+        )
+        self.assertEqual(len(wrf_quicklook.SURFACE_ENERGY_PRODUCTS), 4)
+
     def test_wrfout_for_valid_time_uses_archive_run_domain_file(self) -> None:
         with tempfile.TemporaryDirectory() as raw:
             archive_run = Path(raw)

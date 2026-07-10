@@ -543,6 +543,132 @@ Keep these checks attached to any future maintained run wrapper:
   force `conda run -n brc-tools-2026 ...` for its Python commands, and run full
   NWP transfers on `notchpeak-dtn`.
 
+## Pelican Slope/Shading Review And MYJ/Eta Gate (2026-07-09)
+
+Treatment-1 execution evidence:
+
+- accepted control: NAM one-way terrain3s WRF job `13852034` at
+  `/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/pelican2013_nam_3_1_333m_75lev_oneway_terrain3s/full6h/run_20260708T021809Z/`;
+- slope/shading: preparation `13876527`, WRF `13876534`, and quicklooks
+  `13877355`, all completed `0:0`;
+- slope archive:
+  `/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/pelican2013_nam_3_1_333m_75lev_oneway_terrain3s_slope/full6h/run_20260710T003606Z/`;
+- mechanical proof: 21 hourly `wrfout`, `SUCCESS COMPLETE WRF`, zero-byte
+  `debug/wrf_error_marker_scan.txt`, 54 nonempty quicklooks, and manifest
+  verification `2/2 OK`; the six retained `met_em` files caused only the
+  documented nonfatal stale-input warning.
+
+Paired science review job `13877599` completed `0:0` in `00:00:38` on
+`notch392`. Its durable review directory is:
+
+```text
+/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/pelican2013_nam_3_1_333m_75lev_oneway_terrain3s_slope/control/run_20260710T003606Z/review_control_vs_slope_13877599/
+```
+
+The directory contains `field_stats.tsv` (189 matched rows),
+`continuity_stats.tsv`, `threshold_counts.tsv`, surface-cell and shortwave
+component audits, eight d03 surface triptychs, two vertical-theta sections, a
+d03 time-series panel, and Horsepool 16/18Z profiles. All reviewed arrays were
+finite.
+
+Review findings:
+
+- D03 `SWDOWN` changes are small in the domain mean and terrain-aligned in the
+  tails. At 16/17/18Z, 7/4/34 of 22,500 cells exceeded `|20 W m-2|`; the
+  strongest components were only 1-5 cells. The darkest absolute cells appear
+  in both control and treatment and are not missing/nonfinite values.
+- D03 `GLW`, `HFX`, and `LH` respond coherently along the same terrain/shadow
+  features; there is no domain-wide energy collapse.
+- D03 T2 mean absolute differences are `0.065`, `0.031`, and `0.033 K` at
+  16/17/18Z. The roughly `-6 K` extreme tail is confined to the one-cell north
+  lateral boundary by 17-18Z; d02's `-8.86 K` minimum is also one cell from a
+  boundary. These stay as explicit caveats, not basin-interior science values.
+- D03 PBLH mean absolute differences remain `1.36-1.77 m`; d03 10 m wind
+  remains `0.017-0.023 m s-1`, with no wind change reaching `1 m s-1`.
+- Across all 75 d03 levels, theta mean absolute differences remain
+  `0.0021-0.0048 K`; central sections are about `+/-0.04 K`, Horsepool
+  profiles differ by less than about `0.02 K`, and no d03 value exceeds `1 K`.
+- Adjacent-cell p99 jumps remain comparable between the two runs. The extreme
+  boundary tails do not spread into the basin-interior thermal column, and no
+  missing/nonfinite field or pathological domain collapse was found.
+
+The user subsequently approved slope+MYJ/Eta. Incremental namelist evidence
+proved only `bl_pbl_physics = 1 -> 2` and `sf_sfclay_physics = 1 -> 2` changed
+from the slope treatment; Noah remained `sf_surface_physics = 2`.
+Preparation job `13879078` completed `0:0` in `00:00:15` with six `met_em`
+files and namelist SHA-256
+`401ac40d057b3314ea407e67fbd421780128a0ef72781125f734f120056a5f32`.
+WRF job `13879100` completed `0:0` in `01:41:53` on `notch392`; `real.exe`
+took 28 seconds, `wrf.exe` took 6047 seconds, all executable/runtime provenance
+checks passed, 21 hourly files were archived, and the error-marker scan was
+empty. Quicklook job `13879973` completed `0:0` in `00:01:15` with 54 PNGs:
+30 standard, 12 supplemental, and 12 surface-energy maps. Durable archive:
+
+```text
+/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/pelican2013_nam_3_1_333m_75lev_oneway_terrain3s_slope_myj/full6h/run_20260710T003606Z/
+```
+
+Publication generator `13879669` completed `0:0` in `00:11:53` with 604 tasks
+and no per-figure errors. Final convergence job `13880154` completed `0:0` in
+`00:00:19`. The seven per-case roots contain 63 PNGs each (441 total), and the
+cross-case compare root contains 184 PNGs, including 21 `MYJ-Eta-slope`
+differences. Focused paired diagnostic job `13880122` completed `0:0` in
+`00:00:40` with 189 field/time/domain rows, zero nonfinite values, 12 figures,
+and structured continuity/threshold/extreme-cell audits:
+
+```text
+/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/pelican2013_nam_3_1_333m_75lev_oneway_terrain3s_slope_myj/control/run_20260710T003606Z/review_slope_vs_myj_13880122/
+```
+
+At d03 16/17/18Z, MYJ-minus-slope mean T2 was `+0.040/+0.157/+0.307 K`,
+mean PBLH was `-33.3/-69.6/-74.8 m`, and mean 10 m wind-speed differences
+were `-0.086/+0.095/+0.065 m s-1`. Three-dimensional theta mean differences
+were about `-0.04` to `-0.05 K`, with mean absolute differences
+`0.083-0.091 K`; sections and Horsepool profiles place most response below
+about 700 m AGL. No d03 T2 cell exceeded `5 K`, but the MYJ PBLH field is
+substantially patchier and needs explicit human interpretation.
+
+The standard terrain3s two-way feedback companion is also complete. Preparation
+job `13880432` completed `0:0` in `00:00:12`; the normalized namelist diff
+changed only `feedback = 0 -> 1`, retaining `smooth_option = 0`, standard
+YSU/revised-MM5 physics, and no slope/shading. WRF job `13880435` completed
+`0:0` in `01:44:43`; `real.exe` took 28 seconds, `wrf.exe` took 6214 seconds,
+all executable/runtime provenance checks passed, 21 hourly files were
+archived, and the error-marker scan was empty. Quicklook job `13881153`
+completed `0:0` in `00:01:30` with 54 PNGs and manifest verification `2/2 OK`.
+Durable archive:
+
+```text
+/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/pelican2013_nam_3_1_333m_75lev_twoway_terrain3s/full6h/run_20260710T084413Z/
+```
+
+Paired diagnostic job `13881198` completed `0:0` in `00:00:50` with 189
+field/time/domain rows, zero nonfinite values, 12 figures, continuity metrics,
+threshold counts, and extreme-cell boundary distances:
+
+```text
+/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/pelican2013_nam_3_1_333m_75lev_twoway_terrain3s/control/run_20260710T084413Z/review_oneway_vs_twoway_13881198/
+```
+
+At d03 16/17/18Z, two-way-minus-one-way mean T2 was
+`+0.037/-0.003/-0.023 K` with mean absolute differences
+`0.108/0.096/0.086 K`; mean PBLH was `+1.36/+0.47/+0.91 m` with mean
+absolute differences `5.80/6.74/6.20 m`; mean 10 m wind speed was
+`-0.016/-0.015/+0.007 m s-1` with mean absolute differences
+`0.132/0.134/0.127 m s-1`. Local response is non-null and often interior:
+late d03 extrema reached about `+/-1.9 K` T2, `+/-166 m` PBLH, and
+`+/-2.4 m s-1` wind. Adjacent-cell p99 roughness remained comparable between
+members for T2, PBLH, wind, and three-dimensional theta, providing no evidence
+of broad grid-noise amplification. Cells with `|SWDOWN|` differences at least
+`20 W m-2` increased from 462 to 960 to 1658 of 22,500 at 16/17/18Z, mostly
+more than ten cells from the d03 outer boundary.
+
+Current stop: human science review of the completed physics suite and the
+one-way `13852034` versus two-way `13880435` terrain3s pair. Separate
+parent/nest-edge effects from d03 basin-interior response; the current edge
+audit measures distance from each domain's outer boundary, not the parent
+feedback-footprint interface. No additional WRF treatment is authorized.
+
 ## Parked For Human Review Or Approval
 
 Do not lose sight of these. They are not good login-node free-running tasks.

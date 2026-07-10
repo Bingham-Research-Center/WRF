@@ -109,9 +109,22 @@ a proven NetCDF-capable render environment with `PYTHONPATH` pointed at
   `contract_<case>.json`; `brc-wrf` consumes those sidecars.
 - Pelican completed WRF-side runs: NAM two-way baseline job `13695261`, GFS
   analysis job `13753673`, and NAM one-way feedback sensitivity job `13788264`.
-- Current active lane: custom `3s` `HGT_M` geogrid proof for the NAM one-way
-  terrain run is accepted; stop before WRF unless the WRF conveyor is
-  explicitly approved.
+- The custom `3s` NAM one-way terrain run is complete: WPS `13851884`, WRF
+  `13852034`, and quicklooks `13852773`. Its clean two-way feedback companion
+  is complete in preparation `13880432`, WRF `13880435`, and quicklooks
+  `13881153`; the only normalized namelist change was `feedback = 0 -> 1`, and
+  it produced 21 hourly outputs plus 54 review PNGs. Paired diagnostic job
+  `13881198` completed with 189 finite field/time/domain rows and found small
+  d03 domain-mean but non-null localized feedback response without broad
+  adjacent-cell roughness growth. The six-hour
+  slope/shading treatment is complete in preparation `13876527`, WRF
+  `13876534`, and quicklooks
+  `13877355`; its slope+MYJ/Eta increment is complete in preparation
+  `13879078`, WRF `13879100`, and quicklooks `13879973`. Each treatment has
+  21 hourly outputs and 54 review PNGs. The paired publication and diagnostic
+  figure suites are also complete; current stop is human science review,
+  including a dedicated one-way-versus-two-way terrain3s comparison. Do not
+  submit another WRF treatment without a new explicit approval.
 - Current static-terrain evidence: download job `13849489` on `dtn05` and build
   job `13849490` on `notch137` completed `0:0`; 99 USGS 1 arc-second GeoTIFFs
   cached at 4.6G; `topo_brc_custom_3s` built at 350M with 63 tiles plus index;

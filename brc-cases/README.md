@@ -145,7 +145,27 @@ The checkpoint is intentionally small:
    namelists only; it does not run WPS, WRF, Slurm, NetCDF reads, quicklooks,
    or archive promotion.
 
-9. Render no-run visual quicklooks from the existing proof artifacts:
+9. Render a paired derived-run control packet from an accepted WRF
+   namelist and `met_em` source without rerunning WPS:
+
+   ```bash
+   python brc-cases/wrf_treatment.py \
+     brc-cases/pelican2013_nam_3_1_333m_75lev_oneway_terrain3s_slope.case.yaml \
+     --output-dir /path/outside/this/checkout/control/run_<UTC> \
+     --run-id run_<UTC>
+   ```
+
+   The treatment manifest declares `set.SECTION.KEY` assignments for physics
+   or nesting sensitivities and, when a
+   derived run reuses another case's staging sidecars, identifies that source
+   with `forcing.artifact_case_name`. The renderer patches a copy of the
+   accepted namelist, proves that only the declared normalized keys changed,
+   writes raw and structured diffs, and syntax-checks separate preparation,
+   WRF, and quicklook scripts. Each script has its own approval environment
+   guard. Rendering does not inspect NetCDF, copy scratch data, submit Slurm,
+   or run WRF.
+
+10. Render no-run visual quicklooks from the existing proof artifacts:
 
    ```bash
    python brc-cases/wrf_quicklook.py check brc-cases/jan2013_basin_nam.case.yaml
@@ -178,6 +198,18 @@ The checkpoint is intentionally small:
    and `_4h/{01_t2_10m_wind.png,04_10m_wind_speed.png,06_snow_depth.png}` from
    the 4-hour lead WRF file. Use `--output-dir` to target an existing stamped
    comparison root such as `quicklooks/standardized_compare_<UTC>/`.
+
+   Physics-treatment runs can also add surface-energy diagnostics at the
+   four-hour lead without changing the standard or supplemental products:
+
+   ```bash
+   python brc-cases/wrf_quicklook.py render-surface-energy \
+     brc-cases/<treatment>.case.yaml --archive-run <exact-run-path>
+   ```
+
+   This writes `SWDOWN`, `GLW`, `HFX`, and `LH` maps under each domain's
+   `_4h_energy/` directory. The treatment packet renderer expects 12 such
+   maps in addition to the established 42 standard/supplemental PNGs.
    Path-only quicklook unit tests are login-node safe because they do not
    verify manifests, open NetCDF files, read archives, or render PNGs.
    The workflow source is tracked in `jan2013_nam_workflow.mmd`.

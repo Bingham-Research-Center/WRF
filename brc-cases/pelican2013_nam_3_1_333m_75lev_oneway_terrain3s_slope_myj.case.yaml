@@ -1,0 +1,67 @@
+schema_version: 1
+
+case:
+  name: pelican2013_nam_3_1_333m_75lev_oneway_terrain3s_slope_myj
+  label: "Pelican NAM one-way terrain3s slope radiation with MYJ and Eta surface layer"
+  start: "2013-02-02_12:00:00"
+  end: "2013-02-02_18:00:00"
+  domains: 3
+  owner_namespace: jrlawson
+  proof_status: rendered_treatment_pending_approval
+
+forcing:
+  sources: ["nam_analysis"]
+  artifact_case_name: pelican2013_nam_3_1_333m_75lev
+  wps_fg_name: ["NAM"]
+  interval_seconds: 21600
+  num_metgrid_levels: 40
+  expected_met_em_count: 6
+  manifest_path: "/scratch/general/vast/u0737349/wrf_inputs/pelican2013_nam_3_1_333m_75lev/manifest_pelican2013_nam_3_1_333m_75lev.json"
+  contract_path: "/scratch/general/vast/u0737349/wrf_inputs/pelican2013_nam_3_1_333m_75lev/contract_pelican2013_nam_3_1_333m_75lev.json"
+
+paths:
+  wrf_src: "/uufs/chpc.utah.edu/common/home/u0737349/gits/brc-wrf"
+  wrf_build: "/uufs/chpc.utah.edu/common/home/u0737349/gits/brc-wrf"
+  wps_root: "/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_build/WPS"
+  input_root: "/scratch/general/vast/u0737349/wrf_inputs/pelican2013_nam_3_1_333m_75lev/nam_analysis"
+  run_root: "/scratch/general/vast/u0737349/wrf_runs/pelican2013_nam_3_1_333m_75lev_oneway_terrain3s_slope_myj"
+  wps_run: "/scratch/general/vast/u0737349/wrf_runs/pelican2013_nam_3_1_333m_75lev_oneway_terrain3s/run_20260708T021809Z/wps_run"
+  wrf_run: "/scratch/general/vast/u0737349/wrf_runs/pelican2013_nam_3_1_333m_75lev_oneway_terrain3s_slope_myj/render_pending/wrf_run_full6h"
+  geog_data_path: "/scratch/general/vast/u0737349/wps_geog_terrain3s"
+  archive_root: "/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/pelican2013_nam_3_1_333m_75lev_oneway_terrain3s_slope_myj/full6h"
+
+wps:
+  vtable: "Vtable.NAM"
+  ungrib_prefix: "NAM"
+  namelist_fg_name: ["NAM"]
+
+namelists:
+  namelist_wps: "/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/pelican2013_nam_3_1_333m_75lev_oneway_terrain3s/control/run_20260708T021809Z/namelist.wps"
+  namelist_input: "/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/pelican2013_nam_3_1_333m_75lev_oneway_terrain3s/full6h/run_20260708T021809Z/namelist.input"
+
+slurm:
+  profile: owned_notch392_max
+  job_name: wrf_pel333_3s_slmyj
+  account: lawson-np
+  partition: lawson-np
+  nodelist: notch392
+  nodes: 1
+  ntasks: 56
+  memory: "900G"
+  time: "06:00:00"
+  mpi_launcher: "srun --mpi=pmi2"
+
+archive:
+  required_patterns: ["wrfout_d0*", "namelist.input", "rsl.out.0000", "real.rsl.out.0000"]
+  colon_safe_wrfout_source: "./wrfout_d0*"
+
+treatment:
+  family: tran_physics_bridge
+  comparison_parent: pelican2013_nam_3_1_333m_75lev_oneway_terrain3s_slope
+  baseline_namelist: "/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/pelican2013_nam_3_1_333m_75lev_oneway_terrain3s/full6h/run_20260708T021809Z/namelist.input"
+  source_wrf_run: "/scratch/general/vast/u0737349/wrf_runs/pelican2013_nam_3_1_333m_75lev_oneway_terrain3s/run_20260708T021809Z/wrf_run_full6h"
+  set.physics.slope_rad: ["1", "1", "1"]
+  set.physics.topo_shading: ["1", "1", "1"]
+  set.physics.shadlen: ["25000."]
+  set.physics.sf_sfclay_physics: ["2", "2", "2"]
+  set.physics.bl_pbl_physics: ["2", "2", "2"]

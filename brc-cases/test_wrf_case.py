@@ -242,6 +242,25 @@ archive:
             check=False,
         )
 
+    def test_validate_allows_declared_reuse_of_staging_artifacts(self) -> None:
+        with tempfile.TemporaryDirectory() as raw:
+            root = Path(raw)
+            case_file = self.write_case(root, case_name="source_case")
+            text = case_file.read_text(encoding="utf-8")
+            text = text.replace("  name: source_case\n", "  name: treatment_case\n", 1)
+            text = text.replace(
+                '  sources: ["nam_analysis"]\n',
+                '  sources: ["nam_analysis"]\n  artifact_case_name: source_case\n',
+                1,
+            )
+            case_file.write_text(text, encoding="utf-8")
+
+            result = self.run_validate(case_file)
+
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            self.assertNotIn("contract case", result.stdout)
+            self.assertNotIn("manifest case", result.stdout)
+
     def run_wps_field_proof(self, case_file: Path, *args: str) -> subprocess.CompletedProcess[str]:
         return subprocess.run(
             [

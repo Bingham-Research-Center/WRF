@@ -201,9 +201,116 @@ source proof: geogrid.log says "Using brc_custom_3s data source for HGT_M." for 
 HGT_M summary: d01 min/mean/max = 1113.251/2122.432/3879.707 m; d02 = 1417.477/2084.941/3823.632 m; d03 = 1414.842/1558.500/2148.225 m
 terrain comparison: d03 terrain3s minus 30s mean_abs = 5.103 m, range -36.682 to 68.782 m; d03 terrain3s minus topo5m mean_abs = 27.531 m, range -122.784 to 235.096 m
 preview: terrain3s_hgt_and_diffs.png in the corrected archive, comparing HGT_M and differences against installed 30s and topo5m
-stop point: geogrid only; no ungrib, metgrid, real.exe, wrf.exe, or quicklooks
-next stop: rerun the NAM one-way WPS/WRF conveyor with 3s terrain only after explicit approval
+historical stop point: geogrid only; the later full conveyor is recorded below
 ```
+
+Terrain3s conveyor completion and current physics-bridge controls:
+
+```text
+terrain3s WPS job: 13851884, completed 0:0
+terrain3s WRF job: 13852034, completed 0:0 with 21 hourly wrfout files
+terrain3s quicklook job: 13852773, completed with 42 PNGs
+terrain3s archive: /uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/pelican2013_nam_3_1_333m_75lev_oneway_terrain3s/full6h/run_20260708T021809Z/
+
+terrain3s two-way control: /uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/pelican2013_nam_3_1_333m_75lev_twoway_terrain3s/control/run_20260710T084413Z/
+terrain3s two-way normalized diff: feedback 0 -> 1 only; smooth_option remains 0; slope/shading and MYJ/Eta remain off
+terrain3s two-way preparation job: 13880432, completed 0:0 in 00:00:12 with six met_em files
+terrain3s two-way WRF job: 13880435, completed 0:0 in 01:44:43; real.exe 28 s; wrf.exe 6214 s
+terrain3s two-way WRF proof: 21 hourly wrfout files, SUCCESS COMPLETE WRF, all executable/runtime provenance checks PASS, empty archived error-marker scan
+terrain3s two-way archive: /uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/pelican2013_nam_3_1_333m_75lev_twoway_terrain3s/full6h/run_20260710T084413Z/
+terrain3s two-way quicklook job: 13881153, completed 0:0 in 00:01:30
+terrain3s two-way quicklook proof: 54 PNGs = 30 standard + 12 supplemental + 12 _4h_energy; manifest verification 2/2 OK
+terrain3s two-way quicklook summary: /uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/pelican2013_nam_3_1_333m_75lev_twoway_terrain3s/control/run_20260710T084413Z/quicklook_summary_13881153.tsv
+terrain3s paired diagnostic job: 13881198, completed 0:0 in 00:00:50 with 189 field/time/domain rows, zero nonfinite values, and 12 figures
+terrain3s paired diagnostic artifact: /uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/pelican2013_nam_3_1_333m_75lev_twoway_terrain3s/control/run_20260710T084413Z/review_oneway_vs_twoway_13881198/
+terrain3s d03 late response: at 16/17/18Z, two-way minus one-way mean T2 = +0.037/-0.003/-0.023 K, mean PBLH = +1.36/+0.47/+0.91 m, and mean 10 m wind speed = -0.016/-0.015/+0.007 m s-1
+terrain3s d03 locality/noise: local T2, PBLH, and wind responses are non-null and often more than 10 cells from the outer boundary, but adjacent-cell p99 roughness remains comparable between one-way and two-way
+terrain3s d03 shortwave response: cells exceeding |20 W m-2| = 462/960/1658 of 22500 at 16/17/18Z (2.1/4.3/7.4%), mostly more than 10 cells from the outer boundary
+terrain3s feedback science stop: human figure review and a parent-nest-footprint mask remain; mechanical completion and descriptive diagnostics are not yet a manuscript verdict
+
+slope treatment control: /uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/pelican2013_nam_3_1_333m_75lev_oneway_terrain3s_slope/control/run_20260710T003606Z/
+slope+MYJ treatment control: /uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/pelican2013_nam_3_1_333m_75lev_oneway_terrain3s_slope_myj/control/run_20260710T003606Z/
+slope preparation job: 13876527, completed 0:0 in 00:00:18
+slope WRF job: 13876534, completed 0:0 in 01:45:09; real.exe 30 s; wrf.exe 6233 s
+slope WRF proof: 21 hourly wrfout files, SUCCESS COMPLETE WRF, empty archived error-marker scan
+slope archive: /uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/pelican2013_nam_3_1_333m_75lev_oneway_terrain3s_slope/full6h/run_20260710T003606Z/
+slope quicklook job: 13877355, completed 0:0 in 00:01:26
+slope quicklook proof: 54 PNGs = 30 standard + 12 supplemental + 12 _4h_energy
+slope quicklook summary: /uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/pelican2013_nam_3_1_333m_75lev_oneway_terrain3s_slope/control/run_20260710T003606Z/quicklook_summary_13877355.tsv
+quicklook environment: clyfar-nov2025 with PYTHONPATH pointed at ../brc-tools
+quicklook check note: manifest verification 2/2 OK; nonfatal warning reported the six retained met_em files in the prepared scratch run as stale
+review diagnostic job: 13877599, completed 0:0 in 00:00:38 on notch392
+review artifact: /uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/pelican2013_nam_3_1_333m_75lev_oneway_terrain3s_slope/control/run_20260710T003606Z/review_control_vs_slope_13877599/
+review proof: 189 field/time/domain rows; zero nonfinite values; paired surface, time-series, vertical-section, and Horsepool-profile figures
+review recommendation: GO for slope+MYJ/Eta, with lateral-boundary surface outliers retained as an analysis caveat
+
+slope+MYJ incremental diff: bl_pbl_physics 1 -> 2 and sf_sfclay_physics 1 -> 2 only; Noah sf_surface_physics remains 2
+slope+MYJ preparation job: 13879078, completed 0:0 in 00:00:15
+slope+MYJ WRF job: 13879100, completed 0:0 in 01:41:53; real.exe 28 s; wrf.exe 6047 s
+slope+MYJ WRF proof: 21 hourly wrfout files, SUCCESS COMPLETE WRF, all provenance checks PASS, empty error-marker scan
+slope+MYJ archive: /uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/pelican2013_nam_3_1_333m_75lev_oneway_terrain3s_slope_myj/full6h/run_20260710T003606Z/
+slope+MYJ quicklook job: 13879973, completed 0:0 in 00:01:15
+slope+MYJ quicklook proof: 54 PNGs = 30 standard + 12 supplemental + 12 _4h_energy
+slope+MYJ quicklook summary: /uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/pelican2013_nam_3_1_333m_75lev_oneway_terrain3s_slope_myj/control/run_20260710T003606Z/quicklook_summary_13879973.tsv
+slope+MYJ publication generator: 13879669, completed 0:0 in 00:11:53; 604 tasks and no per-figure errors
+slope+MYJ publication convergence: 13880154, completed 0:0 in 00:00:19; every seven-case task up to date
+slope+MYJ publication inventory: 63 PNGs per case x 7 = 441 per-case PNGs; cross-case root = 184 PNGs; total = 625 PNGs
+slope+MYJ paired diagnostic job: 13880122, completed 0:0 in 00:00:40; 189 field/time/domain rows, zero nonfinite values, 12 figures
+slope+MYJ paired diagnostic artifact: /uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/pelican2013_nam_3_1_333m_75lev_oneway_terrain3s_slope_myj/control/run_20260710T003606Z/review_slope_vs_myj_13880122/
+slope+MYJ preliminary response: coherent, non-null low-level physics sensitivity; MYJ lowers d03 mean PBLH by 33-75 m from 16-18Z and makes PBLH substantially patchier
+current stop point: human science review of the completed physics suite and terrain3s feedback pair; no additional WRF treatment is authorized
+
+publication figure job: 13877404, TIMEOUT with exit 0:0 after 02:00:13 on notch392
+publication figure end: 2026-07-09 23:29:03 MDT; stderr records cancellation due to the Slurm time limit
+publication figure logs: /scratch/general/vast/u0737349/pelican_figures_13877404.{out,err}
+publication figure stdout proof: start line only; no completion line or Python traceback
+publication figure partial slope output: 23 PNGs = 6 sections + 6 upperair + 11 surface
+publication figure partial cross-case output: 4 PNGs = 1 profile + 1 heat-deficit + 2 Horsepool skew-Ts
+publication figure last progress: theta2m_nam_terrain3s_slope_multidomain_14z.png at 2026-07-09 21:32:32 MDT
+publication figure initial verdict: failed partial batch, not an accepted complete figure set
+publication recovery job: 13878948, cancelled after a second reproducible long-process stall in 00:06:14; 87 newly completed PNGs were preserved
+publication isolated proof: 13878999 completed 0:0 in 00:00:17; the previously blocked 12Z slope/control difference rendered successfully
+publication bounded completion: 13879006 and 13879007 completed 0:0 in 00:00:21 and 00:00:22, filling the remaining slope/control differences through 18Z
+publication convergence check: 13879016 completed 0:0 in 00:00:29 with every selected six-case product up to date
+publication final inventory: 63 PNGs per completed case x 6 cases = 378 per-case PNGs; cross-case compare root = 156 PNGs; total = 534 PNGs
+publication final verdict: complete for GFS, NAM, NAM one-way, terrain5m, terrain3s, and slope/shading; slope+MYJ/Eta was excluded because it was still unrun during that publication recovery, and its later completion is recorded above
+```
+
+The first treatment adds only `slope_rad`, `topo_shading`, and `shadlen`.
+The second retains those settings and changes YSU/revised-MM5 to MYJ/Eta.
+Both reuse the accepted terrain3s `met_em` inputs and keep FDDA off. The paper
+text does not document the three terrain-radiation namelist values, so call
+these Tran-inspired bridge treatments, not reproductions.
+
+The completed control-versus-slope review found the following:
+
+- From 16-18Z, d03 mean `SWDOWN` changes were `-0.010`, `-0.117`, and
+  `-0.250 W m-2`; only 7, 4, and 34 of 22,500 cells respectively exceeded
+  `|20 W m-2|`. The visually darkest absolute cells were already dark in the
+  control (for example `87.18` versus `87.02 W m-2` at 16Z), while the actual
+  treatment response formed small terrain-aligned 1-5-cell components.
+- D03 `GLW`, `HFX`, and `LH` differences followed the shortwave terrain
+  pattern without domain-wide energy collapse. At 18Z their mean changes were
+  `+0.212`, `+0.339`, and `+0.036 W m-2` respectively.
+- D03 T2 mean absolute differences were `0.065`, `0.031`, and `0.033 K` at
+  16-18Z; 2 m theta was similar. The roughly `-6 K` minima were confined to
+  the outermost one-cell lateral boundary strip by 17-18Z. The largest d02 T2
+  response (`-8.86 K`) was also one cell from its boundary.
+- D03 PBLH mean absolute differences stayed at `1.36-1.77 m` from 16-18Z and
+  10 m wind at `0.017-0.023 m s-1`. Local tails followed terrain/boundary
+  features; no d03 wind difference reached `1 m s-1`.
+- Across all 75 d03 levels, theta mean absolute differences were
+  `0.0021-0.0048 K` from 16-18Z. Central EW/NS sections were about
+  `+/-0.04 K`, the Horsepool 16/18Z profiles differed by less than about
+  `0.02 K`, and no d03 value exceeded `1 K`.
+- Adjacent-cell p99 jumps remained comparable between control and treatment.
+  The extreme surface-temperature/PBLH tails at parent and nest boundaries are
+  real review caveats, but they do not propagate into the basin-interior
+  thermal column or constitute a pathological domain collapse.
+
+The user approved treatment 2 after this review, and the slope+MYJ/Eta run and
+base quicklooks completed as recorded above. The next owner is the paired
+science/figure workflow; this completion is not approval for another WRF run.
 
 Resolution choice tradeoff:
 
