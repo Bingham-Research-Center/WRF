@@ -165,6 +165,11 @@ The checkpoint is intentionally small:
    guard. Rendering does not inspect NetCDF, copy scratch data, submit Slurm,
    or run WRF.
 
+   The accepted default-terrain GFS feedback companion is declared in
+   `pelican2013_gfs_3_1_333m_75lev_oneway.case.yaml`. It reuses the accepted
+   GFS staging sidecars, changes only `domains.feedback`, and routes exact run
+   and post-processing evidence through `doc/BRC_WRF_EXPERIMENT_TODO.md`.
+
 10. Render no-run visual quicklooks from the existing proof artifacts:
 
    ```bash

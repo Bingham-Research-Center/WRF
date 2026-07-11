@@ -15,14 +15,13 @@ large downloads.
 
 ## Active Goal For Next Session
 
-Current user-selected goal: run the real terrain-fidelity sensitivity based on
-the successful Pelican NAM one-way run, job `13788264`. The shared `WPS_GEOG`
-tree did not contain finer `HGT_M` terrain, so the completed overlay proof used
-`topo_gmted2010_5m`; WPS proof for `run_20260707T182414Z` confirmed `HGT_M`
-came from `gmted2010_5m`, WRF job `13847980` completed `0:0`, and quicklook job
-`13848733` wrote 42 PNGs. Important correction: WPS `5m` means 5 arc-minutes,
-so the next true fine-terrain run should use custom `3s` `HGT_M` terrain and
-otherwise copy the `13847980` NAM one-way run shape.
+Current user-selected goal is closed: the default-terrain GFS one-way member
+completed in preparation `13894268`, WRF `13894282`, and quicklooks `13896648`.
+It reused the accepted X6 GFS `met_em` inputs, changed only
+`feedback = 1 -> 0`, and did not rerun WPS. The four-run GFS/NAM by
+one-/two-way factorial analysis `13896641` and full-figure/convergence jobs
+`13896642`, `13896828`, and `13896871` also completed. The next step is
+manuscript and human science review, not another default-terrain WRF run.
 
 Read in this order after `AGENTS.md`:
 
@@ -50,6 +49,15 @@ the Pelican NAM namelists with `interval_seconds = 21600`.
 | NAM one-way feedback full6h | `13788264` | `COMPLETED`, `0:0`, elapsed `02:12:32`; `wrf.exe` step elapsed `02:11:26`; `real.exe`, `wrf.exe`, success-marker, and archive phases all exited `0`. | Archive: `/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/pelican2013_nam_3_1_333m_75lev_oneway/full6h/run_20260702T053120Z/`; debug: `.../debug/`; control: `/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/pelican2013_nam_3_1_333m_75lev_oneway/control/run_20260702T053120Z/`. |
 | NAM one-way feedback quicklooks | `13791045` | `COMPLETED`, `0:0`, elapsed `00:00:53`; rendered 30 PNGs, 10 per d01/d02/d03. First attempt `13791008` failed because `brc-tools-2026` lacked the xarray NetCDF backend; retry used the proven `clyfar-nov2025` NetCDF/render stack with `PYTHONPATH` pointed at `../brc-tools`. | Summary: `/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/pelican2013_nam_3_1_333m_75lev_oneway/control/run_20260702T053120Z/quicklook_summary_retry_13791045.tsv`; outputs: `/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/pelican2013_nam_3_1_333m_75lev_oneway/full6h/run_20260702T053120Z/quicklooks/dXX/`. |
 | Supplemental Pelican quicklooks | `13792197` | Completed from log evidence on `notch392`; rendered 12 add-on PNGs per case, 4 per d01/d02/d03, for NAM, GFS, and NAM one-way. `sacct` accounting was unavailable after completion due to a transient SlurmDBD connection error, but the job log finished with all three case rows and `squeue` no longer listed the job. | Summary: `/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/pelican2013_nam_gfs_compare/control/quicklooks_supplemental_20260702T082027Z/quicklook_supplemental_summary_13792197.tsv`; log: `/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_build_logs/brc-wrf/quicklook_pelican333_supplemental_13792197.out`; outputs: `_600hPa/01_600hPa_height_rh_wind_barbs.png` at 1-hour lead plus `_4h/{01_t2_10m_wind.png,04_10m_wind_speed.png,06_snow_depth.png}` at 4-hour lead under each domain directory. |
+
+The matched GFS one-way row is now accepted WRF-side evidence. Preparation
+`13894268` reused six verified X6 `met_em` files; WRF `13894282` completed with
+21 hourly files and an empty error scan; quicklooks `13896648` wrote 54 PNGs.
+The exact archive is
+`/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/pelican2013_gfs_3_1_333m_75lev_oneway/full6h/run_20260710T234000Z/`.
+Manuscript analysis `13896641`, publication jobs `13896642`/`13896828`, and
+exact-config convergence `13896871` completed outside this repo; X10 has 63
+publication PNGs and the study compare root has 247.
 
 GFS acceptance facts:
 
@@ -200,6 +208,12 @@ completed 333 m runs: NAM two-way, GFS, and NAM one-way. Job `13792197` added
 four nested products per domain without deleting parent quicklooks: one
 `_600hPa` product from 2013-02-02 13Z and three `_4h` surface products from
 2013-02-02 16Z.
+
+As of 2026-07-10, the matched GFS one-way feedback run and its post-processing
+are complete. This closes the default-terrain GFS/NAM by one-/two-way matrix;
+the five-hour analysis shows the GFS--NAM stability and transport-wind
+separation under both feedback modes, with a much smaller source-conditioned
+feedback interaction.
 
 As of 2026-06-30, ERA5 is not ready for immediate staging in local evidence:
 `brc-tools` has no `era5` source, `cdsapi`/`ecmwfapi` are absent even in
@@ -663,8 +677,8 @@ of broad grid-noise amplification. Cells with `|SWDOWN|` differences at least
 `20 W m-2` increased from 462 to 960 to 1658 of 22,500 at 16/17/18Z, mostly
 more than ten cells from the d03 outer boundary.
 
-Current stop: human science review of the completed physics suite and the
-one-way `13852034` versus two-way `13880435` terrain3s pair. Separate
+Current stop: manuscript review of the completed default-terrain factorial and
+human science review of the physics suite and terrain3s feedback pair. Separate
 parent/nest-edge effects from d03 basin-interior response; the current edge
 audit measures distance from each domain's outer boundary, not the parent
 feedback-footprint interface. No additional WRF treatment is authorized.

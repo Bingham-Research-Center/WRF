@@ -17,6 +17,7 @@ facts back into the owner docs.
 | RAP-only | Blocked before `real.exe`. Hybrid RAP lacked a real-ready 3D atmosphere; pressure RAP had 38 atmospheric levels but no layered soil temperature/moisture. | Park unchanged RAP-only reruns. Revisit only with a corrected RAP product or explicit filler-stream design. |
 | ERA5 | Locally blocked for immediate staging. `brc-tools` has no ERA5 WRF source, `brc-tools-2026` lacks `cdsapi`/`ecmwfapi`, and CDS credentials were not configured. WPS-side support is plausible via `Vtable.ECMWF`. | Defer until CDS tooling/credentials and pressure-level plus surface/land request support exist. |
 | GFS analysis | Complete. `pelican2013_gfs_3_1_333m_75lev` ran through WPS, `real.exe`, `wrf.exe`, and archive on 2026-06-30. `NUM_METGRID_SOIL_LEVELS = 4`, clearing the RAP failure mode. | Review with the rendered NAM/GFS standardized quicklooks. |
+| GFS one-way feedback | Complete. `pelican2013_gfs_3_1_333m_75lev_oneway` reused the accepted GFS `met_em` inputs and changed only `feedback = 1` to `feedback = 0`; job `13894282` archived 21 files with an empty error scan, and quicklooks `13896648` produced 54 PNGs. | Use the completed GFS/NAM by feedback factorial in manuscript review; no further WRF run is needed for this question. |
 | FNL | Not tried in this WRF staging lane. | Optional third-source work in `brc-tools`, after the NAM/GFS comparison need is clear. |
 | GEFS+NAM two-stream | Parked legacy filler/ensemble idea. | Do not revive unless John explicitly asks. |
 
@@ -37,6 +38,7 @@ Completed and optional case names:
 
 ```text
 pelican2013_gfs_3_1_333m_75lev  # complete
+pelican2013_gfs_3_1_333m_75lev_oneway  # complete through WRF, quicklooks, analysis, and full figures
 pelican2013_nam_3_1_333m_75lev_oneway  # complete WRF feedback=0 sensitivity
 pelican2013_nam_3_1_333m_75lev_oneway_terrain5m  # complete overlay proof; HGT_M from topo_gmted2010_5m
 pelican2013_fnl_3_1_333m_75lev
@@ -46,6 +48,22 @@ GFS archive:
 
 ```text
 /uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/pelican2013_gfs_3_1_333m_75lev/full6h/run_20260630T181555Z/
+```
+
+GFS one-way feedback run:
+
+```text
+preparation job: 13894268
+WRF job: 13894282; real.exe 32 s; wrf.exe 5865 s; final status 0
+normalized diff from GFS two-way: feedback 1 -> 0 only
+control: /uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/pelican2013_gfs_3_1_333m_75lev_oneway/control/run_20260710T234000Z/
+archive: /uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/pelican2013_gfs_3_1_333m_75lev_oneway/full6h/run_20260710T234000Z/
+proof: 21 hourly files, both WRF success markers, all archive phases exit 0, empty archived error-marker scan
+quicklooks: 13896648; completed 0:0 with 54 PNGs
+manuscript factorial analysis: 13896641; completed 0:0
+publication figures: 13896642 and 13896828; final exact-config convergence 13896871
+figure result: 63 X10 PNGs and 247 refreshed cross-case PNGs in the study archive
+execution manifest: <control>/execution_manifest.tsv; SHA-256 bf5b10053c7f84e001165ef214e0ad73fb36ca38cd5b29cd407b120db401d724
 ```
 
 Comparison quicklooks:

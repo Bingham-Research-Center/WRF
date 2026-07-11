@@ -387,6 +387,31 @@ archive phases exited 0
 21 archived wrfout files, d01/d02/d03 hourly 12Z through 18Z
 ```
 
+## 2026-07-10 Pelican 333 m GFS One-Way Feedback Evidence
+
+Case: `pelican2013_gfs_3_1_333m_75lev_oneway`
+
+This WRF-side sensitivity reused the verified six GFS `met_em` files from the
+accepted two-way run and did not rerun WPS or restage GFS. The normalized
+control-to-treatment diff changed only `feedback = 1 -> 0`; `smooth_option = 0`,
+the 75-level grid, default terrain, YSU/revised-MM5 physics, and no-FDDA setup
+were retained.
+
+```text
+control: /uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/pelican2013_gfs_3_1_333m_75lev_oneway/control/run_20260710T234000Z/
+archive: /uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/pelican2013_gfs_3_1_333m_75lev_oneway/full6h/run_20260710T234000Z/
+preparation job: 13894268; six met_em files; namelist SHA-256 0b4947111d85ba08daed28dedbfe72a8d1417c58ae7db070dc8e9da957480a92
+WRF job: 13894282; final status 0 on notch392
+real.exe: 32 s; wrf.exe: 5865 s
+acceptance: SUCCESS COMPLETE REAL_EM INIT; SUCCESS COMPLETE WRF
+archive proof: 21 hourly wrfout files; all archive phases exit 0; empty error-marker scan
+quicklooks: 13896648; completed 0:0; 54 PNGs
+manuscript factorial analysis: 13896641; completed 0:0
+publication figures: 13896642 plus symmetric forcing contrast 13896828; final exact-config convergence 13896871
+figure inventory: 63 X10 PNGs and 247 cross-case PNGs; representative products visually reviewed
+execution manifest: <control>/execution_manifest.tsv; SHA-256 bf5b10053c7f84e001165ef214e0ad73fb36ca38cd5b29cd407b120db401d724
+```
+
 ## 2026-06-30 Pelican 333 m NAM/GFS Comparison Quicklooks
 
 These are the like-for-like products for the completed NAM and GFS WRF runs.

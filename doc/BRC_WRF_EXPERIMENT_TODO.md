@@ -12,9 +12,22 @@ Use the completed Pelican 3/1/0.333 km, 75-level runs as a poor-man's ensemble:
 
 - NAM two-way baseline: complete.
 - GFS analysis hot-swap: complete.
+- GFS one-way feedback sensitivity: complete through WRF and post-processing.
 - NAM one-way feedback sensitivity: complete.
 - NAM terrain3s two-way feedback sensitivity: complete.
 - Standard and supplemental quicklooks: complete.
+
+The default-terrain GFS feedback companion is complete. Preparation `13894268`
+copied six verified GFS `met_em` files; WRF job `13894282` changed only
+`feedback = 1 -> 0`, completed with `real.exe` in 32 s and `wrf.exe` in 5865 s,
+and archived 21 hourly files with an empty error-marker scan. Quicklooks
+`13896648` completed with 54 PNGs. Manuscript analysis `13896641`, publication
+figure jobs `13896642` and `13896828`, and exact-config convergence `13896871`
+completed `0:0`; X10 has 63 publication PNGs and the refreshed study compare
+root has 247. This fills the missing WRF leg of the default-terrain GFS/NAM by
+one-/two-way feedback factorial without a new WPS run.
+The durable control packet includes `execution_manifest.tsv` with SHA-256
+`bf5b10053c7f84e001165ef214e0ad73fb36ca38cd5b29cd407b120db401d724`.
 
 The custom `3s` `HGT_M` lane is complete. WPS job `13851884`, WRF job
 `13852034`, and quicklook job `13852773` produced the accepted NAM one-way
@@ -76,7 +89,7 @@ authorized.
 | Detailed historical evidence ledger | `doc/BRC_WRF_MICROTASK_HANDOFF.md` |
 | Build/WPS/WRF end-to-end route | `doc/BRC_WRF_END_TO_END_AI_HANDOFF.md` |
 | Case helpers and quicklook adapter | `brc-cases/README.md` |
-| Derived-run packet renderer | `brc-cases/wrf_treatment.py`, the two `terrain3s_slope*.case.yaml` manifests, and `pelican2013_nam_3_1_333m_75lev_twoway_terrain3s.case.yaml` |
+| Derived-run packet renderer | `brc-cases/wrf_treatment.py`, the two `terrain3s_slope*.case.yaml` manifests, `pelican2013_nam_3_1_333m_75lev_twoway_terrain3s.case.yaml`, and `pelican2013_gfs_3_1_333m_75lev_oneway.case.yaml` |
 | WRF staging state in `brc-tools` | `../brc-tools/docs/WRF-STAGING-STATE-PLAYBOOK.md` |
 | WRF staging implementation details in `brc-tools` | `../brc-tools/docs/WRF-INPUT-STAGING.md` |
 | Broader `brc-tools` backlog | `../brc-tools/WISHLIST-TASKS.md` |
@@ -86,7 +99,7 @@ authorized.
 | Source path | Current status | Owner |
 | --- | --- | --- |
 | NAM baseline | Complete; comparison anchor. | `brc-wrf` review only |
-| GFS analysis | Complete; WRF run and quicklooks rendered. | `brc-wrf` review only |
+| GFS analysis | Two-way and matched one-way runs complete through post-processing. | Manuscript and coauthor review |
 | NAM one-way feedback | Complete; feedback sensitivity, not a new forcing source. | `brc-wrf` review only |
 | RAP-only | Blocked before `real.exe`: hybrid RAP lacks usable 3D atmosphere; pressure RAP lacks layered soil temperature/moisture. | `brc-tools` source fix or explicit filler design |
 | ERA5 | Locally blocked: no `brc-tools` source support, CDS tooling, or CDS credentials. | `brc-tools` access/tooling first |

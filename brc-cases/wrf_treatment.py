@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Render approval-gated WRF physics-treatment packets without running WRF."""
+"""Render approval-gated WRF derived-run packets without running WRF."""
 
 from __future__ import annotations
 
@@ -455,7 +455,7 @@ def render_packet(case_file: Path, output_dir: Path, run_id: str) -> list[Path]:
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description="Render a no-run WRF physics-treatment packet outside the checkout."
+        description="Render a no-run WRF derived-treatment packet outside the checkout."
     )
     parser.add_argument("case_file", type=Path)
     parser.add_argument("--output-dir", type=Path, required=True)

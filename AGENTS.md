@@ -109,6 +109,9 @@ a proven NetCDF-capable render environment with `PYTHONPATH` pointed at
   `contract_<case>.json`; `brc-wrf` consumes those sidecars.
 - Pelican completed WRF-side runs: NAM two-way baseline job `13695261`, GFS
   analysis job `13753673`, and NAM one-way feedback sensitivity job `13788264`.
+- The matched default-terrain GFS one-way leg is complete through post-processing:
+  preparation `13894268`, WRF `13894282`, and quicklooks `13896648`; exact
+  paths and cross-repo analysis/figure evidence are in `doc/BRC_WRF_EXPERIMENT_TODO.md`.
 - The custom `3s` NAM one-way terrain run is complete: WPS `13851884`, WRF
   `13852034`, and quicklooks `13852773`. Its clean two-way feedback companion
   is complete in preparation `13880432`, WRF `13880435`, and quicklooks
