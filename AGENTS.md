@@ -29,20 +29,29 @@ Default start:
 2. `sed -n '1,180p' AGENTS.md`
 3. `sed -n '1,220p' doc/BRC_WRF_EXPERIMENT_TODO.md`
 
-Then load only the task-specific owner doc:
+Then choose one owner document below; do not read the whole set.
+
+## Case And Run Lookup
+
+| Need | Read first | Start from |
+| --- | --- | --- |
+| New or existing case: validate, render, or inspect the available manifests | `brc-cases/README.md` | `brc-cases/*.case.yaml` and `brc-cases/wrf_case.py` |
+| Validated Jan-2013 Uinta Basin NAM proof | `brc-docs/BRC-WRF-FIRST-CASE.md` | `brc-cases/jan2013_basin_nam.case.yaml` |
+| Pelican NAM/GFS control, feedback, source comparison, or human review | `brc-docs/BRC-WRF-PELICAN-NWP-HOTSWAP-HANDOFF.md` | `doc/BRC_WRF_EXPERIMENT_TODO.md`, then `brc-docs/BRC-WRF-RUN-CONVEYOR-SOP.md` |
+| Pelican custom 3s terrain or a geogrid-only terrain proof | `brc-docs/BRC-WRF-DOMAIN-PREVIEW-SOP.md` | `brc-cases/wps_hgt_static.py` and `brc-cases/README.md` |
+| Pelican derived physics/nesting treatment from an accepted control | `brc-cases/README.md` | `brc-cases/wrf_treatment.py` and the `*terrain3s*.case.yaml` manifests |
+| Pelican RAP WPS-only field adequacy review | `brc-docs/BRC-WRF-PELICAN-RAP-FEASIBILITY.md` | `brc-cases/pelican2013_rap_3_1_333m_75lev.case.yaml` |
+| A new forcing source or a staging/contract problem | `../brc-tools/docs/WRF-STAGING-STATE-PLAYBOOK.md` | `../brc-tools/docs/WRF-INPUT-STAGING.md`; return here only with a verified contract |
+| Build, WPS, or full WRF conveyor route | `doc/BRC_WRF_END_TO_END_AI_HANDOFF.md` | `brc-docs/BRC-WRF-RUN-CONVEYOR-SOP.md` |
+
+For every run, use the case manifest and rendered control evidence as the
+authority for executable paths and run roots; do not copy a path from an old
+archive or another case.  An existing completed case is review evidence, not
+authorization to rerun it.
+
+Other targeted owner documents:
 
 - Detailed historical evidence: `doc/BRC_WRF_MICROTASK_HANDOFF.md`
-- Build/WPS/WRF route: `doc/BRC_WRF_END_TO_END_AI_HANDOFF.md`
-- Pelican review, source hot-swap, or comparison plots:
-  `brc-docs/BRC-WRF-PELICAN-NWP-HOTSWAP-HANDOFF.md` and
-  `brc-docs/BRC-WRF-RUN-CONVEYOR-SOP.md`
-- Parked RAP-only details: `brc-docs/BRC-WRF-PELICAN-RAP-FEASIBILITY.md`
-- Case manifests, validators, Slurm renderers, and quicklooks:
-  `brc-cases/README.md`
-- Input staging, manifests, contracts, source access:
-  `../brc-tools/docs/WRF-STAGING-STATE-PLAYBOOK.md`,
-  `../brc-tools/docs/WRF-INPUT-STAGING.md`, and
-  `../brc-tools/WISHLIST-TASKS.md`
 - CHPC node, storage, scheduler, proxy, and Slurm truth:
   `../brc-knowledge/scholarium/reference-base/resources/`
 - Local automation: `.sane/wrf/README.md`
@@ -105,46 +114,20 @@ helpers from `../brc-tools`. Source planning still belongs in
 a proven NetCDF-capable render environment with `PYTHONPATH` pointed at
 `../brc-tools` and record the environment in the control/log evidence.
 
-## Current Experiment Truth
+## Active Experiment Snapshot
 
-- Validated Jan-2013 Basin proof: NAM-only, 12/4 km nested, WPS `Vtable.NAM`,
-  `interval_seconds = 21600`; Gates 5-11 passed on 2026-06-18.
-- John-owned WPS v4.6.0 lives at
+- The Jan-2013 NAM proof is validated; use it as the small reference case.
+- Pelican NAM/GFS controls, feedback comparisons, custom-3s terrain, and the
+  approved terrain treatments are complete through quicklooks. The current
+  stop is human science review; no new Pelican WRF treatment is authorized.
+- RAP remains WPS-field-adequacy-only; ERA5 is locally blocked; FNL and
+  GEFSv12+NAM require an explicit revival decision. Exact status, evidence,
+  job IDs, paths, and next steps belong in `doc/BRC_WRF_EXPERIMENT_TODO.md`.
+- John-owned WPS is
   `/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_build/WPS`.
-  John's WRF executable path must come from rendered control evidence and be
-  checked on disk.
-- Current owned-node WRF profile: `lawson-np` on `notch392`, one node,
-  56 tasks, `900G`, `srun --mpi=pmi2`.
+  Check the WRF executable path from rendered control evidence on disk.
 - Fresh `brc-tools` staging emits `manifest_<case>.json` and
   `contract_<case>.json`; `brc-wrf` consumes those sidecars.
-- Pelican completed WRF-side runs: NAM two-way baseline job `13695261`, GFS
-  analysis job `13753673`, and NAM one-way feedback sensitivity job `13788264`.
-- The matched default-terrain GFS one-way leg is complete through post-processing:
-  preparation `13894268`, WRF `13894282`, and quicklooks `13896648`; exact
-  paths and cross-repo analysis/figure evidence are in `doc/BRC_WRF_EXPERIMENT_TODO.md`.
-- The custom `3s` NAM one-way terrain run is complete: WPS `13851884`, WRF
-  `13852034`, and quicklooks `13852773`. Its clean two-way feedback companion
-  is complete in preparation `13880432`, WRF `13880435`, and quicklooks
-  `13881153`; the only normalized namelist change was `feedback = 0 -> 1`, and
-  it produced 21 hourly outputs plus 54 review PNGs. Paired diagnostic job
-  `13881198` completed with 189 finite field/time/domain rows and found small
-  d03 domain-mean but non-null localized feedback response without broad
-  adjacent-cell roughness growth. The six-hour
-  slope/shading treatment is complete in preparation `13876527`, WRF
-  `13876534`, and quicklooks
-  `13877355`; its slope+MYJ/Eta increment is complete in preparation
-  `13879078`, WRF `13879100`, and quicklooks `13879973`. Each treatment has
-  21 hourly outputs and 54 review PNGs. The paired publication and diagnostic
-  figure suites are also complete; current stop is human science review,
-  including a dedicated one-way-versus-two-way terrain3s comparison. Do not
-  submit another WRF treatment without a new explicit approval.
-- Current static-terrain evidence: download job `13849489` on `dtn05` and build
-  job `13849490` on `notch137` completed `0:0`; 99 USGS 1 arc-second GeoTIFFs
-  cached at 4.6G; `topo_brc_custom_3s` built at 350M with 63 tiles plus index;
-  corrected geogrid-only job `13849737` proved nonzero custom 3s `HGT_M`.
-- RAP-only remains blocked before `real.exe`; ERA5 is locally blocked by source
-  support, CDS tooling, and CDS credentials; FNL is optional; GEFSv12+NAM is
-  parked unless explicitly revived.
 
 ## Login-Safe Versus Off-Login
 
