@@ -1,0 +1,74 @@
+schema_version: 1
+
+# Sub-100 m Ashley Valley proof. Five-domain 3:1 ladder, HRRR-forced, one-way.
+# The immediate objective is running at 37 m over this terrain; the cold-pool
+# seiche picks the event and sets output cadence. Tracked in
+# ../ub-wx/experiments/20260222-ashley-seiche-wrf/.
+#
+# NOT RUNNABLE YET. num_metgrid_levels is pending, so `render-slurm` refuses by
+# design (run_readiness_findings). It becomes a number only from the Gate C
+# WPS-only HRRR field proof. `validate` passes now; that is the intended state.
+
+case:
+  name: ashley2026_seiche
+  label: "Ashley Valley 5-domain HRRR one-way ladder to 37 m (mechanical proof)"
+  start: "2026-02-22_06:00:00"
+  end: "2026-02-22_07:00:00"
+  domains: 5
+  owner_namespace: jrlawson
+  proof_status: proposed_pending_source_contract
+
+forcing:
+  sources: ["hrrr"]
+  wps_fg_name: ["HRRR"]
+  interval_seconds: 3600
+  num_metgrid_levels: "metgrid_pending"
+  expected_met_em_count: "metgrid_pending"
+  manifest_path: "/scratch/general/vast/${USER}/wrf_inputs/ashley2026_seiche/manifest_ashley2026_seiche.json"
+  contract_path: "/scratch/general/vast/${USER}/wrf_inputs/ashley2026_seiche/contract_ashley2026_seiche.json"
+
+paths:
+  wrf_src: "/uufs/chpc.utah.edu/common/home/u0737349/gits/brc-wrf"
+  wrf_build: "/uufs/chpc.utah.edu/common/home/u0737349/gits/brc-wrf"
+  wps_root: "/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_build/WPS"
+  input_root: "/scratch/general/vast/${USER}/wrf_inputs/ashley2026_seiche"
+  grib_data: "/scratch/general/vast/${USER}/wrf_runs/ashley2026_seiche/grib_data"
+  run_root: "/scratch/general/vast/${USER}/wrf_runs/ashley2026_seiche"
+  wps_run: "/scratch/general/vast/${USER}/wrf_runs/ashley2026_seiche/wps_run"
+  wrf_run: "/scratch/general/vast/${USER}/wrf_runs/ashley2026_seiche/wrf_run"
+  geog_data_path: "/scratch/general/vast/${USER}/wps_geog_ashley_1s"
+  archive_root: "/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/ashley2026_seiche"
+
+wps:
+  vtable: "Vtable.raphrrr"
+  ungrib_prefix: "HRRR"
+  namelist_fg_name: ["HRRR"]
+  namelist_template: "/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/ashley2026_seiche/control/draft/namelist.wps"
+  geogrid_source: "/scratch/general/vast/${USER}/wrf_runs/ashley2026_seiche/wps_run"
+
+namelists:
+  namelist_wps: "/scratch/general/vast/${USER}/wrf_runs/ashley2026_seiche/wps_run/namelist.wps"
+  namelist_input: "/scratch/general/vast/${USER}/wrf_runs/ashley2026_seiche/wrf_run/namelist.input"
+
+# Owned reserved node, whole-node allocation. All 56 ranks is the shortest wall
+# clock available here, and on an owned node reserving the full 900G costs
+# nothing and removes OOM as a failure mode -- this run is ~5x the X8 memory
+# footprint (49.3M vs 9.9M total grid points).
+#   time: sized for the Gate F one-hour proof at ~6-8 h/simulated hour. Restarts
+#   are enabled in the namelist so a wall-clock overrun resumes instead of
+#   starting over. Override per gate: Gate E 30-min smoke needs ~04:00:00.
+slurm:
+  profile: owned_notch392_max
+  job_name: wrf_ashley_seiche
+  account: lawson-np
+  partition: lawson-np
+  nodelist: notch392
+  nodes: 1
+  ntasks: 56
+  memory: "900G"
+  time: "12:00:00"
+  mpi_launcher: "srun --mpi=pmi2"
+
+archive:
+  required_patterns: ["wrfout_d0*", "namelist.input", "rsl.out.0000", "real.rsl.out.0000"]
+  colon_safe_wrfout_source: "./wrfout_d0*"

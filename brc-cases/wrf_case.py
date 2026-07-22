@@ -608,6 +608,19 @@ def validate_case(data: dict[str, Any], *, strict_files: bool) -> list[Finding]:
             findings.append(Finding("ERROR", "RAP source should use wps.ungrib_prefix RAP"))
         if [str(v) for v in as_list(wps.get("namelist_fg_name", wps_fg_name))] != ["RAP"]:
             findings.append(Finding("ERROR", "RAP source should use wps.namelist_fg_name ['RAP']"))
+    if sources == ["hrrr"] and wps_fg_name != ["HRRR"]:
+        findings.append(Finding("ERROR", "HRRR source should use wps_fg_name ['HRRR']"))
+    if sources == ["hrrr"] and interval_seconds != 3600:
+        findings.append(Finding("ERROR", "HRRR source should use interval_seconds 3600"))
+    if sources == ["hrrr"]:
+        if str(wps.get("ungrib_prefix", "")) != "HRRR":
+            findings.append(Finding("ERROR", "HRRR source should use wps.ungrib_prefix HRRR"))
+        if [str(v) for v in as_list(wps.get("namelist_fg_name", wps_fg_name))] != ["HRRR"]:
+            findings.append(Finding("ERROR", "HRRR source should use wps.namelist_fg_name ['HRRR']"))
+        if str(wps.get("vtable", "")) != "Vtable.raphrrr":
+            findings.append(
+                Finding("WARN", "HRRR normally ungribs with John's Vtable.raphrrr")
+            )
     if "gefs_reforecast" in sources and interval_seconds != 10800:
         findings.append(Finding("WARN", "GEFS reforecast stream normally uses 10800 seconds"))
     if "gefs_reforecast" in sources and wps_fg_name != ["GEFS", "NAM"]:
