@@ -1,14 +1,23 @@
 # Repository Context
 
-This is the Bingham Research Center checkout of WRF:
+This is Bingham Research Center's purpose-built `brc-wrf` fork:
 
-- Remote: `https://github.com/Bingham-Research-Center/WRF.git`
+- Remote: `https://github.com/Bingham-Research-Center/brc-wrf.git`
 - Branch family: `john/*`
-- Current upstream-style baseline: WRF `4.8.0`
+- Pinned baseline: WRF `4.8.0`
 
 This tree is large. Start narrow and local. Do not broad-scan WRF internals,
 scratch trees, archives, or sibling repos unless a named file or `rg` result
 points there.
+
+## Fork Freeze
+
+`brc-wrf` is deliberately independent of upstream WRF and of other branch
+lines in this fork. Do not merge, rebase, or routinely synchronize from
+`master`, `main`, or an upstream remote. Port a newer WRF change only when it
+is specifically needed: use a reviewable `john/port-*` branch, record the
+source version/commit and BRC rationale in `doc/BRC_WRF_PORTING_POLICY.md`,
+then validate the port before it is adopted.
 
 ## Cold Start
 
@@ -46,6 +55,7 @@ If a fact changes, update the owner doc and leave only short pointers elsewhere.
 
 | Truth | Canonical file |
 | --- | --- |
+| Fork identity and selective upstream-port policy | `doc/BRC_WRF_PORTING_POLICY.md` |
 | Current experiment todo across `brc-wrf` and `brc-tools` | `doc/BRC_WRF_EXPERIMENT_TODO.md` |
 | Detailed evidence ledger | `doc/BRC_WRF_MICROTASK_HANDOFF.md` |
 | End-to-end WRF/WPS route | `doc/BRC_WRF_END_TO_END_AI_HANDOFF.md` |

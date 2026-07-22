@@ -1,11 +1,21 @@
-# BRC WRF
+# brc-wrf
 
-This is the Bingham Research Center checkout of WRF 4.8.0 with BRC-local case
-tooling, CHPC run practices, and AI routing layered on top.
+`brc-wrf` is Bingham Research Center's purpose-built WRF fork, based on WRF
+4.8.0 with BRC-local case tooling, CHPC run practices, and AI routing layered
+on top. The GitHub repository is
+[`Bingham-Research-Center/brc-wrf`](https://github.com/Bingham-Research-Center/brc-wrf).
 
 The extensionless `README` is the upstream WRF notice/release/documentation
 file. This `README.md` is the local BRC entry point. Keep it terse and route
 details to the owning docs.
+
+## Fork Policy
+
+This is an independent, frozen fork: it does not automatically follow upstream
+WRF or changes on `master`, `main`, or other branch lines. WRF 4.8.0 is the
+pinned starting point. When a newer upstream change is needed, port only that
+specific change through a reviewable BRC branch, record its source and reason,
+and validate it here before adoption. See `doc/BRC_WRF_PORTING_POLICY.md`.
 
 ## Fast Start
 
