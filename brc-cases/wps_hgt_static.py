@@ -462,6 +462,52 @@ def filename_digits_for_grid(dx_deg: float, *, tile_size: int = DEFAULT_TILE_SIZ
     raise ValueError("WPS geogrid supports only 5- or 6-digit static tile filenames")
 
 
+def filename_digits_for_tiles(tiles: list[Tile]) -> int:
+    """Digit width (5 or 6) needed to name the tiles that actually occur in-region.
+
+    ``filename_digits_for_grid`` sizes from the *global* grid width and refuses
+    anything past 6 digits, so a true 1-arc-second build is rejected because the
+    global 1s grid reaches 1_296_000 (7 digits). A *regional* build only spans a
+    handful of tiles, whose indices are far smaller: a 1s box over Utah tops out
+    near 903_600 (6 digits) and is perfectly representable. Sizing from the
+    in-region tiles is therefore what unlocks a regional 1s build while leaving
+    the existing 3s (max index ~432_000 -> 6) and 30s (~43_200 -> 5) builds byte
+    identical, since their regional maxima land in the same 5/6-digit bucket.
+    """
+    if not tiles:
+        raise ValueError("cannot size filename digits from an empty tile list")
+    max_index = max(max(tile.x_end, tile.y_end) for tile in tiles)
+    if max_index <= 99999:
+        return 5
+    if max_index <= 999999:
+        return 6
+    raise ValueError(
+        "WPS geogrid static tiles support at most 6-digit filenames; in-region "
+        f"tile index {max_index} needs {len(str(max_index))} digits -- shrink the region"
+    )
+
+
+def resolve_filename_digits(tiles: list[Tile], override: int | None) -> int:
+    """Pick the static-tile filename digit width for a regional build.
+
+    Without an override the width is derived from the in-region tiles (see
+    ``filename_digits_for_tiles``). An explicit ``--filename-digits`` override is
+    honored only when it is a legal WPS width (5 or 6) and wide enough to name
+    every in-region tile, so it can never silently truncate a tile index.
+    """
+    region_digits = filename_digits_for_tiles(tiles)
+    if override is None:
+        return region_digits
+    if override not in (5, 6):
+        raise ValueError("--filename-digits must be 5 or 6")
+    if override < region_digits:
+        raise ValueError(
+            f"--filename-digits {override} is too narrow for this region; it needs "
+            f"at least {region_digits} to name the in-region tiles"
+        )
+    return override
+
+
 def tile_name(tile: Tile, *, filename_digits: int) -> str:
     if filename_digits not in {5, 6}:
         raise ValueError("filename_digits must be 5 or 6")
@@ -625,7 +671,7 @@ def build_tiles(args: argparse.Namespace) -> None:
     tile_height = args.tile_size + 2 * args.tile_border
     bounds = tuple(args.bounds)
     tiles = tiles_for_bounds(bounds, dx_deg=args.dx_deg, tile_size=args.tile_size)
-    filename_digits = filename_digits_for_grid(args.dx_deg, tile_size=args.tile_size)
+    filename_digits = resolve_filename_digits(tiles, getattr(args, "filename_digits", None))
 
     gdalbuildvrt = _need_tool("gdalbuildvrt")
     gdalwarp = _need_tool("gdalwarp")
@@ -702,7 +748,7 @@ def build_tiles(args: argparse.Namespace) -> None:
 def cmd_plan(args: argparse.Namespace) -> int:
     bounds = tuple(args.bounds)
     tiles = tiles_for_bounds(bounds, dx_deg=args.dx_deg, tile_size=args.tile_size)
-    filename_digits = filename_digits_for_grid(args.dx_deg, tile_size=args.tile_size)
+    filename_digits = resolve_filename_digits(tiles, getattr(args, "filename_digits", None))
     print("tile\tleft\tright\tsouth\tnorth")
     for tile in tiles:
         left, north, right, south = tile_projwin(tile, dx_deg=args.dx_deg, tile_border=args.tile_border)
@@ -964,6 +1010,12 @@ def build_parser() -> argparse.ArgumentParser:
     plan.add_argument("--dx-deg", type=float, default=DEFAULT_DX_DEG)
     plan.add_argument("--tile-size", type=int, default=DEFAULT_TILE_SIZE)
     plan.add_argument("--tile-border", type=int, default=DEFAULT_TILE_BORDER)
+    plan.add_argument(
+        "--filename-digits",
+        type=int,
+        default=None,
+        help="override static-tile filename digit width (5 or 6); default derives it from the in-region tiles",
+    )
     plan.set_defaults(func=cmd_plan)
 
     build = sub.add_parser("build", help="build WPS HGT_M tiles from existing DEM rasters")
@@ -975,6 +1027,12 @@ def build_parser() -> argparse.ArgumentParser:
     build.add_argument("--tile-border", type=int, default=DEFAULT_TILE_BORDER)
     build.add_argument("--resampling", default="bilinear")
     build.add_argument("--description", default="Custom 3-arc-second topography height for BRC WRF")
+    build.add_argument(
+        "--filename-digits",
+        type=int,
+        default=None,
+        help="override static-tile filename digit width (5 or 6); default derives it from the in-region tiles",
+    )
     build.set_defaults(func=cmd_build)
 
     build_inv = sub.add_parser("build-from-inventory", help="build WPS HGT_M tiles from a download inventory")
@@ -986,6 +1044,12 @@ def build_parser() -> argparse.ArgumentParser:
     build_inv.add_argument("--tile-border", type=int, default=DEFAULT_TILE_BORDER)
     build_inv.add_argument("--resampling", default="bilinear")
     build_inv.add_argument("--description", default="Custom 3-arc-second topography height for BRC WRF")
+    build_inv.add_argument(
+        "--filename-digits",
+        type=int,
+        default=None,
+        help="override static-tile filename digit width (5 or 6); default derives it from the in-region tiles",
+    )
     build_inv.set_defaults(func=cmd_build_from_inventory)
 
     patch = sub.add_parser("patch-geogrid-table", help="insert a custom HGT_M token into GEOGRID.TBL")

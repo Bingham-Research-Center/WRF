@@ -65,6 +65,53 @@ name=LANDUSEF
         self.assertEqual(hgt.tile_name(tile, filename_digits=5), "00001-01200.01201-02400")
         self.assertEqual(hgt.tile_name(tile, filename_digits=6), "000001-001200.001201-002400")
 
+    def test_filename_digits_for_grid_keeps_3s_and_30s_and_caps_global_1s(self) -> None:
+        # Existing 3s/30s behavior must stay byte-identical; global 1s stays refused.
+        self.assertEqual(hgt.filename_digits_for_grid(hgt.DEFAULT_DX_DEG), 6)
+        self.assertEqual(hgt.filename_digits_for_grid(30.0 / 3600.0), 5)
+        with self.assertRaises(ValueError):
+            hgt.filename_digits_for_grid(1.0 / 3600.0)
+
+    def test_filename_digits_for_tiles_allows_regional_one_arcsecond(self) -> None:
+        # A regional 1-arc-second build over the Ashley/Uinta box only reaches
+        # 6-digit tile indices, so it is representable even though the global 1s
+        # grid would need 7 digits.
+        tiles = hgt.tiles_for_bounds((-109.75, 40.27, -109.30, 40.63), dx_deg=1.0 / 3600.0)
+        self.assertTrue(tiles)
+        max_index = max(max(t.x_end, t.y_end) for t in tiles)
+        self.assertLessEqual(max_index, 999999)
+        self.assertGreater(max_index, 99999)
+        self.assertEqual(hgt.filename_digits_for_tiles(tiles), 6)
+        # Same box at 30s stays 5-digit; the 3s Pelican box stays 6-digit.
+        self.assertEqual(
+            hgt.filename_digits_for_tiles(
+                hgt.tiles_for_bounds((-109.75, 40.27, -109.30, 40.63), dx_deg=30.0 / 3600.0)
+            ),
+            5,
+        )
+        self.assertEqual(
+            hgt.filename_digits_for_tiles(
+                hgt.tiles_for_bounds(hgt.DEFAULT_PELICAN_BOUNDS, dx_deg=hgt.DEFAULT_DX_DEG)
+            ),
+            6,
+        )
+
+    def test_resolve_filename_digits_override_rules(self) -> None:
+        tiles = hgt.tiles_for_bounds((-109.75, 40.27, -109.30, 40.63), dx_deg=1.0 / 3600.0)
+        self.assertEqual(hgt.resolve_filename_digits(tiles, None), 6)
+        self.assertEqual(hgt.resolve_filename_digits(tiles, 6), 6)
+        with self.assertRaises(ValueError):
+            hgt.resolve_filename_digits(tiles, 5)  # too narrow for a 6-digit region
+        with self.assertRaises(ValueError):
+            hgt.resolve_filename_digits(tiles, 7)  # not a legal WPS width
+
+    def test_index_text_one_arcsecond_regional(self) -> None:
+        text = hgt.index_text(dx_deg=1.0 / 3600.0, filename_digits=6,
+                              description="Custom 1-arc-second topography height for BRC WRF")
+        self.assertIn("filename_digits = 6", text)
+        self.assertIn("dx = 0.000277777777777778", text)
+        self.assertIn("1-arc-second", text)
+
     def test_manifest_round_trip_and_inventory_paths(self) -> None:
         with tempfile.TemporaryDirectory() as raw:
             root = Path(raw)
