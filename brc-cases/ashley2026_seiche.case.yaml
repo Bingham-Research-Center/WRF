@@ -19,10 +19,17 @@ case:
   proof_status: proposed_pending_source_contract
 
 forcing:
-  sources: ["hrrr"]
-  wps_fg_name: ["HRRR"]
+  # CORRECTED 2026-07-26. This manifest recorded single-stream HRRR long after gate C
+  # PROVED that cannot work and gates D/E actually ran two-stream -- the manifest and
+  # the run had silently disagreed. Public HRRR GRIB carries NO soil temperature
+  # (num_metgrid_soil_levels=0 -> Noah init fails); soil comes from GFS 0.25 f000.
+  # HRRR must be FIRST in fg_name so it wins atmosphere/surface; GFS adds only soil.
+  sources: ["hrrr", "gfs"]
+  wps_fg_name: ["HRRR", "GFSSOIL"]
   interval_seconds: 3600
-  num_metgrid_levels: "metgrid_pending"
+  # From gate C evidence (job 14136134), not assumed: 51 HRRR native levels and
+  # 4 GFS soil layers at both proof times.
+  num_metgrid_levels: 51
   expected_met_em_count: "metgrid_pending"
   manifest_path: "/scratch/general/vast/${USER}/wrf_inputs/ashley2026_seiche/manifest_ashley2026_seiche.json"
   contract_path: "/scratch/general/vast/${USER}/wrf_inputs/ashley2026_seiche/contract_ashley2026_seiche.json"
@@ -40,9 +47,15 @@ paths:
   archive_root: "/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/ashley2026_seiche"
 
 wps:
-  vtable: "Vtable.raphrrr"
+  # The HRRR stream uses a SOIL-STRIPPED Vtable so GFS supplies soil; plain
+  # Vtable.raphrrr would reinstate HRRR's degenerate 0/0.01 m layers and undo the
+  # fix. Both Vtables live in the gate C control packet, not in the WPS tree:
+  # $WRF_ARCHIVE/ashley2026_seiche/control/smoke_20260723T044000Z/
+  # SCHEMA LIMIT: one `vtable` key cannot express two streams -- the GFS stream's
+  # Vtable.gfssoil is implied by sources/fg_name and lives in that same packet.
+  vtable: "Vtable.raphrrr.nosoil"
   ungrib_prefix: "HRRR"
-  namelist_fg_name: ["HRRR"]
+  namelist_fg_name: ["HRRR", "GFSSOIL"]
   namelist_template: "/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/ashley2026_seiche/control/draft/namelist.wps"
   geogrid_source: "/scratch/general/vast/${USER}/wrf_runs/ashley2026_seiche/wps_run"
 

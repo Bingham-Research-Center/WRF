@@ -628,15 +628,56 @@ def validate_case(data: dict[str, Any], *, strict_files: bool) -> list[Finding]:
             findings.append(Finding("ERROR", "RAP source should use wps.ungrib_prefix RAP"))
         if [str(v) for v in as_list(wps.get("namelist_fg_name", wps_fg_name))] != ["RAP"]:
             findings.append(Finding("ERROR", "RAP source should use wps.namelist_fg_name ['RAP']"))
+    # Single-stream HRRR is a PROVEN-BAD configuration for any run using a land
+    # surface model, and the rules below used to enforce it. Public HRRR GRIB
+    # (nat+sfc) contains ZERO soil-temperature messages and soil moisture only at
+    # degenerate 0 / 0.01 m layers, so metgrid yields num_metgrid_soil_levels=0 and
+    # real.exe cannot initialise Noah. Established by ashley2026_seiche gate C
+    # (job 14135619 failed single-stream; 14136134 passed two-stream). RAP 130 was
+    # confirmed to lack soil too; the working soil source is GFS 0.25 f000.
+    if sources == ["hrrr"]:
+        findings.append(
+            Finding(
+                "WARN",
+                "single-stream HRRR has NO soil temperature (num_metgrid_soil_levels=0) "
+                "and cannot initialise Noah -- use sources ['hrrr','gfs'] with "
+                "wps_fg_name ['HRRR','GFSSOIL'] unless this run has no land-surface model",
+            )
+        )
     if sources == ["hrrr"] and wps_fg_name != ["HRRR"]:
-        findings.append(Finding("ERROR", "HRRR source should use wps_fg_name ['HRRR']"))
-    if sources == ["hrrr"] and interval_seconds != 3600:
+        findings.append(Finding("ERROR", "HRRR-only source should use wps_fg_name ['HRRR']"))
+    if sources in (["hrrr"], ["hrrr", "gfs"]) and interval_seconds != 3600:
         findings.append(Finding("ERROR", "HRRR source should use interval_seconds 3600"))
     if sources == ["hrrr"]:
         if str(wps.get("ungrib_prefix", "")) != "HRRR":
             findings.append(Finding("ERROR", "HRRR source should use wps.ungrib_prefix HRRR"))
         if [str(v) for v in as_list(wps.get("namelist_fg_name", wps_fg_name))] != ["HRRR"]:
-            findings.append(Finding("ERROR", "HRRR source should use wps.namelist_fg_name ['HRRR']"))
+            findings.append(Finding("ERROR", "HRRR-only source should use wps.namelist_fg_name ['HRRR']"))
+
+    # Two-stream HRRR atmosphere + GFS soil: the configuration that actually works.
+    # metgrid takes fg_name in priority order, so HRRR must come FIRST (it wins
+    # atmosphere and surface) and GFSSOIL second (it contributes only soil).
+    if sources == ["hrrr", "gfs"]:
+        if wps_fg_name != ["HRRR", "GFSSOIL"]:
+            findings.append(Finding(
+                "ERROR",
+                "HRRR+GFS two-stream should use wps_fg_name ['HRRR','GFSSOIL'] in that "
+                "order -- HRRR first so it wins atmosphere/surface, GFS adds only soil",
+            ))
+        if [str(v) for v in as_list(wps.get("namelist_fg_name", wps_fg_name))] != ["HRRR", "GFSSOIL"]:
+            findings.append(Finding(
+                "ERROR",
+                "HRRR+GFS two-stream should use wps.namelist_fg_name ['HRRR','GFSSOIL']",
+            ))
+        # The HRRR stream must use a soil-stripped Vtable, or HRRR's degenerate soil
+        # layers win over GFS's real ones and the run is back to the broken state.
+        if str(wps.get("vtable", "")) != "Vtable.raphrrr.nosoil":
+            findings.append(Finding(
+                "ERROR",
+                "HRRR+GFS two-stream needs wps.vtable 'Vtable.raphrrr.nosoil' (soil lines "
+                "stripped) so GFS supplies soil; plain Vtable.raphrrr reinstates HRRR's "
+                "degenerate 0/0.01 m layers",
+            ))
         if str(wps.get("vtable", "")) != "Vtable.raphrrr":
             findings.append(
                 Finding("WARN", "HRRR normally ungribs with John's Vtable.raphrrr")

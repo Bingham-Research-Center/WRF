@@ -80,7 +80,7 @@ slurm:
   nodes: 1
   ntasks: 56
   memory: "900G"
-  time: "48:00:00"
+  time: "16:00:00"
   mpi_launcher: "srun --mpi=pmi2"
 
 archive:

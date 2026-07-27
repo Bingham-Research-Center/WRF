@@ -82,4 +82,4 @@ end_date         = "0000-00-00_00:00:00"
 interval_seconds = 3600
 
 [run]
-hours = 18
+hours = 7
