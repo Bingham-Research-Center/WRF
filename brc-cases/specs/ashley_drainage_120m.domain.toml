@@ -63,7 +63,13 @@ e_sn = 115
 # representable), not merely a wrapper around d03. Its own centre is given for the
 # same reason -- centring it on d03 would slide the box east off Duchesne.
 e_we   = 271
-e_sn   = 186
+# Grown 186 -> 251 (111 -> 150 km N-S) after the gate B v2 preview: the north edge
+# ran close to the Uinta crest, which is the SOURCE region for Dry Fork drainage.
+# Air generated on those slopes was sitting near d02's relaxation zone, i.e. partly
+# imposed by d01 at 3 km rather than developed at 600 m. Now spans ~39.7-41.0,
+# putting the crest ~25 km inside and picking up the southern Book Cliffs rim.
+# Costs ~3% of total: d02 is ~9% of the work and this is +35% of that.
+e_sn   = 251
 center = [-109.95, 40.35]
 
 [target]

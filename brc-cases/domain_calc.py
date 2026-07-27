@@ -351,6 +351,52 @@ def namelist_geogrid(result: Result, spec: dict) -> str:
     return "\n".join(lines) + "\n"
 
 
+# Geometry keys in namelist.input's &domains that are DERIVED. Anything not listed
+# here (physics, vertical grid, damping) is hand-authored and must not be touched.
+SYNCED_KEYS = ("max_dom", "e_we", "e_sn", "dx", "dy", "grid_id", "parent_id",
+               "i_parent_start", "j_parent_start", "parent_grid_ratio",
+               "parent_time_step_ratio", "time_step")
+
+
+def sync_namelist_input(result: Result, path: Path) -> list[str]:
+    """Rewrite ONLY the derived geometry keys in an existing namelist.input.
+
+    namelist.wps is generated wholesale, but namelist.input carries hand-authored
+    physics that must survive. Without this, its &domains block drifts away from the
+    spec silently -- the two files then describe different runs and nothing complains.
+    Returns the list of lines changed, so the caller can prove what moved.
+    """
+    ds = result.domains
+    vals = {
+        "max_dom": [len(ds)],
+        "e_we": [d.e_we for d in ds],
+        "e_sn": [d.e_sn for d in ds],
+        "dx": [int(d.dx) for d in ds],
+        "dy": [int(d.dx) for d in ds],
+        "grid_id": [d.grid_id for d in ds],
+        "parent_id": [d.parent_id for d in ds],
+        "i_parent_start": [d.i_parent_start for d in ds],
+        "j_parent_start": [d.j_parent_start for d in ds],
+        "parent_grid_ratio": [d.parent_grid_ratio for d in ds],
+        "parent_time_step_ratio": [d.parent_time_step_ratio for d in ds],
+        "time_step": [int(ds[0].dt)],
+    }
+    changed: list[str] = []
+    out: list[str] = []
+    for line in path.read_text().splitlines():
+        stripped = line.strip()
+        key = stripped.split("=")[0].strip() if "=" in stripped else ""
+        if key in SYNCED_KEYS and not stripped.startswith("!"):
+            new = f" {key:24} = " + ",".join(f"{v:>5}" for v in vals[key]) + ","
+            if new.split("=")[1].strip() != line.split("=")[1].strip():
+                changed.append(f"{key}: {line.split('=')[1].strip()} -> {new.split('=')[1].strip()}")
+            out.append(new)
+        else:
+            out.append(line)
+    path.write_text("\n".join(out) + "\n")
+    return changed
+
+
 def report(result: Result, spec: dict) -> str:
     out = [f"# {spec.get('case', {}).get('name', 'domain')} -- geometry"]
     out.append("")
@@ -388,6 +434,9 @@ def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("spec", type=Path, help="domain spec TOML")
     ap.add_argument("--namelist-wps", type=Path, help="write the &share/&geogrid blocks here")
+    ap.add_argument("--sync-namelist-input", type=Path,
+                    help="rewrite only the derived geometry keys in an existing "
+                         "namelist.input, leaving hand-authored physics untouched")
     args = ap.parse_args(argv)
 
     spec = tomllib.loads(args.spec.read_text())
@@ -404,6 +453,18 @@ def main(argv: list[str] | None = None) -> int:
         args.namelist_wps.parent.mkdir(parents=True, exist_ok=True)
         args.namelist_wps.write_text(text)
         print(f"\nwrote {args.namelist_wps}")
+
+    if args.sync_namelist_input:
+        if result.failed:
+            print(f"\nrefusing to sync {args.sync_namelist_input}: geometry has errors",
+                  file=sys.stderr)
+            return 2
+        changed = sync_namelist_input(result, args.sync_namelist_input)
+        print(f"\nsynced geometry into {args.sync_namelist_input}")
+        for c in changed:
+            print(f"  {c}")
+        if not changed:
+            print("  (already in sync)")
 
     return 2 if result.failed else 0
 
