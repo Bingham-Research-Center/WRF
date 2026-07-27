@@ -64,6 +64,15 @@ PENDING_NUMERIC_TOKENS = {
     "unknown",
     "tbd",
 }
+# Same idea as PENDING_NUMERIC_TOKENS, for case.start / case.end when the event has
+# not been selected yet. Explicitly NOT a parseable date: a placeholder that parses
+# is indistinguishable from a decision.
+PENDING_DATE_TOKENS = {
+    "pending",
+    "event_pending",
+    "unknown",
+    "tbd",
+}
 
 REQUIRED_SECTIONS = {
     "case": ("name", "start", "end", "domains"),
@@ -369,6 +378,17 @@ def parse_case_datetime(value: Any, field: str, findings: list[Finding]) -> date
             return datetime.strptime(text, fmt)
         except ValueError:
             pass
+    # A manifest may legitimately exist before its event is chosen: domain geometry,
+    # forcing design and the Slurm profile are all decidable first, and a geogrid
+    # preview needs no dates at all. Writing a plausible placeholder instead would
+    # record a decision nobody made, so declare the gap the same way an unproven
+    # num_metgrid_levels is declared. Downstream steps still refuse -- see
+    # run_readiness_findings.
+    if text.strip().lower() in PENDING_DATE_TOKENS:
+        findings.append(
+            Finding("WARN", f"case.{field} is pending; set it when the event is chosen")
+        )
+        return None
     findings.append(Finding("ERROR", f"case.{field} has unsupported date format: {text}"))
     return None
 

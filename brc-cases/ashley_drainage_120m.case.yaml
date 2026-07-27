@@ -1,0 +1,88 @@
+schema_version: 1
+
+# Ashley Valley 120 m drainage. Three-domain 5:1 ladder, HRRR-forced, one-way.
+# Tracked in ../ub-wx/experiments/ashley-drainage-120m/ (rationale: its proposal.md).
+#
+# NO EVENT IS CHOSEN. case.start/end below are placeholders; picking the night is
+# gate A0 in the ub-wx entry, and it is a science decision (single-night DEVELOPING
+# drainage/inversion, not a multi-day cold-air pool), not a formality.
+#
+# NOT RUNNABLE YET, by design and on two counts:
+#   * num_metgrid_levels is "metgrid_pending", so `render-slurm` refuses until the
+#     gate C two-stream proof turns it into a number;
+#   * the dates are placeholders.
+# `validate` passing now is the intended state -- it checks the manifest is
+# coherent, not that the run is ready.
+#
+# The geometry is NOT stated here. It lives in specs/ashley_drainage_120m.domain.toml
+# and is rendered by domain_calc.py into the draft namelist.wps referenced below,
+# so there is exactly one place a domain change has to be made.
+
+case:
+  name: ashley_drainage_120m
+  label: "Ashley Valley 3-domain HRRR one-way ladder to 120 m (terrain-fineness sensitivity)"
+  start: "event_pending"
+  end: "event_pending"
+  domains: 3
+  owner_namespace: jrlawson
+  proof_status: proposed_pending_event_selection
+
+forcing:
+  # Two streams, and this is not optional: public HRRR GRIB carries NO soil
+  # temperature (num_metgrid_soil_levels=0 -> Noah init fails). Established by the
+  # sibling case's gate C; soil comes from GFS 0.25 f000. Event-independent.
+  sources: ["hrrr", "gfs"]
+  wps_fg_name: ["HRRR", "GFSSOIL"]
+  interval_seconds: 3600
+  num_metgrid_levels: "metgrid_pending"
+  expected_met_em_count: "metgrid_pending"
+  manifest_path: "/scratch/general/vast/${USER}/wrf_inputs/ashley_drainage_120m/manifest_ashley_drainage_120m.json"
+  contract_path: "/scratch/general/vast/${USER}/wrf_inputs/ashley_drainage_120m/contract_ashley_drainage_120m.json"
+
+paths:
+  wrf_src: "/uufs/chpc.utah.edu/common/home/u0737349/gits/brc-wrf"
+  wrf_build: "/uufs/chpc.utah.edu/common/home/u0737349/gits/brc-wrf"
+  wps_root: "/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_build/WPS"
+  input_root: "/scratch/general/vast/${USER}/wrf_inputs/ashley_drainage_120m"
+  grib_data: "/scratch/general/vast/${USER}/wrf_runs/ashley_drainage_120m/grib_data"
+  run_root: "/scratch/general/vast/${USER}/wrf_runs/ashley_drainage_120m"
+  wps_run: "/scratch/general/vast/${USER}/wrf_runs/ashley_drainage_120m/wps_run"
+  wrf_run: "/scratch/general/vast/${USER}/wrf_runs/ashley_drainage_120m/wrf_run"
+  # The 3-arc-second set (~90 m source) is grid-appropriate at 120 m. The custom
+  # 1-arc-second set built for the 37 m sibling is over-resolved here and was the
+  # source of its 56-degree grid-scale slopes.
+  geog_data_path: "/scratch/general/vast/${USER}/wps_geog_terrain3s"
+  archive_root: "/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/ashley_drainage_120m"
+
+wps:
+  vtable: "Vtable.raphrrr"
+  ungrib_prefix: "HRRR"
+  namelist_fg_name: ["HRRR", "GFSSOIL"]
+  namelist_template: "/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/ashley_drainage_120m/control/draft/namelist.wps"
+  geogrid_source: "/scratch/general/vast/${USER}/wrf_runs/ashley_drainage_120m/domain_preview/wps_run"
+
+namelists:
+  namelist_wps: "/scratch/general/vast/${USER}/wrf_runs/ashley_drainage_120m/wps_run/namelist.wps"
+  namelist_input: "/scratch/general/vast/${USER}/wrf_runs/ashley_drainage_120m/wrf_run/namelist.input"
+
+# Owned reserved node, whole-node allocation. This configuration is ~20x cheaper
+# than the 37 m sibling (est. 1.70 wall-h per simulated hour vs a measured 36.4),
+# so an 18 h run is ~31 wall-hours rather than ~27 days. Restarts are enabled in
+# the namelist so a wall-clock overrun resumes rather than starting over.
+#   time: sized for an 18 h member with headroom. Override per gate: the gate E
+#   CFL/cost smoke needs far less.
+slurm:
+  profile: owned_notch392_max
+  job_name: wrf_ashley_120m
+  account: lawson-np
+  partition: lawson-np
+  nodelist: notch392
+  nodes: 1
+  ntasks: 56
+  memory: "900G"
+  time: "48:00:00"
+  mpi_launcher: "srun --mpi=pmi2"
+
+archive:
+  required_patterns: ["wrfout_d0*", "namelist.input", "rsl.out.0000", "real.rsl.out.0000"]
+  colon_safe_wrfout_source: "./wrfout_d0*"
