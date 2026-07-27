@@ -21,11 +21,11 @@ schema_version: 1
 case:
   name: ashley_drainage_120m
   label: "Ashley Valley 3-domain HRRR one-way ladder to 120 m (terrain-fineness sensitivity)"
-  start: "event_pending"
-  end: "event_pending"
+  start: "2026-04-24_23:00:00"
+  end: "2026-04-25_05:00:00"
   domains: 3
   owner_namespace: jrlawson
-  proof_status: proposed_pending_event_selection
+  proof_status: event_selected_pending_source_contract
 
 forcing:
   # Two streams, and this is not optional: public HRRR GRIB carries NO soil
@@ -55,7 +55,11 @@ paths:
   archive_root: "/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/ashley_drainage_120m"
 
 wps:
-  vtable: "Vtable.raphrrr"
+  # SOIL-STRIPPED. Plain Vtable.raphrrr would reinstate HRRR's degenerate 0/0.01 m
+  # soil layers and they would beat GFS's real ones, silently undoing the two-stream
+  # fix. Both Vtables live in the sibling's gate C control packet:
+  # $WRF_ARCHIVE/ashley2026_seiche/control/smoke_20260723T044000Z/
+  vtable: "Vtable.raphrrr.nosoil"
   ungrib_prefix: "HRRR"
   namelist_fg_name: ["HRRR", "GFSSOIL"]
   namelist_template: "/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/ashley_drainage_120m/control/draft/namelist.wps"

@@ -90,15 +90,14 @@ jensen          = [-109.35, 40.37]
 split_mountain  = [-109.20, 40.44]
 
 [share]
-# GEOGRID PLACEHOLDER. geogrid.exe must parse these but ignores them for geometry --
-# geo_em depends only on the projection and grid. The WINDOW SHAPE is chosen
-# (21Z -> 04Z, 7 h: 3 h spin-up + ~4 h past sunset, sized to ~12 wall-hours); the
-# DATE is inherited from the sibling case and is NOT a selected event. Gate A0 sets
-# the real one, and ungrib/metgrid must not run until it does. [event] in the ub-wx
-# registry entry is still empty and the case manifest still says event_pending.
-start_date       = "2025-01-28_21:00:00"
-end_date         = "2025-01-29_04:00:00"
+# EVENT CHOSEN (gate A0): 24-25 April 2026. Selected from Synoptic obs showing a
+# clean anabatic->katabatic switch -- a textbook slope-flow reversal rather than a
+# deep persistent cold pool, which is the regime this 7 h-class window can actually
+# resolve. Sunset at Vernal is ~02:05 UTC on 25 Apr (20:05 MDT 24 Apr).
+# Window 23Z 24 Apr -> 05Z 25 Apr: ~3 h before sunset, ~3 h after. See proposal.md 4a.
+start_date       = "2026-04-24_23:00:00"
+end_date         = "2026-04-25_05:00:00"
 interval_seconds = 3600
 
 [run]
-hours = 7
+hours = 6
