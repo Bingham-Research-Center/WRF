@@ -127,7 +127,13 @@ def parse_value(raw: str) -> Any:
     if not raw:
         return ""
     if raw.startswith(('"', "'", "[", "{")):
-        return ast.literal_eval(raw)
+        # JSON first so inline flow values can use real YAML/JSON spelling --
+        # true/false/null rather than Python's True/False/None. literal_eval stays as
+        # the fallback for single-quoted strings and tuples, which JSON rejects.
+        try:
+            return json.loads(raw)
+        except json.JSONDecodeError:
+            return ast.literal_eval(raw)
     lowered = raw.lower()
     if lowered in {"true", "false"}:
         return lowered == "true"
@@ -640,19 +646,30 @@ def validate_case(data: dict[str, Any], *, strict_files: bool) -> list[Finding]:
             Finding(
                 "WARN",
                 "single-stream HRRR has NO soil temperature (num_metgrid_soil_levels=0) "
-                "and cannot initialise Noah -- use sources ['hrrr','gfs'] with "
+                "and cannot initialise Noah -- use sources ['hrrr','gfs_soil'] with "
                 "wps_fg_name ['HRRR','GFSSOIL'] unless this run has no land-surface model",
             )
         )
     if sources == ["hrrr"] and wps_fg_name != ["HRRR"]:
         findings.append(Finding("ERROR", "HRRR-only source should use wps_fg_name ['HRRR']"))
-    if sources in (["hrrr"], ["hrrr", "gfs"]) and interval_seconds != 3600:
+    if sources in (["hrrr"], ["hrrr", "gfs"], ["hrrr", "gfs_soil"]) and interval_seconds != 3600:
         findings.append(Finding("ERROR", "HRRR source should use interval_seconds 3600"))
     if sources == ["hrrr"]:
         if str(wps.get("ungrib_prefix", "")) != "HRRR":
             findings.append(Finding("ERROR", "HRRR source should use wps.ungrib_prefix HRRR"))
         if [str(v) for v in as_list(wps.get("namelist_fg_name", wps_fg_name))] != ["HRRR"]:
             findings.append(Finding("ERROR", "HRRR-only source should use wps.namelist_fg_name ['HRRR']"))
+    if sources in (["hrrr", "gfs"], ["hrrr", "gfs_soil"]) and wps_fg_name != ["HRRR", "GFSSOIL"]:
+        # ORDER, not just membership. metgrid reads fg_name by priority, so
+        # ['GFSSOIL','HRRR'] would hand GFS the atmosphere and nothing would say so.
+        findings.append(
+            Finding(
+                "ERROR",
+                f"two-stream HRRR+soil must use wps_fg_name ['HRRR','GFSSOIL'] in that "
+                f"order, got {wps_fg_name!r} -- metgrid reads fg_name by priority, so an "
+                "inverted order silently gives GFS the atmosphere",
+            )
+        )
 
     # Two-stream HRRR atmosphere + GFS soil: the configuration that actually works.
     # metgrid takes fg_name in priority order, so HRRR must come FIRST (it wins
@@ -856,13 +873,60 @@ def add_wps_field_proof_findings(findings: list[Finding], data: dict[str, Any]) 
 
     if "/" in str(wps["vtable"]):
         findings.append(Finding("ERROR", f"wps.vtable must be a simple table name: {wps['vtable']!r}"))
-    if str(wps["ungrib_prefix"]) != text_value(wps["namelist_fg_name"]):
+
+    # TWO-STREAM. Public HRRR GRIB carries no soil temperature at all, so an
+    # HRRR-forced run with a land-surface model MUST ungrib a second source for soil
+    # and hand metgrid both via fg_name. That is now the standard shape for every
+    # HRRR case here, not an exotic one, so the proof renderer has to express it.
+    #
+    # fg_name is read by metgrid IN PRIORITY ORDER, so the atmosphere stream has to
+    # come first: inverted, GFS would take the atmosphere away from HRRR and nothing
+    # would complain. That ordering is the rule enforced below.
+    fg_names = [str(v) for v in as_list(wps["namelist_fg_name"])]
+    extra = as_list(wps.get("extra_streams", []))
+    extra_prefixes = [str(s.get("prefix", "")) for s in extra if isinstance(s, dict)]
+
+    if not fg_names:
+        findings.append(Finding("ERROR", "wps.namelist_fg_name is empty"))
+    elif str(wps["ungrib_prefix"]) != fg_names[0]:
         findings.append(
             Finding(
                 "ERROR",
-                "wps.ungrib_prefix and wps.namelist_fg_name should match for a single-source proof",
+                f"wps.ungrib_prefix {wps['ungrib_prefix']!r} must be the FIRST entry of "
+                f"wps.namelist_fg_name {fg_names!r} -- metgrid reads fg_name by priority, "
+                "so the atmosphere stream has to win",
             )
         )
+    for name in fg_names[1:]:
+        if name not in extra_prefixes:
+            findings.append(
+                Finding(
+                    "ERROR",
+                    f"wps.namelist_fg_name lists {name!r} but no wps.extra_streams entry "
+                    f"declares that prefix (declared: {extra_prefixes or 'none'})",
+                )
+            )
+    for index, stream in enumerate(extra):
+        if not isinstance(stream, dict):
+            findings.append(Finding("ERROR", f"wps.extra_streams[{index}] must be a mapping"))
+            continue
+        for key in ("prefix", "vtable", "source"):
+            if not stream.get(key):
+                findings.append(
+                    Finding("ERROR", f"wps.extra_streams[{index}] missing '{key}'")
+                )
+        if stream.get("vtable") and "/" in str(stream["vtable"]):
+            findings.append(
+                Finding("ERROR", f"wps.extra_streams[{index}].vtable must be a simple table name")
+            )
+        if str(stream.get("prefix", "")) not in fg_names:
+            findings.append(
+                Finding(
+                    "WARN",
+                    f"wps.extra_streams[{index}].prefix {stream.get('prefix')!r} is not in "
+                    "wps.namelist_fg_name, so metgrid would never read it",
+                )
+            )
     for key in ("namelist_template", "geogrid_source"):
         add_path_finding(
             findings,
@@ -1158,7 +1222,34 @@ def render_wps_field_proof_slurm(data: dict[str, Any], case_file: Path) -> str:
     grib_source = input_root / source_name
     expected_met_em = expected_met_em_count_from_case(data)
     expected_met_em_text = str(expected_met_em) if expected_met_em is not None else "unknown"
-    fg_name = text_value(wps.get("namelist_fg_name", forcing["wps_fg_name"]))
+    # Fortran namelist list literal: 'HRRR','GFSSOIL'. text_value() would give
+    # "HRRR, GFSSOIL", which becomes the single string 'HRRR, GFSSOIL' -- one stream
+    # named after two, and metgrid would look for a prefix nothing wrote.
+    fg_names = [str(v) for v in as_list(wps.get("namelist_fg_name", forcing["wps_fg_name"]))]
+    fg_name_literal = ",".join(f"'{n}'" for n in fg_names)
+
+    # Streams in fg_name priority order: the primary (atmosphere) first, then each
+    # declared extra. Encoded as prefix|vtable|grib_dir|single so the rendered bash
+    # can loop without needing a parser.
+    extra_streams = [s for s in as_list(wps.get("extra_streams", [])) if isinstance(s, dict)]
+    stream_specs = [
+        "|".join([
+            str(wps["ungrib_prefix"]),
+            str(wps["vtable"]),
+            str(input_root / source_name),
+            "all",
+        ])
+    ]
+    for stream in extra_streams:
+        stream_specs.append(
+            "|".join([
+                str(stream["prefix"]),
+                str(stream["vtable"]),
+                str(stream.get("grib_dir") or (input_root / str(stream["source"]))),
+                "single" if stream.get("single_time") else "all",
+            ])
+        )
+    vtable_dir = wps.get("vtable_dir") or (wps_root / "ungrib" / "Variable_Tables")
     field_patterns = "\n".join(f"{name}\t{pattern}" for name, pattern in WPS_FIELD_CHECKS)
 
     lines = [
@@ -1205,10 +1296,13 @@ def render_wps_field_proof_slurm(data: dict[str, Any], case_file: Path) -> str:
             f"GEOGRID_SOURCE={shell_quote(geogrid_source)}",
             f"VTABLE_NAME={shell_quote(wps['vtable'])}",
             f"UNGRIB_PREFIX={shell_quote(wps['ungrib_prefix'])}",
-            f"METGRID_FG_NAME={shell_quote(fg_name)}",
+            f"METGRID_FG_NAME={shell_quote(fg_name_literal)}",
+            f"PRIMARY_PREFIX={shell_quote(wps['ungrib_prefix'])}",
+            f"VTABLE_DIR={shell_quote(vtable_dir)}",
+            "STREAMS=(" + " ".join(shell_quote(s) for s in stream_specs) + ")",
             f"GEOG_DATA_PATH={shell_quote(paths['geog_data_path'])}",
             f"WRF_SRC={shell_quote(paths['wrf_src'])}",
-            "export CASE_START CASE_END DOMAINS INTERVAL_SECONDS UNGRIB_PREFIX METGRID_FG_NAME GEOG_DATA_PATH",
+            "export CASE_START CASE_END DOMAINS INTERVAL_SECONDS UNGRIB_PREFIX METGRID_FG_NAME GEOG_DATA_PATH NML_START NML_END",
             'RUN_ID="wps_field_proof_${SLURM_JOB_ID:-manual}_$(date -u +%Y%m%dT%H%M%SZ)"',
             'WPS_WORK="${RUN_ROOT}/${RUN_ID}/wps_run"',
             'GRIB_DATA="${RUN_ROOT}/${RUN_ID}/grib_data"',
@@ -1268,9 +1362,28 @@ def render_wps_field_proof_slurm(data: dict[str, Any], case_file: Path) -> str:
             'ln -sf "$WPS_ROOT/ungrib.exe" ungrib.exe',
             'ln -sf "$WPS_ROOT/metgrid.exe" metgrid.exe',
             'ln -sf "$WPS_ROOT/link_grib.csh" link_grib.csh',
-            'ln -sf "$WPS_ROOT/ungrib/Variable_Tables/$VTABLE_NAME" Vtable',
             'rsync -av "$GEOGRID_SOURCE"/geo_em.d0*.nc "$WPS_WORK"/',
             "",
+            "# The valid times metgrid will be asked for. A single-time stream (soil,",
+            "# typically) has its one intermediate duplicated across all of them.",
+            'mapfile -t TIMES < <(python3 -c "',
+            "import datetime, os, sys",
+            "fmt = \\\"%Y-%m-%d_%H:%M:%S\\\"",
+            "start = datetime.datetime.strptime(os.environ[\\\"CASE_START\\\"], fmt)",
+            "end = datetime.datetime.strptime(os.environ[\\\"CASE_END\\\"], fmt)",
+            "step = datetime.timedelta(seconds=int(os.environ[\\\"INTERVAL_SECONDS\\\"]))",
+            "t = start",
+            "while t <= end:",
+            "    print(t.strftime(\\\"%Y-%m-%d_%H\\\"))",
+            "    t += step",
+            '")',
+            'echo "metgrid valid times: ${TIMES[*]}"',
+            "",
+            "# Rewrite namelist.wps for the current stream. Called once per ungrib pass",
+            "# with UNGRIB_PREFIX set, then once more before metgrid. Only the dates,",
+            "# prefix and fg_name are touched -- &geogrid comes from the template, which",
+            "# domain_calc.py derived from the spec, so the proof cannot drift from it.",
+            "emit_namelist() {",
             'python3 - "$NAMELIST_TEMPLATE" "$WPS_WORK/namelist.wps" <<\'PY\'',
             "import os",
             "import re",
@@ -1278,8 +1391,11 @@ def render_wps_field_proof_slurm(data: dict[str, Any], case_file: Path) -> str:
             "",
             "template, output = sys.argv[1:]",
             "domains = int(os.environ['DOMAINS'])",
-            "start = os.environ['CASE_START']",
-            "end = os.environ['CASE_END']",
+            "# NML_START/NML_END let a single-time stream (soil) ungrib over just its",
+            "# one valid time. Asking ungrib for seven times it has one GRIB for is how",
+            "# a two-stream proof fails confusingly.",
+            "start = os.environ.get('NML_START') or os.environ['CASE_START']",
+            "end = os.environ.get('NML_END') or os.environ['CASE_END']",
             "interval = os.environ['INTERVAL_SECONDS']",
             "prefix = os.environ['UNGRIB_PREFIX']",
             "fg_name = os.environ['METGRID_FG_NAME']",
@@ -1295,7 +1411,7 @@ def render_wps_field_proof_slurm(data: dict[str, Any], case_file: Path) -> str:
             "    r'(?m)^\\s*interval_seconds\\s*=.*$': f\" interval_seconds = {interval}\",",
             "    r'(?m)^\\s*geog_data_path\\s*=.*$': f\" geog_data_path = '{geog}'\",",
             "    r'(?m)^\\s*prefix\\s*=.*$': f\" prefix = '{prefix}',\",",
-            "    r'(?m)^\\s*fg_name\\s*=.*$': f\" fg_name = '{fg_name}'\",",
+            "    r'(?m)^\\s*fg_name\\s*=.*$': f\" fg_name = {fg_name}\",",
             "}",
             "for pattern, replacement in replacements.items():",
             "    text, count = re.subn(pattern, replacement, text)",
@@ -1303,9 +1419,43 @@ def render_wps_field_proof_slurm(data: dict[str, Any], case_file: Path) -> str:
             "        raise SystemExit(f'expected one namelist replacement for {pattern}, got {count}')",
             "open(output, 'w', encoding='utf-8').write(text)",
             "PY",
+            "}",
             "",
-            '"$WPS_ROOT/link_grib.csh" "${GRIB_FILES[@]}"',
-            "run_phase ungrib ./ungrib.exe",
+            "# ---- ungrib, once per stream, in fg_name priority order ----",
+            "for spec in \"${STREAMS[@]}\"; do",
+            '  IFS="|" read -r s_prefix s_vtable s_gribdir s_single <<< "$spec"',
+            '  echo "=== ungrib stream $s_prefix (Vtable $s_vtable, single_time=$s_single) ==="',
+            '  vt="$VTABLE_DIR/$s_vtable"',
+            '  test -f "$vt" || vt="$WPS_ROOT/ungrib/Variable_Tables/$s_vtable"',
+            '  test -f "$vt" || fail "Vtable not found for stream $s_prefix: $s_vtable"',
+            '  rm -f GRIBFILE.*',
+            '  ln -sf "$vt" Vtable',
+            '  if [[ "$s_single" == "single" ]]; then',
+            '    UNGRIB_PREFIX="$s_prefix" NML_START="$CASE_START" NML_END="$CASE_START" emit_namelist',
+            "  else",
+            '    UNGRIB_PREFIX="$s_prefix" emit_namelist',
+            "  fi",
+            '  mapfile -t s_files < <(find "$s_gribdir" -maxdepth 1 -type f \\( -name "*.grb" -o -name "*.grb2" -o -name "*.grib" -o -name "*.grib2" \\) | sort)',
+            '  [[ "${#s_files[@]}" -gt 0 ]] || fail "no GRIB under $s_gribdir for stream $s_prefix"',
+            '  "$WPS_ROOT/link_grib.csh" "${s_files[@]}"',
+            '  run_phase "ungrib_${s_prefix}" ./ungrib.exe',
+            '  mv -f ungrib.log "$DEBUG_DIR/ungrib_${s_prefix}.log" 2>/dev/null || true',
+            '  compgen -G "${s_prefix}:*" >/dev/null || fail "stream $s_prefix produced no intermediate"',
+            '  if [[ "$s_single" == "single" ]]; then',
+            '    src=$(ls -1 "${s_prefix}":* | head -1)',
+            '    for t in "${TIMES[@]}"; do',
+            '      [[ -f "${s_prefix}:${t}" ]] || cp -f "$src" "${s_prefix}:${t}"',
+            "    done",
+            '    echo "  duplicated $(basename "$src") across ${#TIMES[@]} valid times"',
+            "  fi",
+            "  for t in \"${TIMES[@]}\"; do",
+            '    test -f "${s_prefix}:${t}" || fail "stream $s_prefix has no intermediate at $t"',
+            "  done",
+            "done",
+            "",
+            "# ---- metgrid, reading every stream in fg_name order ----",
+            'UNGRIB_PREFIX="$PRIMARY_PREFIX" emit_namelist',
+            'cp "$WPS_WORK/namelist.wps" "$DEBUG_DIR/namelist.wps.metgrid"',
             "run_phase metgrid ./metgrid.exe",
             "",
             'find "$WPS_WORK" -maxdepth 1 -type f -name "met_em.d0*.nc" | sort > "$DEBUG_DIR/met_em_files.txt"',

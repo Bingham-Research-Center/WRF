@@ -327,6 +327,12 @@ def namelist_geogrid(result: Result, spec: dict) -> str:
         " start_date = " + ",".join(f"'{start}'" for _ in ds) + ",",
         " end_date   = " + ",".join(f"'{end}'" for _ in ds) + ",",
         f" interval_seconds = {share.get('interval_seconds', 3600)},",
+        # MUST match nocolons in namelist.input &time_control. The two flags live in
+        # different namelists and nothing reconciles them: with nocolons only on the
+        # WRF side, WPS writes met_em.d01.2026-04-24_23:00:00.nc while real.exe asks
+        # for ...23_00_00.nc and dies with "bad date in namelist or file not in
+        # directory". That cost a gate D submission on ashley_drainage_120m.
+        *([" nocolons = .true.,"] if share.get("nocolons") else []),
         "/",
         "",
         "&geogrid",

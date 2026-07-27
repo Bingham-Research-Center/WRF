@@ -98,6 +98,12 @@ split_mountain  = [-109.20, 40.44]
 start_date       = "2026-04-24_23:00:00"
 end_date         = "2026-04-25_05:00:00"
 interval_seconds = 3600
+# MUST match nocolons in namelist.input &time_control, which is .true. because colons
+# in filenames break shell globs and rsync downstream. Nothing reconciles the two
+# flags: without this, WPS writes met_em...23:00:00.nc while real.exe asks for
+# ...23_00_00.nc and dies "bad date in namelist or file not in directory". Cost a
+# gate D submission (job 14311434) before it was tracked as CHK-NOCOLONS.
+nocolons         = true
 
 [run]
 hours = 6

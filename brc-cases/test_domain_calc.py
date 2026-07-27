@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import copy
 import tomllib
 from pathlib import Path
 
@@ -109,3 +110,25 @@ def test_namelist_has_one_value_per_domain(spec):
         line = next(ln for ln in text.splitlines() if ln.strip().startswith(key))
         assert line.rstrip().rstrip(",").count(",") == n - 1, line
     assert f"max_dom = {n}," in text
+
+
+def test_nocolons_is_emitted_only_when_the_spec_asks(spec):
+    """WPS and WRF must agree on filename style or real.exe cannot find met_em.
+
+    nocolons lives in namelist.wps &share and namelist.input &time_control, and
+    nothing reconciles them. With it set only on the WRF side, WPS writes
+    met_em.d01.2026-04-24_23:00:00.nc while real.exe asks for ...23_00_00.nc and
+    dies with "bad date in namelist or file not in directory". Cost a gate D
+    submission on ashley_drainage_120m before it was caught.
+    """
+    # the tracked spec sets it, so derive the negative case by removing it
+    spec_off = copy.deepcopy(spec)
+    spec_off.get("share", {}).pop("nocolons", None)
+    without = domain_calc.namelist_geogrid(domain_calc.build(spec_off), spec_off)
+    assert "nocolons" not in without
+
+    with_on = domain_calc.namelist_geogrid(domain_calc.build(spec), spec)
+    assert " nocolons = .true.," in with_on
+    # and it must sit inside &share, not leak into &geogrid
+    share_block = with_on.split("&geogrid")[0]
+    assert "nocolons" in share_block

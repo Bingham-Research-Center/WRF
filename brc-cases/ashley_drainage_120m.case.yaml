@@ -66,6 +66,14 @@ wps:
   vtable: "Vtable.raphrrr.nosoil"
   ungrib_prefix: "HRRR"
   namelist_fg_name: ["HRRR", "GFSSOIL"]
+  # Neither Vtable ships in the WPS tree; both live in this case's gate C packet.
+  vtable_dir: "/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/ashley_drainage_120m/control/gateC_20260727T0903Z"
+  # The soil stream. ungrib_prefix above is the ATMOSPHERE stream and must stay the
+  # first entry of namelist_fg_name -- metgrid reads fg_name by priority, so an
+  # inverted order would let GFS take the atmosphere away from HRRR silently.
+  # single_time: the staged GFS file is one cycle valid exactly at the init, so its
+  # single intermediate is duplicated across all seven valid times, as gate C did.
+  extra_streams: [{"prefix": "GFSSOIL", "vtable": "Vtable.gfssoil", "source": "gfs_soil", "single_time": true}]
   namelist_template: "/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/ashley_drainage_120m/control/draft/namelist.wps"
   geogrid_source: "/scratch/general/vast/${USER}/wrf_runs/ashley_drainage_120m/domain_preview/wps_run"
 

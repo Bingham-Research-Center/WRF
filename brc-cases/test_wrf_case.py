@@ -426,9 +426,13 @@ archive:
             self.assertIn("BRC_WPS_FIELD_PROOF_APPROVED=YES", script)
             self.assertIn("Vtable.RAP.hybrid.ncep", script)
             self.assertIn("UNGRIB_PREFIX=RAP", script)
-            self.assertIn("METGRID_FG_NAME=RAP", script)
+            # fg_name is now a Fortran list literal so two-stream cases can render
+            # 'HRRR','GFSSOIL'. The emitted namelist line is unchanged for a single
+            # stream -- it was quoted in the heredoc before, and is quoted here now.
+            self.assertIn("'RAP'", script)
+            self.assertIn("PRIMARY_PREFIX=RAP", script)
             self.assertIn("EXPECTED_MET_EM_COUNT=21", script)
-            self.assertIn("run_phase ungrib ./ungrib.exe", script)
+            self.assertIn("run_phase \"ungrib_${s_prefix}\" ./ungrib.exe", script)
             self.assertIn("run_phase metgrid ./metgrid.exe", script)
             self.assertIn("num_metgrid_levels", script)
             self.assertIn("field_check.tsv", script)
@@ -654,3 +658,85 @@ archive:
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TwoStreamFieldProofTests(RenderPracticalHarnessTests):
+    """Public HRRR GRIB has no soil, so an HRRR case MUST ungrib a second source.
+
+    That is the standard shape for HRRR-forced runs here, and until 2026-07-27 the
+    renderer refused it outright ("should match for a single-source proof"), forcing
+    every such case to hand-roll its gate C job.
+    """
+
+    def write_two_stream_case(self, workdir: Path, *, fg_name: str,
+                              declare_extra: bool = True) -> Path:
+        """RAP fixture rewritten as two-stream, consistently across all three files.
+
+        The case yaml, the staged manifest and the contract each carry the source
+        list independently and validate against each other, so a two-stream test has
+        to move all three or it trips a coupling check instead of the rule under test.
+        """
+        case_file = self.write_rap_case(workdir)
+        extra = ('\n  extra_streams: [{"prefix": "GFSSOIL", "vtable": "Vtable.gfssoil",'
+                 ' "source": "gfs_soil", "single_time": true}]') if declare_extra else ""
+        text = case_file.read_text(encoding="utf-8")
+        text = text.replace('  namelist_fg_name: ["RAP"]',
+                            f'  namelist_fg_name: {fg_name}{extra}')
+        text = text.replace('sources: ["rap_analysis"]',
+                            'sources: ["rap_analysis", "gfs_soil"]')
+        text = text.replace('wps_fg_name: ["RAP"]', f'wps_fg_name: {fg_name}')
+        case_file.write_text(text, encoding="utf-8")
+
+        manifest = workdir / "manifest_rap.json"
+        data = json.loads(manifest.read_text(encoding="utf-8"))
+        data["case"]["sources"] = ["rap_analysis", "gfs_soil"]
+        manifest.write_text(json.dumps(data), encoding="utf-8")
+
+        contract = workdir / "contract_rap.json"
+        data = json.loads(contract.read_text(encoding="utf-8"))
+        data["wps_fg_name"] = json.loads(fg_name.replace("'", '"'))
+        contract.write_text(json.dumps(data), encoding="utf-8")
+        return case_file
+
+    def test_two_stream_case_renders_both_ungrib_passes(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            workdir = Path(tmp)
+            case_file = self.write_two_stream_case(workdir, fg_name='["RAP", "GFSSOIL"]')
+            result = self.run_wps_field_proof(
+                case_file, "--output-dir", str(workdir / "pkt"))
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            script = (workdir / "pkt" / "wps_field_proof.slurm").read_text(encoding="utf-8")
+
+            # both streams present, atmosphere FIRST -- metgrid reads fg_name by
+            # priority, so an inverted order would hand the soil source the
+            # atmosphere and nothing would complain
+            # METGRID_FG_NAME is shell-quoted in the rendered script, so assert on
+            # ORDER within that line rather than on a verbatim literal
+            fg_line = next(ln for ln in script.splitlines()
+                           if ln.startswith("METGRID_FG_NAME="))
+            self.assertLess(fg_line.index("RAP"), fg_line.index("GFSSOIL"), fg_line)
+            self.assertIn("RAP|Vtable.RAP.hybrid.ncep", script)
+            self.assertIn("GFSSOIL|Vtable.gfssoil", script)
+            self.assertIn("|single", script)
+            # a single-time stream ungribs over one time, not the whole window
+            self.assertIn('NML_START="$CASE_START" NML_END="$CASE_START"', script)
+            self.assertNotIn("./real.exe", script)
+
+    def test_fg_name_order_is_enforced(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            workdir = Path(tmp)
+            case_file = self.write_two_stream_case(workdir, fg_name='["GFSSOIL", "RAP"]')
+            result = self.run_wps_field_proof(
+                case_file, "--output-dir", str(workdir / "pkt"))
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("must be the FIRST entry", result.stdout + result.stderr)
+
+    def test_undeclared_stream_in_fg_name_is_rejected(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            workdir = Path(tmp)
+            case_file = self.write_two_stream_case(
+                workdir, fg_name='["RAP", "GFSSOIL"]', declare_extra=False)
+            result = self.run_wps_field_proof(
+                case_file, "--output-dir", str(workdir / "pkt"))
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("no wps.extra_streams entry", result.stdout + result.stderr)
