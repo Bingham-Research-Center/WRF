@@ -32,8 +32,9 @@ parent_time_step_ratio = [1, 4, 4]
 time_step              = 10.0
 
 # Centred on the Uinta Basin, matching the sibling case's projection convention.
-ref_lat   = 40.35
-ref_lon   = -109.95
+# Re-centred with d02's third enlargement so d01 and d02 stay concentric.
+ref_lat   = 40.26
+ref_lon   = -109.725
 # Standard parallels BRACKET the domain (which spans ~38.8-41.9 N). The sibling's
 # inherited 30/60 left a map factor of 0.9695 at 40.5 N, so its nominal 120 m grid
 # was really 123.8 m on the ground -- a 3.1% error inherited by every derived
@@ -41,7 +42,7 @@ ref_lon   = -109.95
 # ~1.00 and makes the nominal spacing the true spacing.
 truelat1  = 39.0
 truelat2  = 42.0
-stand_lon = -109.95
+stand_lon = -109.725
 
 # Parent cells of clearance to aim for when auto-sizing an intermediate domain.
 nest_margin_cells = 30
@@ -62,15 +63,16 @@ e_sn = 115
 # requirement (the only domain on which a basin-wide cold-air reservoir is
 # representable), not merely a wrapper around d03. Its own centre is given for the
 # same reason -- centring it on d03 would slide the box east off Duchesne.
-e_we   = 271
-# Grown 186 -> 251 (111 -> 150 km N-S) after the gate B v2 preview: the north edge
-# ran close to the Uinta crest, which is the SOURCE region for Dry Fork drainage.
-# Air generated on those slopes was sitting near d02's relaxation zone, i.e. partly
-# imposed by d01 at 3 km rather than developed at 600 m. Now spans ~39.7-41.0,
-# putting the crest ~25 km inside and picking up the southern Book Cliffs rim.
-# Costs ~3% of total: d02 is ~9% of the work and this is +35% of that.
-e_sn   = 251
-center = [-109.95, 40.35]
+# Enlarged three times, each for a stated reason:
+#   186 -> 251 (N-S): the north edge ran close to the Uinta crest, the SOURCE
+#     region for Dry Fork drainage, leaving that air near the relaxation zone.
+#   271 -> 351 (E-W): +5% west to take west-Basin flow in full, and +10% east to
+#     ~-108.5 to catch drainage entering the Basin from the Colorado side.
+#   251 -> 286 (N-S): further south to ~39.5 for more of the Green River canyon.
+# Now ~-110.96 to -108.49, ~39.49 to 41.03 (208 x 171 km).
+e_we   = 351
+e_sn   = 286
+center = [-109.725, 40.26]
 
 [target]
 # d03: the Ashley Valley drainage system. Dry Fork canyon exit through Vernal and
