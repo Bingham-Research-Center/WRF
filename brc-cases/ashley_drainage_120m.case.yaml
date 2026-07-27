@@ -3,14 +3,13 @@ schema_version: 1
 # Ashley Valley 120 m drainage. Three-domain 5:1 ladder, HRRR-forced, one-way.
 # Tracked in ../ub-wx/experiments/ashley-drainage-120m/ (rationale: its proposal.md).
 #
-# NO EVENT IS CHOSEN. case.start/end below are placeholders; picking the night is
-# gate A0 in the ub-wx entry, and it is a science decision (single-night DEVELOPING
-# drainage/inversion, not a multi-day cold-air pool), not a formality.
+# EVENT CHOSEN at gate A0 (2026-07-27): 24-25 April 2026, an anabatic->katabatic
+# slope-flow reversal picked from Synoptic observations. case.start/end below are
+# that window and are no longer placeholders.
 #
-# NOT RUNNABLE YET, by design and on two counts:
-#   * num_metgrid_levels is "metgrid_pending", so `render-slurm` refuses until the
-#     gate C two-stream proof turns it into a number;
-#   * the dates are placeholders.
+# NOT RUNNABLE YET, on one remaining count: num_metgrid_levels is "metgrid_pending",
+# so `render-slurm` refuses until the gate C two-stream proof turns it into a number
+# (expected 51 = 50 HRRR hybrid levels + the surface, with 21 met_em files).
 # `validate` passing now is the intended state -- it checks the manifest is
 # coherent, not that the run is ready.
 #
@@ -31,7 +30,10 @@ forcing:
   # Two streams, and this is not optional: public HRRR GRIB carries NO soil
   # temperature (num_metgrid_soil_levels=0 -> Noah init fails). Established by the
   # sibling case's gate C; soil comes from GFS 0.25 f000. Event-independent.
-  sources: ["hrrr", "gfs"]
+  # "gfs_soil", not "gfs": that is the brc-tools source name, and it is what the
+  # staged manifest and contract both record. Declaring "gfs" here made `validate`
+  # warn that the manifest was missing a requested source when nothing was missing.
+  sources: ["hrrr", "gfs_soil"]
   wps_fg_name: ["HRRR", "GFSSOIL"]
   interval_seconds: 3600
   num_metgrid_levels: "metgrid_pending"
@@ -57,8 +59,11 @@ paths:
 wps:
   # SOIL-STRIPPED. Plain Vtable.raphrrr would reinstate HRRR's degenerate 0/0.01 m
   # soil layers and they would beat GFS's real ones, silently undoing the two-stream
-  # fix. Both Vtables live in the sibling's gate C control packet:
-  # $WRF_ARCHIVE/ashley2026_seiche/control/smoke_20260723T044000Z/
+  # fix. Confirmed against this window's own f00 GRIB on 2026-07-27: HRRR carries no
+  # TSOIL message at all, and only SOILW at 0-0 m and 0.01-0.01 m.
+  # Both Vtables now live in THIS case's gate C control packet:
+  # $WRF_ARCHIVE/ashley_drainage_120m/control/gateC_20260727T0903Z/
+  # (copied from the sibling's smoke_20260723T044000Z, which remains their origin).
   vtable: "Vtable.raphrrr.nosoil"
   ungrib_prefix: "HRRR"
   namelist_fg_name: ["HRRR", "GFSSOIL"]
