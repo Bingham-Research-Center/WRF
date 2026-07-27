@@ -34,8 +34,13 @@ time_step              = 10.0
 # Centred on the Uinta Basin, matching the sibling case's projection convention.
 ref_lat   = 40.35
 ref_lon   = -109.95
-truelat1  = 30.0
-truelat2  = 60.0
+# Standard parallels BRACKET the domain (which spans ~38.8-41.9 N). The sibling's
+# inherited 30/60 left a map factor of 0.9695 at 40.5 N, so its nominal 120 m grid
+# was really 123.8 m on the ground -- a 3.1% error inherited by every derived
+# quantity and by the phrase "120 m" in any write-up. 39/42 puts the map factor at
+# ~1.00 and makes the nominal spacing the true spacing.
+truelat1  = 39.0
+truelat2  = 42.0
 stand_lon = -109.95
 
 # Parent cells of clearance to aim for when auto-sizing an intermediate domain.
@@ -77,8 +82,14 @@ jensen          = [-109.35, 40.37]
 split_mountain  = [-109.20, 40.44]
 
 [share]
-start_date       = "0000-00-00_00:00:00"
-end_date         = "0000-00-00_00:00:00"
+# GEOGRID PLACEHOLDER. geogrid.exe must parse these but ignores them for geometry --
+# geo_em depends only on the projection and grid. The WINDOW SHAPE is chosen
+# (21Z -> 04Z, 7 h: 3 h spin-up + ~4 h past sunset, sized to ~12 wall-hours); the
+# DATE is inherited from the sibling case and is NOT a selected event. Gate A0 sets
+# the real one, and ungrib/metgrid must not run until it does. [event] in the ub-wx
+# registry entry is still empty and the case manifest still says event_pending.
+start_date       = "2025-01-28_21:00:00"
+end_date         = "2025-01-29_04:00:00"
 interval_seconds = 3600
 
 [run]
