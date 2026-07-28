@@ -22,12 +22,36 @@ i/j_parent_start are DERIVED and must still be confirmed against a geogrid-only
 preview PNG before this geometry is accepted."""
 
 [grid]
-dx                     = [3000.0, 600.0, 120.0]
-parent_grid_ratio      = [1, 5, 5]
-# Deliberately decoupled from parent_grid_ratio: matching 5,5 would give d03
-# dt/25, roughly 3x more conservative than CFL requires. See proposal.md section 4.
-parent_time_step_ratio = [1, 4, 4]
-time_step              = 10.0
+# LADDER CHANGED 2026-07-28: d03 120 m -> 200 m, ratios 5:5 -> 5:3.
+#
+# WHY. The 120 m configuration never integrated. Two distinct failures were seen:
+# vertical-CFL blow-ups (W reaching 1737 m/s, then NaN) always landing on d03's
+# steepest cells, and a separate stall in which the model burns 97% CPU without
+# advancing. Eleven dials were falsified against them -- epssm, zadvect_implicit,
+# diff_opt, dzbot, fixed dt, adaptive dt, radiation, microphysics, PBL scheme,
+# tracer advection and MPI decomposition -- so this is a geometry change, not
+# another tuning attempt.
+#
+# WHAT 200 m BUYS. Over the same footprint the count of cells steeper than 45 deg
+# falls 87 -> 4, and every blow-up observed landed on one of those cells. Cost falls
+# to 0.22x, which also makes iterating affordable.
+#
+# WHAT IT COSTS, measured rather than assumed. The Dry Fork canyon is 0.4-4.6 km
+# wide. At the FLUX GATE (40.565 N) it is 4.6 km, so 200 m still gives ~23 cells
+# across it -- the flux measurement is unaffected. The narrow upper canyon (0.4 km)
+# drops from 3 cells to 1.8, but 3 cells was already below the ~8 needed to resolve
+# a drainage jet, so almost nothing that 120 m actually delivered is lost.
+#
+# TIME STEP: fixed, by JRL's preference -- adaptive dt was tried and, while it
+# integrated ten times further than any fixed step, it makes dt a dependent variable
+# and would have broken CHK-LADDER's hold-everything-constant requirement.
+# 9 s with ratios 1,3,3 gives d03 dt = 1.0 s, inside the 1.33 s 6dx guideline at
+# 200 m. Note adaptive dt CHOSE 0.91 s at 120 m -- larger than the 0.625 s that blew
+# up -- which is why dt was never the binding constraint.
+dx                     = [3000.0, 600.0, 200.0]
+parent_grid_ratio      = [1, 5, 3]
+parent_time_step_ratio = [1, 3, 3]
+time_step              = 9.0
 
 # Centred on the Uinta Basin, matching the sibling case's projection convention.
 # Re-centred with d02's third enlargement so d01 and d02 stay concentric.
