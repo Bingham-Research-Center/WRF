@@ -101,7 +101,18 @@ center = [-109.725, 40.26]
 # Maeser to Jensen, east to Split Mountain. Browns Park is deliberately EXCLUDED --
 # it lies north of the Diamond Mountain / Blue Mountain divide, does not feed the
 # Dry Fork gate, and would cost ~2.4x on the dominant domain.
-bbox = [-109.72, 40.30, -109.14, 40.66]
+# EAST EDGE TRIMMED -109.14 -> -109.32 on 2026-07-28, approved by JRL.
+# Every blow-up at BOTH 120 m and 200 m landed on the same place: lat ~40.47,
+# lon ~-109.25, the single steepest cell in the domain (51.8 deg at 120 m, 47.9 at
+# 200 m). All 7 cells above 43 deg sat in one cluster spanning -109.252..-109.167,
+# 40.470..40.477 -- Split Mountain, on the eastern rim, 32 km from the Dry Fork flux
+# gate. The controlling quantity is MAX slope, not the count: cutting 87 steep cells
+# to 1 by going to 200 m changed nothing because the one that remained is the one
+# that breaks it. Trimming here gives max slope 42.9 deg with ZERO cells above 43,
+# matching the sibling's proven-stable 37 m configuration.
+# Split Mountain is DROPPED from d03 and stays resolved at 600 m in d02. Dry Fork,
+# Maeser, Vernal and Jensen are all retained.
+bbox = [-109.72, 40.30, -109.32, 40.66]
 waypoint_min_inset_km = 2.0
 
 [target.waypoints]
@@ -109,7 +120,7 @@ dry_fork_canyon = [-109.63, 40.58]
 maeser          = [-109.58, 40.48]
 vernal          = [-109.53, 40.455]
 jensen          = [-109.35, 40.37]
-split_mountain  = [-109.20, 40.44]
+# split_mountain removed: outside the trimmed d03, resolved at 600 m in d02.
 
 [share]
 # EVENT (revised 2026-07-28): 8-9 SEPTEMBER 2025, replacing 24-25 April 2026.
