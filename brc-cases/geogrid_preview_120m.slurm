@@ -58,7 +58,7 @@ GEOGRID_EXE="${WPS_ROOT}/geogrid.exe"
 UTC="$(date -u +%Y%m%dT%H%M%SZ)"
 JOBID="${SLURM_JOB_ID:-manual}"
 PACKET="${ARCHIVE_ROOT}/domain_review/geogrid_${UTC}_${JOBID}"
-NDOM=3
+NDOM="${PREVIEW_NDOM:-3}"   # overridable: the two-domain 600 m spec sets 2
 
 echo "geogrid preview (120 m) start $(date -u +%Y-%m-%dT%H:%M:%SZ) host=$(hostname) job=${JOBID}"
 echo "  case=${CASE} wps_run=${WPS_RUN} geog=${GEOG_DIR}"
@@ -121,7 +121,10 @@ d2src="$(hgt_src 2)"; d3src="$(hgt_src 3)"
 echo "      d02: ${d2src}"
 echo "      d03: ${d3src}"
 echo "${d2src}" | grep -q "${TOKEN_3S}" || fail "d02 did NOT use ${TOKEN_3S} (silent fallback): ${d2src}"
-echo "${d3src}" | grep -q "${TOKEN_3S}" || fail "d03 did NOT use ${TOKEN_3S} (silent fallback): ${d3src}"
+# d03 only exists when NDOM=3; the two-domain 600 m spec has no fine nest.
+if [[ "${NDOM}" -ge 3 ]]; then
+  echo "${d3src}" | grep -q "${TOKEN_3S}" || fail "d03 did NOT use ${TOKEN_3S} (silent fallback): ${d3src}"
+fi
 
 # ---- step 4: render preview -------------------------------------------------
 echo "[4/5] rendering domain_preview.png"
