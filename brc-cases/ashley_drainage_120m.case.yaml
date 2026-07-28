@@ -3,14 +3,17 @@ schema_version: 1
 # Ashley Valley 120 m drainage. Three-domain 5:1 ladder, HRRR-forced, one-way.
 # Tracked in ../ub-wx/experiments/ashley-drainage-120m/ (rationale: its proposal.md).
 #
-# EVENT CHOSEN at gate A0 (2026-07-27): 24-25 April 2026, an anabatic->katabatic
-# slope-flow reversal picked from Synoptic observations. case.start/end below are
-# that window and are no longer placeholders.
+# EVENT REPLACED 2026-07-28: 8-9 SEPTEMBER 2025, not 24-25 April 2026. April failed
+# proposal 4a's weak-synoptic-flow criterion -- HRRR showed 8-14 m/s Basin-wide
+# before sunset, the mechanical-mixing confound that criterion excludes. September is
+# 1-4 m/s outside one surge, and PC101 (Dry Fork truth site, inside d03) shows a clean
+# bidirectional reversal. Forcing re-staged; gates C and D must be re-run.
 #
-# GATE C PASSED 2026-07-27, job 14310228: the two-stream metgrid proof produced 21
-# met_em (3 domains x 7 times), every one at num_metgrid_levels=51 (50 HRRR hybrid
-# levels + the surface) and num_metgrid_soil_levels=4. Those numbers are now set
-# below, so `render-slurm` no longer refuses. Gate D (real.exe) is next.
+# num_metgrid_levels=51 (50 HRRR hybrid levels + the surface) was proved at gate C on
+# the April window, job 14310228, and is a property of HRRR rather than of the date,
+# so it carries over. expected_met_em_count does NOT: it is 51 now (3 domains x 17
+# valid times) where April had 21. Gate C must still be RE-RUN on the September
+# window -- the design is proved, this event is not.
 #
 # The geometry is NOT stated here. It lives in specs/ashley_drainage_120m.domain.toml
 # and is rendered by domain_calc.py into the draft namelist.wps referenced below,
@@ -19,11 +22,13 @@ schema_version: 1
 case:
   name: ashley_drainage_120m
   label: "Ashley Valley 3-domain HRRR one-way ladder to 120 m (terrain-fineness sensitivity)"
-  start: "2026-04-24_23:00:00"
-  end: "2026-04-25_05:00:00"
+  # 20Z 8 Sep -> 12Z 9 Sep is the STAGED/boundary span; wrf.exe integrates only
+  # to 05Z (run_hours=9). The longer end makes a restart extension legal.
+  start: "2025-09-08_20:00:00"
+  end: "2025-09-09_12:00:00"
   domains: 3
   owner_namespace: jrlawson
-  proof_status: metgrid_proved_pending_real
+  proof_status: event_changed_pending_restage
 
 forcing:
   # Two streams, and this is not optional: public HRRR GRIB carries NO soil
@@ -36,7 +41,7 @@ forcing:
   wps_fg_name: ["HRRR", "GFSSOIL"]
   interval_seconds: 3600
   num_metgrid_levels: 51
-  expected_met_em_count: 21
+  expected_met_em_count: 51   # 3 domains x 17 valid times (20Z 8 Sep -> 12Z 9 Sep)
   manifest_path: "/scratch/general/vast/${USER}/wrf_inputs/ashley_drainage_120m/manifest_ashley_drainage_120m.json"
   contract_path: "/scratch/general/vast/${USER}/wrf_inputs/ashley_drainage_120m/contract_ashley_drainage_120m.json"
 
@@ -71,8 +76,8 @@ wps:
   # The soil stream. ungrib_prefix above is the ATMOSPHERE stream and must stay the
   # first entry of namelist_fg_name -- metgrid reads fg_name by priority, so an
   # inverted order would let GFS take the atmosphere away from HRRR silently.
-  # single_time: the staged GFS file is one cycle valid exactly at the init, so its
-  # single intermediate is duplicated across all seven valid times, as gate C did.
+  # single_time: the staged GFS file is one cycle valid exactly at the init (18Z 8 Sep
+  # f002), so its single intermediate is duplicated across all seventeen valid times.
   extra_streams: [{"prefix": "GFSSOIL", "vtable": "Vtable.gfssoil", "source": "gfs_soil", "single_time": true}]
   namelist_template: "/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/ashley_drainage_120m/control/draft/namelist.wps"
   geogrid_source: "/scratch/general/vast/${USER}/wrf_runs/ashley_drainage_120m/domain_preview/wps_run"

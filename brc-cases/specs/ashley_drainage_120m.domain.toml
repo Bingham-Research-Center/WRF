@@ -7,9 +7,7 @@
 #   python brc-cases/domain_calc.py brc-cases/specs/ashley_drainage_120m.domain.toml
 #
 # Tracked in ../ub-wx/experiments/ashley-drainage-120m/ (rationale in its
-# proposal.md). NO EVENT IS CHOSEN -- start_date/end_date below are placeholders
-# that geogrid ignores for geometry purposes but that must be replaced before any
-# ungrib/metgrid work.
+# proposal.md). Event and window live in [share] below.
 
 [case]
 name = "ashley_drainage_120m"
@@ -90,20 +88,36 @@ jensen          = [-109.35, 40.37]
 split_mountain  = [-109.20, 40.44]
 
 [share]
-# EVENT CHOSEN (gate A0): 24-25 April 2026. Selected from Synoptic obs showing a
-# clean anabatic->katabatic switch -- a textbook slope-flow reversal rather than a
-# deep persistent cold pool, which is the regime this 7 h-class window can actually
-# resolve. Sunset at Vernal is ~02:05 UTC on 25 Apr (20:05 MDT 24 Apr).
-# Window 23Z 24 Apr -> 05Z 25 Apr: ~3 h before sunset, ~3 h after. See proposal.md 4a.
-start_date       = "2026-04-24_23:00:00"
-end_date         = "2026-04-25_05:00:00"
+# EVENT (revised 2026-07-28): 8-9 SEPTEMBER 2025, replacing 24-25 April 2026.
+# Chosen by JRL from PC101 (Synoptic), the Dry Fork canyon truth site at 40.5235
+# -109.6063, 1785 m -- which sits INSIDE d03, ~6 km down-canyon of the Dry Fork
+# waypoint, so the run has an in-domain validation point the April case never had.
+# PC101 shows a clean bidirectional slope-flow reversal: down-canyon (NW, 290-350)
+# overnight, switching to up-canyon (SE, 110-200) at ~15Z with the temperature rise
+# rate dropping as anabatic flow begins, then back to down-canyon at 21:50Z on 8 Sep
+# with a 6.0 m/s surge -- the highest wind of any September night at the site.
+# WHY THIS EVENT OVER 24-25 APRIL: April failed proposal 4a's weak-synoptic-flow
+# criterion outright (HRRR showed 8-14 m/s Basin-wide before sunset). September is
+# 1-4 m/s outside the surge.
+# KNOWN CAVEAT, accepted: the 21:50Z surge is LOCAL and TRANSIENT, not a propagating
+# hydraulic front -- no neighbouring station (QV4, A3822, QRS) sees it, and PC101
+# holds down-canyon only 68% of the following 3 h. The coherent basin-wide
+# transition is ~02:00Z on 9 Sep, near sunset.
+#
+# WINDOW: 20Z 8 Sep -> 05Z 9 Sep (9 h) is what wrf.exe integrates -- see [run].
+# end_date below is deliberately LATER, 12Z 9 Sep, so real.exe builds a wrfbdy_d01
+# spanning 16 h. That makes a later RESTART EXTENSION legal without re-running WPS:
+# boundary conditions already exist out to 12Z, and restart_interval=60 writes a
+# restart at 05Z. Staging covers HRRR f00..f16 for the same reason.
+start_date       = "2025-09-08_20:00:00"
+end_date         = "2025-09-09_12:00:00"
 interval_seconds = 3600
 # MUST match nocolons in namelist.input &time_control, which is .true. because colons
 # in filenames break shell globs and rsync downstream. Nothing reconciles the two
-# flags: without this, WPS writes met_em...23:00:00.nc while real.exe asks for
-# ...23_00_00.nc and dies "bad date in namelist or file not in directory". Cost a
+# flags: without this, WPS writes met_em...20:00:00.nc while real.exe asks for
+# ...20_00_00.nc and dies "bad date in namelist or file not in directory". Cost a
 # gate D submission (job 14311434) before it was tracked as CHK-NOCOLONS.
 nocolons         = true
 
 [run]
-hours = 6
+hours = 9   # wrf.exe integrates 20Z->05Z; wrfbdy runs to 12Z for restarts
