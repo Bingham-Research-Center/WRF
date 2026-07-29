@@ -1,4 +1,9 @@
-# Ashley Valley rotating cell, 11-12 Oct 2025 -- domain spec (TWO DOMAINS).
+# Ashley Valley, 11-12 Oct 2025 -- domain spec (TWO DOMAINS).
+#
+# SCOPE: geometry and the WPS time window. The science question, the event
+# justification, the gate status and the write-up claim boundary live in
+# ../ub-wx/experiments/20251011-ashley-rotating-cell/ and are deliberately NOT
+# restated here -- two copies of a rationale drift, and the ub-wx one is canonical.
 #
 # GEOMETRY IS LIFTED VERBATIM from ashley_drainage_600m.domain.toml. Every number in
 # [grid], [coarse] and [target].bbox is identical, deliberately: that configuration
@@ -69,10 +74,10 @@ bbox = [-110.96, 39.49, -108.49, 41.03]
 waypoint_min_inset_km = 2.0
 
 [target.waypoints]
-# The drainage waypoints stay (they are the same valley) and three are added for this
-# case. spotter_point is the coordinate of the 02:20Z wind report and the 02:30-02:40Z
-# funnel; kvel is the nearest official trace and the only low-level verification that
-# exists, since KGJX's beam is ~3.5 km AGL over Vernal at its lowest tilt.
+# The drainage waypoints stay (same valley); three are added for this case. These are
+# CONTAINMENT CHECKS -- domain_calc asserts each sits inside the finest domain with
+# margin, and they are also the tslist points. Why these three, and what the
+# observations at them are, is the ub-wx entry's business, not this file's.
 dry_fork_canyon = [-109.63, 40.58]
 maeser          = [-109.58, 40.48]
 vernal          = [-109.53, 40.455]
@@ -82,11 +87,8 @@ kvel            = [-109.51273, 40.44295]
 split_mountain  = [-109.35326, 40.39136]
 
 [share]
-# EVENT: 11-12 OCTOBER 2025. Chosen because something was observed, not by screening.
-# start_date is the wrf.exe init. 23Z is 1h42m BEFORE sunset at Vernal (~00:41 UTC),
-# so the model builds its own evening transition, decaying CBL and drainage onset
-# before the storm arrives instead of inheriting an already-stabilised state from a
-# later cycle -- worth more here than a shorter lead to the 02:20Z report.
+# EVENT: 11-12 OCTOBER 2025, init 23Z. The event choice and its justification are
+# gate A0 of the ub-wx entry; this file only has to be consistent with it.
 #
 # end_date is deliberately LATER than the run end (see [run]): real.exe then builds a
 # wrfbdy_d01 spanning 7 h to 06Z, so a restart extension is legal without re-running
@@ -100,8 +102,7 @@ interval_seconds = 3600
 nocolons         = true
 
 [run]
-# wrf.exe integrates 23Z 11 Oct -> 04Z 12 Oct. The 5th hour past JRL's original 03Z
-# is not padding: the funnel "was less prominent as the cell got closer to Split
-# Mountain" by ~02:45Z, so the decay IS a terrain-interaction result and cutting the
-# window at 03Z would remove the thing worth explaining. Costs ~0.6 wall-h.
+# wrf.exe integrates 23Z 11 Oct -> 04Z 12 Oct. Used only for the cost report here;
+# run_hours in namelist.input is what actually bounds the integration, and the two
+# must agree. Why 5 h and not 4: ub-wx entry, gate A0.
 hours = 5

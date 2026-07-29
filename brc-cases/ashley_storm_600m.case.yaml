@@ -108,8 +108,8 @@ slurm:
 
 archive:
   # auxhist2 (the 60 s 2-D storm stream) and the tslist .TS files are deliberately
-  # listed: they are the two products that resolve a ~4-minute vortex transit, and an
-  # archive step that quietly dropped them would leave a run that cannot answer its
-  # own question. Both are new machinery here -- gate D proves they appear at all.
+  # listed: they are new machinery in this repo, and an archive step that quietly
+  # dropped them would leave a run that cannot answer its own question. Gate D proves
+  # they appear at all. What they are FOR is the ub-wx entry's product list.
   required_patterns: ["wrfout_d0*", "auxhist2_d02*", "*.TS", "namelist.input", "rsl.out.0000", "real.rsl.out.0000"]
   colon_safe_wrfout_source: "./wrfout_d0*"
