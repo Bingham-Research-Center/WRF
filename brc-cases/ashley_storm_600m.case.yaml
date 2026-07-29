@@ -1,0 +1,115 @@
+schema_version: 1
+
+# Ashley Valley rotating cell, 11-12 October 2025. Two-domain 5:1 ladder, HRRR-forced,
+# one-way. Tracked in ../ub-wx/experiments/20251011-ashley-rotating-cell/.
+#
+# Sibling of ashley_drainage_120m, whose two-domain configuration this reuses whole.
+# What differs is the window, the physics and the output design; those live in
+# namelist.input, not here.
+#
+# num_metgrid_levels=51 (50 HRRR hybrid levels + the surface) is a property of HRRR
+# rather than of the date, so it carries over from the sibling's gate C. The COUNT
+# does not: 16 here (2 domains x 8 valid times, 23Z 11 Oct -> 06Z 12 Oct) against 34
+# there. Gate C must still be RE-RUN on this window -- the design is proved, this
+# event is not.
+#
+# The geometry is NOT stated here. It lives in specs/ashley_storm_600m.domain.toml and
+# is rendered by domain_calc.py into the draft namelist.wps referenced below, so there
+# is exactly one place a domain change has to be made. Verified 2026-07-28 that it
+# derives d01 130x115 and d02 356x286 at i/j_parent_start 30,30 -- byte-identical to
+# the September run's namelist, which is the point.
+
+case:
+  name: ashley_storm_600m
+  label: "Ashley Valley 2-domain HRRR one-way ladder to 600 m (nocturnal rotating cell)"
+  # 23Z 11 Oct -> 06Z 12 Oct is the STAGED/boundary span; wrf.exe integrates only to
+  # 04Z (run_hours=5). The longer end makes a restart extension legal without WPS.
+  start: "2025-10-11_23:00:00"
+  end: "2025-10-12_06:00:00"
+  domains: 2
+  owner_namespace: jrlawson
+  proof_status: pending_gate_a
+
+forcing:
+  # Two streams, and this is not optional: public HRRR GRIB carries NO soil
+  # temperature (num_metgrid_soil_levels=0 -> Noah init fails). Event-independent,
+  # established at the sibling's gate C and re-verified on its September window.
+  # "gfs_soil", not "gfs": that is the brc-tools source name, and it is what the
+  # staged manifest and contract both record.
+  sources: ["hrrr", "gfs_soil"]
+  # ORDER IS LOAD-BEARING. metgrid reads fg_name by priority, so an inverted order
+  # would let GFS take the atmosphere away from HRRR silently. validate_case enforces
+  # it; the enforcement exists because sorted() once inverted it.
+  wps_fg_name: ["HRRR", "GFSSOIL"]
+  # 3600 is not a preference. validate_case ERRORS on any other value for an HRRR
+  # source, and rightly: the sub-hourly `subh` product is 2-D surface fields only, so
+  # it cannot supply 3-D lateral boundaries at any cadence.
+  interval_seconds: 3600
+  num_metgrid_levels: 51
+  expected_met_em_count: 16   # 2 domains x 8 valid times (23Z 11 Oct -> 06Z 12 Oct)
+  manifest_path: "/scratch/general/vast/${USER}/wrf_inputs/ashley_storm_600m/manifest_ashley_storm_600m.json"
+  contract_path: "/scratch/general/vast/${USER}/wrf_inputs/ashley_storm_600m/contract_ashley_storm_600m.json"
+
+paths:
+  wrf_src: "/uufs/chpc.utah.edu/common/home/u0737349/gits/brc-wrf"
+  wrf_build: "/uufs/chpc.utah.edu/common/home/u0737349/gits/brc-wrf"
+  wps_root: "/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_build/WPS"
+  input_root: "/scratch/general/vast/${USER}/wrf_inputs/ashley_storm_600m"
+  grib_data: "/scratch/general/vast/${USER}/wrf_runs/ashley_storm_600m/grib_data"
+  run_root: "/scratch/general/vast/${USER}/wrf_runs/ashley_storm_600m"
+  wps_run: "/scratch/general/vast/${USER}/wrf_runs/ashley_storm_600m/wps_run"
+  wrf_run: "/scratch/general/vast/${USER}/wrf_runs/ashley_storm_600m/wrf_run"
+  # The 3-arc-second set (~90 m source) is grid-appropriate at 600 m; the custom
+  # 1-arc-second set built for the 37 m sibling is over-resolved and was the source of
+  # its 56-degree grid-scale slopes. Staged once, shared across cases.
+  geog_data_path: "/scratch/general/vast/${USER}/wps_geog_terrain3s"
+  archive_root: "/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/ashley_storm_600m"
+
+wps:
+  # SOIL-STRIPPED. Plain Vtable.raphrrr would reinstate HRRR's degenerate 0/0.01 m
+  # soil layers and they would beat GFS's real ones, silently undoing the two-stream
+  # fix. Neither Vtable ships in the WPS tree -- COPY both from the sibling's most
+  # recent gate C packet rather than re-deriving them, and point vtable_dir at this
+  # case's own packet once gate C has run.
+  vtable: "Vtable.raphrrr.nosoil"
+  ungrib_prefix: "HRRR"
+  namelist_fg_name: ["HRRR", "GFSSOIL"]
+  vtable_dir: "/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/ashley_drainage_120m/control/sep600_20260728T1900Z"
+  # The soil stream. ungrib_prefix above is the ATMOSPHERE stream and must stay the
+  # first entry of namelist_fg_name. single_time: the staged GFS file is one cycle
+  # valid exactly at the init (18Z 11 Oct f005, 0 h staleness), so its single
+  # intermediate is duplicated across all eight valid times.
+  extra_streams: [{"prefix": "GFSSOIL", "vtable": "Vtable.gfssoil", "source": "gfs_soil", "single_time": true}]
+  namelist_template: "/uufs/chpc.utah.edu/common/home/lawson-group6/jrlawson/wrf_archive/ashley_storm_600m/control/draft/namelist.wps"
+  geogrid_source: "/scratch/general/vast/${USER}/wrf_runs/ashley_storm_600m/domain_preview/wps_run"
+
+namelists:
+  namelist_wps: "/scratch/general/vast/${USER}/wrf_runs/ashley_storm_600m/wps_run/namelist.wps"
+  namelist_input: "/scratch/general/vast/${USER}/wrf_runs/ashley_storm_600m/wrf_run/namelist.input"
+
+# Owned reserved node, whole-node allocation; on an owned node reserving the full 900G
+# costs nothing and removes OOM as a failure mode.
+#   time: 8 h against an expected ~3.5-4.0 wall-hours. That expectation is the
+#   sibling's MEASURED 0.597 wall-h/sim-h adjusted for Thompson-graupel over WSM5
+#   (+~25%), AFWA and HAILCAST (+~5%), and dropping 8 tracers (-~10%). domain_calc
+#   projects 0.26, which is the same 2.3x-optimistic derivation the sibling caught --
+#   size the request from the measurement, not from the report.
+slurm:
+  profile: owned_notch392_max
+  job_name: wrf_ashley_storm
+  account: lawson-np
+  partition: lawson-np
+  nodelist: notch392
+  nodes: 1
+  ntasks: 56
+  memory: "900G"
+  time: "08:00:00"
+  mpi_launcher: "srun --mpi=pmi2"
+
+archive:
+  # auxhist2 (the 60 s 2-D storm stream) and the tslist .TS files are deliberately
+  # listed: they are the two products that resolve a ~4-minute vortex transit, and an
+  # archive step that quietly dropped them would leave a run that cannot answer its
+  # own question. Both are new machinery here -- gate D proves they appear at all.
+  required_patterns: ["wrfout_d0*", "auxhist2_d02*", "*.TS", "namelist.input", "rsl.out.0000", "real.rsl.out.0000"]
+  colon_safe_wrfout_source: "./wrfout_d0*"
